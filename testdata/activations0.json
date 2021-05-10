@@ -1,0 +1,94 @@
+[
+  {
+    "id": 17083300,
+    "regcode": "INTERNAL-USE-ONLY-116f-4b58",
+    "type": "internal",
+    "status": "ACTIVE",
+    "starts_at": "2021-04-21T15:08:32.114Z",
+    "expires_at": "2026-04-21T15:08:32.114Z",
+    "system_id": 5009543,
+    "service": {
+      "id": 2187,
+      "name": "SUSE_Linux_Enterprise_Micro_5.0_x86_64",
+      "url": "https://scc.suse.com/access/services/2187?credentials=SUSE_Linux_Enterprise_Micro_5.0_x86_64",
+      "obsoleted_service_name": "",
+      "product": {
+        "id": 2202,
+        "name": "SLES",
+        "identifier": "SLES",
+        "former_identifier": "SUSE-MicroOS",
+        "version": "15.1",
+        "release_type": null,
+        "arch": "x86_64",
+        "friendly_name": "SUSE Linux Enterprise Micro 5.0 x86_64",
+        "friendly_version": "5.0",
+        "product_class": "MICROOS-X86",
+        "cpe": "cpe:/o:suse:suse-microos:5.0",
+        "free": false,
+        "description": "SUSE Linux Enterprise Micro 5.0",
+        "release_stage": "released",
+        "eula_url": "",
+        "repositories": [
+          {
+            "id": 4936,
+            "url": "https://updates.suse.com/SUSE/Updates/SUSE-MicroOS/5.0/x86_64/update/",
+            "name": "SUSE-MicroOS-5.0-Updates",
+            "distro_target": "sle-15-x86_64",
+            "description": "SUSE-MicroOS-5.0-Updates for sle-15-x86_64",
+            "enabled": true,
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "id": 4937,
+            "url": "https://updates.suse.com/SUSE/Updates/SUSE-MicroOS/5.0/x86_64/update_debug/",
+            "name": "SUSE-MicroOS-5.0-Debuginfo-Updates",
+            "distro_target": "sle-15-x86_64",
+            "description": "SUSE-MicroOS-5.0-Debuginfo-Updates for sle-15-x86_64",
+            "enabled": false,
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "id": 4938,
+            "url": "https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product/",
+            "name": "SUSE-MicroOS-5.0-Pool",
+            "distro_target": "sle-15-x86_64",
+            "description": "SUSE-MicroOS-5.0-Pool for sle-15-x86_64",
+            "enabled": true,
+            "autorefresh": false,
+            "installer_updates": false
+          },
+          {
+            "id": 4939,
+            "url": "https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product_debug/",
+            "name": "SUSE-MicroOS-5.0-Debuginfo-Pool",
+            "distro_target": "sle-15-x86_64",
+            "description": "SUSE-MicroOS-5.0-Debuginfo-Pool for sle-15-x86_64",
+            "enabled": false,
+            "autorefresh": false,
+            "installer_updates": false
+          },
+          {
+            "id": 4940,
+            "url": "https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product_source/",
+            "name": "SUSE-MicroOS-5.0-Source-Pool",
+            "distro_target": "sle-15-x86_64",
+            "description": "SUSE-MicroOS-5.0-Source-Pool for sle-15-x86_64",
+            "enabled": false,
+            "autorefresh": false,
+            "installer_updates": false
+          }
+        ],
+        "product_type": "base",
+        "predecessor_ids": [],
+        "online_predecessor_ids": [],
+        "offline_predecessor_ids": [],
+        "shortname": "SUSE Linux Enterprise Micro",
+        "recommended": false,
+        "migration_extra": false,
+        "extensions": null
+      }
+    }
+  }
+]
