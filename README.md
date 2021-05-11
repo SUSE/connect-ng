@@ -19,3 +19,15 @@ This will leave a `suseconnect` binary on the host.
 
 See `ext/use-lib.py` for example use from python.
 TODO ruby.
+
+## Examples
+```
+# ./suseconnect --status
+[{"identifier":"SUSE-MicroOS","version":"5.0","arch":"x86_64","status":"Registered","regcode":"INTERNAL-USE-ONLY-116f-4b58","starts_at":"2021-04-21T15:08:32.114Z","expires_at":"2026-04-21T15:08:32.114Z","subscription_status":"ACTIVE","type":"internal"}]
+```
+#### HTTP proxy
+```
+# podman run --name squid -d -p 3128:3128 datadog/squid
+# HTTPS_PROXY=127.0.0.1:3128 ./suseconnect -s
+[{"identifier":"SUSE-MicroOS","version":"5.0","arch":"x86_64","status":"Registered","regcode":"INTERNAL-USE-ONLY-116f-4b58","starts_at":"2021-04-21T15:08:32.114Z","expires_at":"2026-04-21T15:08:32.114Z","subscription_status":"ACTIVE","type":"internal"}]
+```
