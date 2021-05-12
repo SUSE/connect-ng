@@ -17,8 +17,8 @@ This will leave a `suseconnect` binary on the host.
 ### Shared library
 `go build -buildmode=c-shared -o libsuseconnect.so ext/main.go`
 
+See `ext/use-lib.rb` for example use from ruby.
 See `ext/use-lib.py` for example use from python.
-TODO ruby.
 
 ## Examples
 ```
