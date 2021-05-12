@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# Based on https://www.ardanlabs.com/blog/2020/07/extending-python-with-go.html
+# It has a note about using free().
+
 import ctypes
 
 so = ctypes.cdll.LoadLibrary('./libsuseconnect.so')
