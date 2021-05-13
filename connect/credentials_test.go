@@ -1,15 +1,27 @@
 package connect
 
 import (
+	"strings"
 	"testing"
 )
 
-func TestLoadFile(t *testing.T) {
-	expectUsername := "SCC_ab12ab12ab12ab12ab12ab12ab12ab12"
-	expectPassword := "cd34cd34cd34cd34cd34cd34cd34cd34"
-	got, _ := LoadFile("../testdata/SCCcredentials")
-	if got.Username != expectUsername || got.Password != expectPassword {
-		t.Errorf("LoadFile() = %q", got)
+func TestParseCredientials(t *testing.T) {
+	var tests = []struct {
+		input       string
+		expectCreds Credentials
+		expectErr   error
+	}{
+		{"username=user1\npassword=pass1", Credentials{"user1", "pass1"}, nil},
+		{" \n username = user1 \n password = pass1 \n", Credentials{"user1", "pass1"}, nil},
+		{"username = user1 \n junk \n password = pass1 \n", Credentials{"user1", "pass1"}, nil},
+		{"USERNAME = user1 \n passed = pass1", Credentials{}, ErrParseCredientials},
+		{"username= \n password = \n", Credentials{}, ErrParseCredientials},
 	}
 
+	for _, test := range tests {
+		got, err := ParseCredientials(strings.NewReader(test.input))
+		if err != test.expectErr || !credentialsEqual(got, test.expectCreds) {
+			t.Errorf("ParseCredientials() == %+v, %s, expected %+v, %s", got, err, test.expectCreds, test.expectErr)
+		}
+	}
 }
