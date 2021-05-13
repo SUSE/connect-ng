@@ -3,6 +3,7 @@ package connect
 import (
 	"errors"
 	"fmt"
+	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"io"
 	"os"
 	"regexp"
@@ -29,6 +30,7 @@ func credentialsEqual(a, b Credentials) bool {
 }
 
 func GetCredentials() (Credentials, error) {
+	xlog.Debug.Printf("Reading credientials from %s", defaulCredPath)
 	f, err := os.Open(defaulCredPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

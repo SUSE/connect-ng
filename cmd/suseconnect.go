@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"gitlab.suse.de/doreilly/go-connect/connect"
+	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"os"
 )
 
@@ -12,6 +13,7 @@ var (
 	//go:embed usage.txt
 	usageText string
 	status    bool
+	debug     bool
 )
 
 func init() {
@@ -22,12 +24,16 @@ func init() {
 
 	flag.BoolVar(&status, "status", false, "")
 	flag.BoolVar(&status, "s", false, "")
+	flag.BoolVar(&debug, "debug", false, "")
 
 	if len(os.Args) < 2 {
 		flag.Usage()
 		os.Exit(1)
 	}
 	flag.Parse()
+	if debug {
+		xlog.EnableDebug()
+	}
 }
 
 func main() {
@@ -35,6 +41,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
 	}
+	xlog.Debug.Println("cmd line:", os.Args)
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
 		return

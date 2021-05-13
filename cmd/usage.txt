@@ -9,4 +9,5 @@ Manage subscriptions at https://scc.suse.com
                              format.
 
 Common options:
+        --debug              Provide debug output.
     -h, --help               Show this message.
