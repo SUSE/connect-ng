@@ -1,19 +1,17 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"gitlab.suse.de/doreilly/go-connect/connect"
 	"os"
 )
 
-var usageHeader = `Usage: SUSEConnect [options]
-Register SUSE Linux Enterprise installations with the SUSE Customer Center.
-Registration allows access to software repositories (including updates)
-and allows online management of subscriptions and organizations.
-
-Manage subscriptions at https://scc.suse.com
-`
+var (
+	//go:embed usage.txt
+	usageText string
+)
 
 func main() {
 	if os.Geteuid() != 0 {
@@ -21,15 +19,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	var status, statusText bool
-	flag.BoolVar(&status, "status", false, "Get current system registration status in json format.")
-	flag.BoolVar(&status, "s", false, "Get current system registration status in json format.")
-	flag.BoolVar(&statusText, "status-text", false, "Get current system registration status in text format.")
+	var status bool
+	flag.BoolVar(&status, "status", false, "")
+	flag.BoolVar(&status, "s", false, "")
 
-	// this function can be changed to display exactly what the ruby SUSEConnect displays.
+	// display help like the ruby SUSEConnect
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "%s\n", usageHeader)
-		flag.PrintDefaults()
+		fmt.Fprint(os.Stderr, usageText)
 	}
 	if len(os.Args) < 2 {
 		flag.Usage()
@@ -39,10 +35,6 @@ func main() {
 
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
-		return
-	}
-	if statusText {
-		fmt.Print(connect.GetProductStatuses("text"))
 		return
 	}
 	// unknown args

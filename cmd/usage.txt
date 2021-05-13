@@ -1,0 +1,12 @@
+Usage: SUSEConnect [options]
+Register SUSE Linux Enterprise installations with the SUSE Customer Center.
+Registration allows access to software repositories (including updates)
+and allows online management of subscriptions and organizations.
+
+Manage subscriptions at https://scc.suse.com
+
+    -s, --status             Get current system registration status in json
+                             format.
+
+Common options:
+    -h, --help               Show this message.
