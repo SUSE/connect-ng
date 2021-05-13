@@ -10,7 +10,7 @@ func DoGET(urlSuffix string) ([]byte, error) {
 	config := LoadConfig()
 	credentials, err := GetCredentials()
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		return nil, err
 	}
 	url := config.BaseURL + urlSuffix
 	client := &http.Client{}

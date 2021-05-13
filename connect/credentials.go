@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -11,8 +12,9 @@ const (
 )
 
 var (
-	userMatch = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
-	passMatch = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
+	ErrNoCredentialsFile = errors.New("Credentials file does not exist")
+	userMatch            = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
+	passMatch            = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
 )
 
 type Credentials struct {
@@ -27,6 +29,9 @@ func GetCredentials() (Credentials, error) {
 func LoadFile(path string) (Credentials, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return Credentials{}, fmt.Errorf("%w; %s", ErrNoCredentialsFile, err)
+		}
 		return Credentials{}, err
 	}
 	uMatch := userMatch.FindStringSubmatch(string(content))
