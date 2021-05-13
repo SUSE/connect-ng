@@ -2,7 +2,7 @@ package connect
 
 import (
 	"errors"
-	"log"
+	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 )
 
 func GetActivations() []Activation {
@@ -12,7 +12,7 @@ func GetActivations() []Activation {
 		// A missing credentials file just means the system is
 		// not registered. Don't print an error in this case.
 		if !errors.Is(err, ErrNoCredentialsFile) {
-			log.Println(err)
+			xlog.Error.Println(err)
 		}
 		return []Activation{}
 	}

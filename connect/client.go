@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -16,17 +15,17 @@ func DoGET(urlSuffix string) ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		return nil, err
 	}
 	req.SetBasicAuth(credentials.Username, credentials.Password)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		return nil, err
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("%s", err)
+		return nil, err
 	}
 	//log.Printf("resp: %s", string(body))
 	return body, nil

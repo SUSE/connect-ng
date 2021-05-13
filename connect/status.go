@@ -2,8 +2,7 @@ package connect
 
 import (
 	"encoding/json"
-	"log"
-	// "os"
+	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"time"
 )
 
@@ -57,14 +56,14 @@ func GetProductStatuses(format string) string {
 		statuses := getStatuses()
 		jsonStr, err := json.Marshal(statuses)
 		if err != nil {
-			log.Fatal(err)
+			xlog.Error.Fatal(err)
 		}
 		return string(jsonStr)
 	}
 
 	if format == "text" {
 		statuses := getStatuses()
-		log.Printf("+%v\n", statuses)
+		xlog.Debug.Printf("+%v\n", statuses)
 		return "Not implamented \n"
 	}
 	panic("Parameter must be \"json\" or \"text\"")

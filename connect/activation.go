@@ -2,7 +2,7 @@ package connect
 
 import (
 	"encoding/json"
-	"log"
+	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"time"
 )
 
@@ -40,7 +40,7 @@ func ParseJSON(jsonStr []byte) []Activation {
 	var activations []Activation
 	err := json.Unmarshal(jsonStr, &activations)
 	if err != nil {
-		log.Fatal(err)
+		xlog.Error.Fatal(err)
 	}
 	return activations
 }
