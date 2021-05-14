@@ -1,6 +1,7 @@
 package xlog
 
 import (
+	"io"
 	"log"
 	"os"
 )
@@ -11,11 +12,10 @@ var (
 )
 
 func init() {
-	devNullFile, _ := os.Open(os.DevNull)
-	Debug = log.New(devNullFile, "", 0)
+	Debug = log.New(io.Discard, "", 0)
 	Error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func EnableDebug() {
-	Debug = log.New(os.Stderr, "", 0)
+	Debug.SetOutput(os.Stderr)
 }
