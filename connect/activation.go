@@ -36,6 +36,10 @@ func (a Activation) ToTriplet() string {
 	return a.Service.Product.ToTriplet()
 }
 
+func (a Activation) IsFree() bool {
+	return a.Service.Product.Free
+}
+
 func ParseJSON(jsonStr []byte) []Activation {
 	var activations []Activation
 	err := json.Unmarshal(jsonStr, &activations)

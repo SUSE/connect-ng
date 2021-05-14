@@ -82,7 +82,7 @@ func getStatuses() []interface{} {
 	for _, product := range products {
 		key := product.ToTriplet()
 		activation, inMap := activationMap[key]
-		if inMap && !activation.Service.Product.Free {
+		if inMap && !activation.IsFree() {
 			statuses = append(statuses, NewStatusReg(activation))
 		} else {
 			statuses = append(statuses, NewStatus(product))
