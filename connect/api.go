@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"encoding/json"
 	"errors"
 	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 )
@@ -16,5 +17,10 @@ func GetActivations() []Activation {
 		}
 		return []Activation{}
 	}
-	return ParseJSON(resp)
+	var activations []Activation
+	err = json.Unmarshal(resp, &activations)
+	if err != nil {
+		xlog.Error.Fatal(err)
+	}
+	return activations
 }

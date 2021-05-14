@@ -1,8 +1,6 @@
 package connect
 
 import (
-	"encoding/json"
-	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"time"
 )
 
@@ -38,13 +36,4 @@ func (a Activation) ToTriplet() string {
 
 func (a Activation) IsFree() bool {
 	return a.Service.Product.Free
-}
-
-func ParseJSON(jsonStr []byte) []Activation {
-	var activations []Activation
-	err := json.Unmarshal(jsonStr, &activations)
-	if err != nil {
-		xlog.Error.Fatal(err)
-	}
-	return activations
 }
