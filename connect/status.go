@@ -1,13 +1,22 @@
 package connect
 
 import (
+	_ "embed" //golint
 	"encoding/json"
 	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
+	"strings"
+	"text/template"
 	"time"
+)
+
+var (
+	//go:embed status-text.tmpl
+	statusTemplate string
 )
 
 // Status is used to create JSON output
 type Status struct {
+	Summary    string     `json:"-"`
 	Identifier string     `json:"identifier"`
 	Version    string     `json:"version"`
 	Arch       string     `json:"arch"`
@@ -21,19 +30,16 @@ type Status struct {
 
 // GetProductStatuses returns statuses of installed products
 func GetProductStatuses(format string) string {
+	statuses := getStatuses()
 	if format == "json" {
-		statuses := getStatuses()
 		jsonStr, err := json.Marshal(statuses)
 		if err != nil {
 			xlog.Error.Fatal(err)
 		}
 		return string(jsonStr)
 	}
-
 	if format == "text" {
-		statuses := getStatuses()
-		xlog.Debug.Printf("+%v\n", statuses)
-		return "Not implamented \n"
+		return doStatusText(statuses)
 	}
 	panic("Parameter must be \"json\" or \"text\"")
 }
@@ -50,6 +56,7 @@ func getStatuses() []Status {
 	var statuses []Status
 	for _, product := range products {
 		status := Status{
+			Summary:    product.Summary,
 			Identifier: product.Name,
 			Version:    product.Version,
 			Arch:       product.Arch,
@@ -69,4 +76,17 @@ func getStatuses() []Status {
 		statuses = append(statuses, status)
 	}
 	return statuses
+}
+
+func doStatusText(statuses []Status) string {
+	t, err := template.New("status-text").Parse(statusTemplate)
+	if err != nil {
+		xlog.Error.Fatal(err)
+	}
+	var outWriter strings.Builder
+	err = t.Execute(&outWriter, statuses)
+	if err != nil {
+		xlog.Error.Fatal(err)
+	}
+	return outWriter.String()
 }

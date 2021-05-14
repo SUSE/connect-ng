@@ -1,0 +1,20 @@
+Installed Products:
+------------------------------------------
+{{ range . }}
+
+  {{ .Summary }}
+  ({{ .Identifier }}/{{ .Version }}/{{ .Arch }})
+
+  {{ .Status }}
+  {{ if .RegCode }}
+    Subscription:
+
+    Regcode: {{ .RegCode }}
+    Starts at: {{ .StartsAt }}
+    Expires at: {{ .ExpiresAt }}
+    Status: {{ .SubStatus }}
+    Type: {{ .Type }}
+  {{ end }}
+
+------------------------------------------
+{{ end }}

@@ -16,6 +16,7 @@ type Product struct {
 	Name    string `xml:"name"`
 	Version string `xml:"version"`
 	Arch    string `xml:"arch"`
+	Summary string `xml:"summary"`
 	IsBase  bool
 }
 

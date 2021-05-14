@@ -11,9 +11,10 @@ import (
 
 var (
 	//go:embed usage.txt
-	usageText string
-	status    bool
-	debug     bool
+	usageText  string
+	status     bool
+	statusText bool
+	debug      bool
 )
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 
 	flag.BoolVar(&status, "status", false, "")
 	flag.BoolVar(&status, "s", false, "")
+	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 
 	if len(os.Args) < 2 {
@@ -44,6 +46,10 @@ func main() {
 	xlog.Debug.Println("cmd line:", os.Args)
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
+		return
+	}
+	if statusText {
+		fmt.Print(connect.GetProductStatuses("text"))
 		return
 	}
 	// unknown args
