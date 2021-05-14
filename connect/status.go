@@ -6,7 +6,6 @@ import (
 	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"strings"
 	"text/template"
-	"time"
 )
 
 var (
@@ -16,16 +15,16 @@ var (
 
 // Status is used to create JSON output
 type Status struct {
-	Summary    string     `json:"-"`
-	Identifier string     `json:"identifier"`
-	Version    string     `json:"version"`
-	Arch       string     `json:"arch"`
-	Status     string     `json:"status"`
-	RegCode    string     `json:"regcode,omitempty"`
-	StartsAt   *time.Time `json:"starts_at,omitempty"`
-	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
-	SubStatus  string     `json:"subscription_status,omitempty"`
-	Type       string     `json:"type,omitempty"`
+	Summary    string `json:"-"`
+	Identifier string `json:"identifier"`
+	Version    string `json:"version"`
+	Arch       string `json:"arch"`
+	Status     string `json:"status"`
+	RegCode    string `json:"regcode,omitempty"`
+	StartsAt   string `json:"starts_at,omitempty"`
+	ExpiresAt  string `json:"expires_at,omitempty"`
+	SubStatus  string `json:"subscription_status,omitempty"`
+	Type       string `json:"type,omitempty"`
 }
 
 // GetProductStatuses returns statuses of installed products
@@ -67,8 +66,9 @@ func getStatuses() []Status {
 		// TODO registered but not activated?
 		if inMap && !activation.IsFree() {
 			status.RegCode = activation.RegCode
-			status.StartsAt = &activation.StartsAt
-			status.ExpiresAt = &activation.ExpiresAt
+			layout := "2006-01-02 15:04:05 MST"
+			status.StartsAt = activation.StartsAt.Format(layout)
+			status.ExpiresAt = activation.ExpiresAt.Format(layout)
 			status.SubStatus = activation.Status
 			status.Type = activation.Type
 			status.Status = "Registered"
