@@ -6,48 +6,17 @@ import (
 	"time"
 )
 
-// Status is used to create JSON output for a product
+// Status is used to create JSON output
 type Status struct {
-	Identifier string `json:"identifier"`
-	Version    string `json:"version"`
-	Arch       string `json:"arch"`
-	Status     string `json:"status"`
-}
-
-// NewStatus creates a Status for non-registered Product
-func NewStatus(p Product) Status {
-	return Status{
-		Identifier: p.Name,
-		Version:    p.Version,
-		Arch:       p.Arch,
-		Status:     "Not Registered",
-	}
-}
-
-// StatusReg adds additional fields to Status for a registered product
-type StatusReg struct {
-	Status
-	RegCode   string    `json:"regcode"`
-	StartsAt  time.Time `json:"starts_at"`
-	ExpiresAt time.Time `json:"expires_at"`
-	SubStatus string    `json:"subscription_status"`
-	Type      string    `json:"type"`
-}
-
-// NewStatusReg creates a StatusReg from an Activation
-func NewStatusReg(a Activation) StatusReg {
-	return StatusReg{
-		Status: Status{
-			Identifier: a.Service.Product.Identifier,
-			Version:    a.Service.Product.Version,
-			Arch:       a.Service.Product.Arch,
-			Status:     "Registered"},
-		RegCode:   a.RegCode,
-		StartsAt:  a.StartsAt,
-		ExpiresAt: a.ExpiresAt,
-		SubStatus: a.Status,
-		Type:      a.Type,
-	}
+	Identifier string    `json:"identifier"`
+	Version    string    `json:"version"`
+	Arch       string    `json:"arch"`
+	Status     string    `json:"status"`
+	RegCode    string    `json:"regcode,omitempty"`
+	StartsAt   time.Time `json:"starts_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	SubStatus  string    `json:"subscription_status,omitempty"`
+	Type       string    `json:"type,omitempty"`
 }
 
 // GetProductStatuses returns statuses of installed products
@@ -69,7 +38,7 @@ func GetProductStatuses(format string) string {
 	panic("Parameter must be \"json\" or \"text\"")
 }
 
-func getStatuses() []interface{} {
+func getStatuses() []Status {
 	products := GetInstalledProducts()
 	activations := GetActivations()
 
@@ -78,15 +47,26 @@ func getStatuses() []interface{} {
 		activationMap[activation.ToTriplet()] = activation
 	}
 
-	var statuses []interface{}
+	var statuses []Status
 	for _, product := range products {
+		status := Status{
+			Identifier: product.Name,
+			Version:    product.Version,
+			Arch:       product.Arch,
+			Status:     "Not Registered",
+		}
 		key := product.ToTriplet()
 		activation, inMap := activationMap[key]
+		// TODO registered but not activated?
 		if inMap && !activation.IsFree() {
-			statuses = append(statuses, NewStatusReg(activation))
-		} else {
-			statuses = append(statuses, NewStatus(product))
+			status.RegCode = activation.RegCode
+			status.StartsAt = activation.StartsAt
+			status.ExpiresAt = activation.ExpiresAt
+			status.SubStatus = activation.Status
+			status.Type = activation.Type
+			status.Status = "Registered"
 		}
+		statuses = append(statuses, status)
 	}
 	return statuses
 }
