@@ -8,15 +8,15 @@ import (
 
 // Status is used to create JSON output
 type Status struct {
-	Identifier string    `json:"identifier"`
-	Version    string    `json:"version"`
-	Arch       string    `json:"arch"`
-	Status     string    `json:"status"`
-	RegCode    string    `json:"regcode,omitempty"`
-	StartsAt   time.Time `json:"starts_at"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	SubStatus  string    `json:"subscription_status,omitempty"`
-	Type       string    `json:"type,omitempty"`
+	Identifier string     `json:"identifier"`
+	Version    string     `json:"version"`
+	Arch       string     `json:"arch"`
+	Status     string     `json:"status"`
+	RegCode    string     `json:"regcode,omitempty"`
+	StartsAt   *time.Time `json:"starts_at,omitempty"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	SubStatus  string     `json:"subscription_status,omitempty"`
+	Type       string     `json:"type,omitempty"`
 }
 
 // GetProductStatuses returns statuses of installed products
@@ -60,8 +60,8 @@ func getStatuses() []Status {
 		// TODO registered but not activated?
 		if inMap && !activation.IsFree() {
 			status.RegCode = activation.RegCode
-			status.StartsAt = activation.StartsAt
-			status.ExpiresAt = activation.ExpiresAt
+			status.StartsAt = &activation.StartsAt
+			status.ExpiresAt = &activation.ExpiresAt
 			status.SubStatus = activation.Status
 			status.Type = activation.Type
 			status.Status = "Registered"
