@@ -2,7 +2,6 @@ package connect
 
 import (
 	"encoding/xml"
-	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"os"
 	"path/filepath"
 )
@@ -37,12 +36,12 @@ func getProducts(path string) []Product {
 	baseProdSymLink := filepath.Join(path, "baseproduct")
 	baseProd, err := filepath.EvalSymlinks(baseProdSymLink)
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 
 	prodFiles, err := filepath.Glob(filepath.Join(path, "*.prod"))
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	var products []Product
 	for _, prodFile := range prodFiles {
@@ -58,11 +57,11 @@ func getProducts(path string) []Product {
 func productFromXMLFile(path string) Product {
 	xmlStr, err := os.ReadFile(path)
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	var p Product
 	if err = xml.Unmarshal(xmlStr, &p); err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	return p
 }

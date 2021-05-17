@@ -3,7 +3,6 @@ package connect
 import (
 	"encoding/json"
 	"errors"
-	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 )
 
 func GetActivations() []Activation {
@@ -13,14 +12,14 @@ func GetActivations() []Activation {
 		// A missing credentials file just means the system is
 		// not registered. Don't print an error in this case.
 		if !errors.Is(err, ErrNoCredentialsFile) {
-			xlog.Error.Println(err)
+			Error.Println(err)
 		}
 		return []Activation{}
 	}
 	var activations []Activation
 	err = json.Unmarshal(resp, &activations)
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	return activations
 }

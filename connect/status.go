@@ -3,7 +3,6 @@ package connect
 import (
 	_ "embed" //golint
 	"encoding/json"
-	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"strings"
 	"text/template"
 )
@@ -33,7 +32,7 @@ func GetProductStatuses(format string) string {
 	if format == "json" {
 		jsonStr, err := json.Marshal(statuses)
 		if err != nil {
-			xlog.Error.Fatal(err)
+			Error.Fatal(err)
 		}
 		return string(jsonStr)
 	}
@@ -81,12 +80,12 @@ func getStatuses() []Status {
 func doStatusText(statuses []Status) string {
 	t, err := template.New("status-text").Parse(statusTemplate)
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	var outWriter strings.Builder
 	err = t.Execute(&outWriter, statuses)
 	if err != nil {
-		xlog.Error.Fatal(err)
+		Error.Fatal(err)
 	}
 	return outWriter.String()
 }

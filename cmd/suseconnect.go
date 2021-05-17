@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"gitlab.suse.de/doreilly/go-connect/connect"
-	"gitlab.suse.de/doreilly/go-connect/connect/xlog"
 	"os"
 )
 
@@ -34,7 +33,7 @@ func init() {
 	}
 	flag.Parse()
 	if debug {
-		xlog.EnableDebug()
+		connect.EnableDebug()
 	}
 }
 
@@ -43,7 +42,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
 	}
-	xlog.Debug.Println("cmd line:", os.Args)
+	connect.Debug.Println("cmd line:", os.Args)
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
 		return

@@ -1,4 +1,4 @@
-package xlog
+package connect
 
 import (
 	"io"
