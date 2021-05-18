@@ -44,7 +44,15 @@ func GetProductStatuses(format string) string {
 
 func getStatuses() []Status {
 	products := GetInstalledProducts()
-	activations := GetActivations()
+
+	var err error
+	activations := []Activation{}
+	if CredentialsExists() {
+		activations, err = GetActivations()
+		if err != nil {
+			Error.Fatal(err)
+		}
+	}
 
 	activationMap := make(map[string]Activation)
 	for _, activation := range activations {

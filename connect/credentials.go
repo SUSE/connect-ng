@@ -2,7 +2,6 @@ package connect
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -13,7 +12,6 @@ const (
 )
 
 var (
-	ErrNoCredentialsFile = errors.New("Credentials file does not exist")
 	ErrParseCredientials = errors.New("Unable to parse credentials")
 	userMatch            = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
 	passMatch            = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
@@ -28,13 +26,17 @@ func credentialsEqual(a, b Credentials) bool {
 	return a.Username == b.Username && a.Password == b.Password
 }
 
+func CredentialsExists() bool {
+	if _, err := os.Stat(defaulCredPath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func GetCredentials() (Credentials, error) {
 	Debug.Printf("Reading credientials from %s", defaulCredPath)
 	f, err := os.Open(defaulCredPath)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return Credentials{}, fmt.Errorf("%w; %s", ErrNoCredentialsFile, err)
-		}
 		return Credentials{}, err
 	}
 	defer f.Close()
