@@ -50,7 +50,7 @@ func GetProductStatuses(format string) string {
 		}
 		return text
 	}
-	panic("Parameter must be \"json\" or \"text\"")
+	return `ERROR: parameter must be "json" or "text"`
 }
 
 func getStatuses() ([]Status, error) {
