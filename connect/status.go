@@ -3,6 +3,7 @@ package connect
 import (
 	_ "embed" //golint
 	"encoding/json"
+	"fmt"
 	"strings"
 	"text/template"
 )
@@ -28,31 +29,42 @@ type Status struct {
 
 // GetProductStatuses returns statuses of installed products
 func GetProductStatuses(format string) string {
-	statuses := getStatuses()
+	statuses, err := getStatuses()
+	if err != nil {
+		Error.Println(err)
+		return fmt.Sprintf("ERROR: %s", err)
+	}
 	if format == "json" {
 		jsonStr, err := json.Marshal(statuses)
 		if err != nil {
-			Error.Fatal(err)
+			Error.Println(err)
+			return fmt.Sprintf("ERROR: %s", err)
 		}
 		return string(jsonStr)
 	}
 	if format == "text" {
-		return doStatusText(statuses)
+		text, err := getStatusText(statuses)
+		if err != nil {
+			Error.Println(err)
+			return fmt.Sprintf("ERROR: %s", err)
+		}
+		return text
 	}
 	panic("Parameter must be \"json\" or \"text\"")
 }
 
-func getStatuses() []Status {
+func getStatuses() ([]Status, error) {
+	var statuses []Status
 	products, err := GetInstalledProducts()
 	if err != nil {
-		Error.Fatal(err)
+		return statuses, err
 	}
 
 	activations := []Activation{}
 	if CredentialsExists() {
 		activations, err = GetActivations()
 		if err != nil {
-			Error.Fatal(err)
+			return statuses, err
 		}
 	}
 
@@ -61,7 +73,6 @@ func getStatuses() []Status {
 		activationMap[activation.ToTriplet()] = activation
 	}
 
-	var statuses []Status
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
@@ -84,18 +95,18 @@ func getStatuses() []Status {
 		}
 		statuses = append(statuses, status)
 	}
-	return statuses
+	return statuses, nil
 }
 
-func doStatusText(statuses []Status) string {
+func getStatusText(statuses []Status) (string, error) {
 	t, err := template.New("status-text").Parse(statusTemplate)
 	if err != nil {
-		Error.Fatal(err)
+		return "", err
 	}
 	var outWriter strings.Builder
 	err = t.Execute(&outWriter, statuses)
 	if err != nil {
-		Error.Fatal(err)
+		return "", err
 	}
-	return outWriter.String()
+	return outWriter.String(), nil
 }
