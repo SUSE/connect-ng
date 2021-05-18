@@ -59,8 +59,8 @@ func getProducts(path string) ([]Product, error) {
 }
 
 func productFromXMLFile(path string) (Product, error) {
-	xmlStr, err := os.ReadFile(path)
 	var p Product
+	xmlStr, err := os.ReadFile(path)
 	if err != nil {
 		return p, err
 	}
