@@ -5,7 +5,7 @@ PoC - evaluate rewriting SUSEConnect in Go.
 Only the status options are implemented (--status and --status-text).
 
 ### Build
-Requires Go 1.16 (probably).
+Requires Go 1.16 for [embed](https://pkg.go.dev/embed).
 ```
 go build cmd/suseconnect.go
 ```
