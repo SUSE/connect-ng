@@ -43,9 +43,11 @@ func GetProductStatuses(format string) string {
 }
 
 func getStatuses() []Status {
-	products := GetInstalledProducts()
+	products, err := GetInstalledProducts()
+	if err != nil {
+		Error.Fatal(err)
+	}
 
-	var err error
 	activations := []Activation{}
 	if CredentialsExists() {
 		activations, err = GetActivations()

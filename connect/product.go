@@ -28,40 +28,44 @@ func ProductsEqual(p1, p2 Product) bool {
 }
 
 // GetInstalledProducts returns products installed on the system
-func GetInstalledProducts() []Product {
+func GetInstalledProducts() ([]Product, error) {
 	return getProducts(productPath)
 }
 
-func getProducts(path string) []Product {
+func getProducts(path string) ([]Product, error) {
+	var products []Product
 	baseProdSymLink := filepath.Join(path, "baseproduct")
 	baseProd, err := filepath.EvalSymlinks(baseProdSymLink)
 	if err != nil {
-		Error.Fatal(err)
+		//TODO maybe this is not really an error
+		return products, err
 	}
 
 	prodFiles, err := filepath.Glob(filepath.Join(path, "*.prod"))
 	if err != nil {
-		Error.Fatal(err)
+		return products, err
 	}
-	var products []Product
 	for _, prodFile := range prodFiles {
-		p := productFromXMLFile(prodFile)
+		p, err := productFromXMLFile(prodFile)
+		if err != nil {
+			return products, err
+		}
 		if prodFile == baseProd {
 			p.IsBase = true
 		}
 		products = append(products, p)
 	}
-	return products
+	return products, nil
 }
 
-func productFromXMLFile(path string) Product {
+func productFromXMLFile(path string) (Product, error) {
 	xmlStr, err := os.ReadFile(path)
-	if err != nil {
-		Error.Fatal(err)
-	}
 	var p Product
-	if err = xml.Unmarshal(xmlStr, &p); err != nil {
-		Error.Fatal(err)
+	if err != nil {
+		return p, err
 	}
-	return p
+	if err = xml.Unmarshal(xmlStr, &p); err != nil {
+		return p, err
+	}
+	return p, nil
 }

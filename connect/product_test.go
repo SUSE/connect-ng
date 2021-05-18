@@ -15,7 +15,7 @@ var (
 
 func TestGetProducts(t *testing.T) {
 	want := []Product{p1, p2, p3, p4, p5, p6}
-	got := getProducts("../testdata/products.d/")
+	got, _ := getProducts("../testdata/products.d/")
 	if len(got) != len(want) {
 		t.Errorf("getProducts() = %+v, want %v", got, want)
 	}
