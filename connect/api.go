@@ -4,16 +4,21 @@ import (
 	"encoding/json"
 )
 
-func GetActivations() ([]Activation, error) {
+// GetActivations returns a map keyed by "Identifier/Version/Arch"
+func GetActivations() (map[string]Activation, error) {
 	urlSuffix := "connect/systems/activations"
+	activeMap := make(map[string]Activation)
 	resp, err := DoGET(urlSuffix)
 	if err != nil {
-		return []Activation{}, err
+		return activeMap, err
 	}
 	var activations []Activation
 	err = json.Unmarshal(resp, &activations)
 	if err != nil {
-		return []Activation{}, err
+		return activeMap, err
 	}
-	return activations, nil
+	for _, activation := range activations {
+		activeMap[activation.ToTriplet()] = activation
+	}
+	return activeMap, nil
 }

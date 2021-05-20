@@ -60,17 +60,12 @@ func getStatuses() ([]Status, error) {
 		return statuses, err
 	}
 
-	activations := []Activation{}
+	activations := make(map[string]Activation) // default empty map
 	if CredentialsExists() {
 		activations, err = GetActivations()
 		if err != nil {
 			return statuses, err
 		}
-	}
-
-	activationMap := make(map[string]Activation)
-	for _, activation := range activations {
-		activationMap[activation.ToTriplet()] = activation
 	}
 
 	for _, product := range products {
@@ -81,10 +76,9 @@ func getStatuses() ([]Status, error) {
 			Arch:       product.Arch,
 			Status:     "Not Registered",
 		}
-		key := product.ToTriplet()
-		activation, inMap := activationMap[key]
+		activation, ok := activations[product.ToTriplet()]
 		// TODO registered but not activated?
-		if inMap && !activation.IsFree() {
+		if ok && !activation.IsFree() {
 			status.RegCode = activation.RegCode
 			layout := "2006-01-02 15:04:05 MST"
 			status.StartsAt = activation.StartsAt.Format(layout)
