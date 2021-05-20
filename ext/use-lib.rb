@@ -1,3 +1,5 @@
+#!/usr/bin/ruby
+
 require 'ffi'
 
 # see https://github.com/ffi/ffi/issues/467#issuecomment-159370223
