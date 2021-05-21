@@ -5,19 +5,14 @@ import (
 	"net/http"
 )
 
-func DoGET(urlSuffix string) ([]byte, error) {
-	config := LoadConfig()
-	credentials, err := GetCredentials()
-	if err != nil {
-		return nil, err
-	}
-	url := config.BaseURL + urlSuffix
+func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
+	url := config.BaseURL + "/" + urlSuffix
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(credentials.Username, credentials.Password)
+	req.SetBasicAuth(creds.Username, creds.Password)
 
 	resp, err := client.Do(req)
 	if err != nil {
