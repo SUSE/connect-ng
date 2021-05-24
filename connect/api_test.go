@@ -33,3 +33,31 @@ func TestGetActivations(t *testing.T) {
 		t.Errorf("activations map missing key [%s]", key)
 	}
 }
+
+func TestGetActivationsRequest(t *testing.T) {
+	var (
+		user       = "testuser"
+		password   = "testpassword"
+		url        = "/connect/systems/activations"
+		gotRequest *http.Request
+	)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRequest = r // make request available outside this func after call
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, "[]")
+	}))
+	defer ts.Close()
+
+	config := Config{BaseURL: ts.URL}
+	creds := Credentials{Username: user, Password: password}
+	if _, err := GetActivations(config, creds); err != nil {
+		t.Errorf("Unexpected error [%s]", err)
+	}
+
+	gotURL := gotRequest.URL.String()
+	u, p, ok := gotRequest.BasicAuth()
+	if !ok || u != user || p != password || gotURL != url {
+		t.Errorf("Server got request with %s, %s, %s. Expected %s, %s, %s", u, p, gotURL, user, password, url)
+	}
+}
