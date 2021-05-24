@@ -61,3 +61,16 @@ func TestGetActivationsRequest(t *testing.T) {
 		t.Errorf("Server got request with %s, %s, %s. Expected %s, %s, %s", u, p, gotURL, user, password, url)
 	}
 }
+
+func TestGetActivationsError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "", http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	config := Config{BaseURL: ts.URL}
+	creds := Credentials{}
+	if _, err := GetActivations(config, creds); err == nil {
+		t.Error("Expecting error. Got none.")
+	}
+}
