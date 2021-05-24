@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -17,6 +18,9 @@ func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Server response: %s", resp.Status)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
