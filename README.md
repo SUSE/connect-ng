@@ -23,6 +23,19 @@ This will leave a `suseconnect` binary on the host.
 See `ext/use-lib.rb` for example use from ruby.
 See `ext/use-lib.py` for example use from python.
 
+### Building with goboring
+```
+$ podman pull goboring/golang:1.16.4b7
+$ cd go-connect
+$ podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16.4b7 go build -v cmd/suseconnect.go
+$ podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16.4b7 go build -v -buildmode=c-shared -o libsuseconnect.so ext/main.go
+```
+
+Check binaries are using goboring crypto:
+```
+$ podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16.4b7 go tool nm suseconnect | grep _Cfunc__goboringcrypto_
+$ podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16.4b7 go tool nm libsuseconnect.so | grep _Cfunc__goboringcrypto_
+```
 ## Examples
 ```
 # ./suseconnect --status
@@ -39,7 +52,7 @@ Installed Products:
   (SUSE-MicroOS/5.0/x86_64)
 
   Registered
-  
+
     Subscription:
 
     Regcode: INTERNAL-USE-ONLY-116f-4b58
@@ -47,7 +60,7 @@ Installed Products:
     Expires at: 2026-04-21 15:08:32 UTC
     Status: ACTIVE
     Type: internal
-  
+
 
 ------------------------------------------
 ```
