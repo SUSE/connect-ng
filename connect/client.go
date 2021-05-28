@@ -27,6 +27,5 @@ func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//log.Printf("resp: %s", string(body))
 	return body, nil
 }

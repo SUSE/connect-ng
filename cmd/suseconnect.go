@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gitlab.suse.de/doreilly/go-connect/connect"
 	"os"
+	"strings"
 )
 
 var (
@@ -43,6 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 	connect.Debug.Println("cmd line:", os.Args)
+	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
 		return
