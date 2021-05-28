@@ -19,6 +19,7 @@ func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Server response: %s", resp.Status)
 	}
