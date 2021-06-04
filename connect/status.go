@@ -81,16 +81,16 @@ func getStatuses() ([]Status, error) {
 			Arch:       product.Arch,
 			Status:     "Not Registered",
 		}
-		activation, ok := activations[product.ToTriplet()]
-		// TODO registered but not activated?
-		if ok && !activation.IsFree() {
-			status.RegCode = activation.RegCode
-			layout := "2006-01-02 15:04:05 MST"
-			status.StartsAt = activation.StartsAt.Format(layout)
-			status.ExpiresAt = activation.ExpiresAt.Format(layout)
-			status.SubStatus = activation.Status
-			status.Type = activation.Type
+		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = "Registered"
+			if !activation.IsFree() {
+				status.RegCode = activation.RegCode
+				layout := "2006-01-02 15:04:05 MST"
+				status.StartsAt = activation.StartsAt.Format(layout)
+				status.ExpiresAt = activation.ExpiresAt.Format(layout)
+				status.SubStatus = activation.Status
+				status.Type = activation.Type
+			}
 		}
 		statuses = append(statuses, status)
 	}
