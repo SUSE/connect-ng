@@ -66,7 +66,8 @@ func getStatuses() ([]Status, error) {
 		if err != nil {
 			return statuses, err
 		}
-		activations, err = GetActivations(LoadConfig(), creds)
+		cfg := LoadConfig(defaultConfigPath)
+		activations, err = GetActivations(cfg, creds)
 		if err != nil {
 			return statuses, err
 		}
