@@ -6,13 +6,14 @@ import (
 	"net/http"
 )
 
+// DoGET performs http client GET calls
 func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
-	url := config.BaseURL + "/" + urlSuffix
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", config.BaseURL, nil)
 	if err != nil {
 		return nil, err
 	}
+	req.URL.Path = urlSuffix
 	req.SetBasicAuth(creds.Username, creds.Password)
 
 	resp, err := client.Do(req)
