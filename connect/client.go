@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,12 @@ import (
 
 // DoGET performs http client GET calls
 func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
+		Proxy:           http.ProxyFromEnvironment,
+	}
+	client := &http.Client{Transport: tr}
+
 	req, err := http.NewRequest("GET", config.BaseURL, nil)
 	if err != nil {
 		return nil, err
