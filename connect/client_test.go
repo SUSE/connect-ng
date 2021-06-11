@@ -3,6 +3,7 @@ package connect
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -21,5 +22,23 @@ func TestDoGetInsecure(t *testing.T) {
 	_, err = DoGET(config, Credentials{}, "/")
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
+	}
+}
+
+func TestParseError(t *testing.T) {
+	s := `{"type":"error","error":"Invalid system credentials","localized_error":"Invalid system credentials"}`
+	body := strings.NewReader(s)
+	expected := "Invalid system credentials"
+	got := parseError(body)
+	if got != expected {
+		t.Errorf("parseError(), got: %s, expected: %s", got, expected)
+	}
+}
+
+func TestParseErrorNotJson(t *testing.T) {
+	body := strings.NewReader("not json")
+	got := parseError(body)
+	if got != "" {
+		t.Errorf("parseError(), got: %s, expected \"\"", got)
 	}
 }
