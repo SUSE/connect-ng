@@ -83,7 +83,7 @@ func getStatuses() ([]Status, error) {
 		}
 		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = "Registered"
-			if !activation.IsFree() {
+			if !activation.isFree() {
 				status.RegCode = activation.RegCode
 				layout := "2006-01-02 15:04:05 MST"
 				status.StartsAt = activation.StartsAt.Format(layout)

@@ -22,11 +22,11 @@ type Activation struct {
 	} `json:"service"`
 }
 
-func (a Activation) ToTriplet() string {
+func (a Activation) toTriplet() string {
 	p := a.Service.Product
 	return p.Identifier + "/" + p.Version + "/" + p.Arch
 }
 
-func (a Activation) IsFree() bool {
+func (a Activation) isFree() bool {
 	return a.Service.Product.Free
 }

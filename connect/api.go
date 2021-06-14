@@ -18,7 +18,7 @@ func GetActivations(config Config, creds Credentials) (map[string]Activation, er
 		return activeMap, err
 	}
 	for _, activation := range activations {
-		activeMap[activation.ToTriplet()] = activation
+		activeMap[activation.toTriplet()] = activation
 	}
 	return activeMap, nil
 }
