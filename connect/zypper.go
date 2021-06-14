@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"encoding/xml"
 	"strings"
 )
 
@@ -34,4 +35,25 @@ const (
 func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
 	cmd := append([]string{zypperPath}, strings.Split(args, " ")...)
 	return execute(cmd, quiet, validExitCodes)
+}
+
+// installedProducts returns installed products
+func installedProducts() ([]Product, error) {
+	args := "--disable-repositories --xmlout --non-interactive products -i"
+	output, err := zypperRun(args, false, []int{zypperOK})
+	if err != nil {
+		return []Product{}, err
+	}
+	return parseProductsXML(output)
+}
+
+// parseProductsXML returns products parsed from zypper XML
+func parseProductsXML(xmlDoc []byte) ([]Product, error) {
+	var products struct {
+		Products []Product `xml:"product-list>product"`
+	}
+	if err := xml.Unmarshal(xmlDoc, &products); err != nil {
+		return []Product{}, err
+	}
+	return products.Products, nil
 }

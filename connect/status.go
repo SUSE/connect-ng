@@ -55,7 +55,7 @@ func GetProductStatuses(format string) string {
 
 func getStatuses() ([]Status, error) {
 	var statuses []Status
-	products, err := GetInstalledProducts()
+	products, err := installedProducts()
 	if err != nil {
 		return statuses, err
 	}
