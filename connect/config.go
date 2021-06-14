@@ -23,10 +23,6 @@ type Config struct {
 	Insecure bool
 }
 
-func (a Config) equals(b Config) bool {
-	return a.Path == b.Path && a.BaseURL == b.BaseURL && a.Language == b.Language && a.Insecure == b.Insecure
-}
-
 // LoadConfig reads and merges any config from cfgPath if it exists.
 // Otherwise just returns config with the default settings.
 func LoadConfig(cfgPath string) Config {

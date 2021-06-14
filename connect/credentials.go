@@ -22,10 +22,6 @@ type Credentials struct {
 	Password string
 }
 
-func credentialsEqual(a, b Credentials) bool {
-	return a.Username == b.Username && a.Password == b.Password
-}
-
 func CredentialsExists() bool {
 	if _, err := os.Stat(defaulCredPath); os.IsNotExist(err) {
 		return false

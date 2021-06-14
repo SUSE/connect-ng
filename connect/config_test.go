@@ -25,7 +25,7 @@ func TestParseConfig(t *testing.T) {
 	expect := Config{"", "https://smt-azure.susecloud.net", "en_US.UTF-8", false}
 	c := Config{}
 	parseConfig(r, &c)
-	if !c.equals(expect) {
+	if c != expect {
 		t.Errorf("got %+v, expected %+v", c, expect)
 	}
 }
@@ -35,7 +35,7 @@ func TestParseConfig2(t *testing.T) {
 	expect := Config{"", "http://example.com", "en_US.UTF-8", true}
 	c := Config{}
 	parseConfig(r, &c)
-	if !c.equals(expect) {
+	if c != expect {
 		t.Errorf("got %+v, expected %+v", c, expect)
 	}
 }

@@ -20,7 +20,7 @@ func TestParseCredientials(t *testing.T) {
 
 	for _, test := range tests {
 		got, err := ParseCredientials(strings.NewReader(test.input))
-		if err != test.expectErr || !credentialsEqual(got, test.expectCreds) {
+		if err != test.expectErr || got != test.expectCreds {
 			t.Errorf("ParseCredientials() == %+v, %s, expected %+v, %s", got, err, test.expectCreds, test.expectErr)
 		}
 	}
