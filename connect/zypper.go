@@ -1,0 +1,37 @@
+package connect
+
+import (
+	"strings"
+)
+
+const (
+	zypperPath = "/usr/bin/zypper"
+)
+
+const (
+	zypperOK = 0
+
+	// Single-digit codes denote errors
+	zypperErrBug         = 1 // Unexpected situation occurred, probably caused by a bug
+	zypperErrSyntax      = 2 // zypper was invoked with an invalid command or option, or a bad syntax
+	zypperErrInvalidArgs = 3 // Some of provided arguments were invalid. E.g. an invalid URI was provided to the addrepo command
+	zypperErrZypp        = 4 // A problem is reported by ZYPP library
+	zypperErrPrivileges  = 5 // User invoking zypper has insufficient privileges for specified operation
+	zypperErrNoRepos     = 6 // No repositories are defined
+	zypperErrZyppLocked  = 7 // The ZYPP library is locked, e.g. packagekit is running
+	zypperErrCommit      = 8 // An error occurred during installation or removal of packages. You may run zypper verify to repair any dependency problems
+
+	// Codes from 100 and above denote additional information passing
+	zypperInfoUpdateNeeded    = 100 // Returned by the patch-check command if there are patches available for installation
+	zypperInfoSecUpdateNeeded = 101 // Returned by the patch-check command if there are security patches available for installation
+	zypperInfoRebootNeeded    = 102 // Returned after a successful installation of a patch which requires reboot of computer
+	zypperInfoRestartNeeded   = 103 // Returned after a successful installation of a patch which requires restart of the package manager itself
+	zypperInfoCapNotFound     = 104 // install or remove command encountered arguments matching no of the available package names or capabilities
+	zypperInfoOnSignal        = 105 // Returned upon exiting after receiving a SIGINT or SIGTERM
+	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
+)
+
+func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
+	cmd := append([]string{zypperPath}, strings.Split(args, " ")...)
+	return execute(cmd, quiet, validExitCodes)
+}
