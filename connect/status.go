@@ -61,8 +61,8 @@ func getStatuses() ([]Status, error) {
 	}
 
 	activations := make(map[string]Activation) // default empty map
-	if CredentialsExists() {
-		creds, err := GetCredentials()
+	if credentialsExists() {
+		creds, err := getCredentials()
 		if err != nil {
 			return statuses, err
 		}
