@@ -9,10 +9,6 @@ type Product struct {
 	IsBase  bool   `xml:"isbase,attr"`
 }
 
-func (p Product) ToTriplet() string {
+func (p Product) toTriplet() string {
 	return p.Name + "/" + p.Version + "/" + p.Arch
-}
-
-func ProductsEqual(p1, p2 Product) bool {
-	return p1.Name == p2.Name && p1.Version == p2.Version && p1.Arch == p2.Arch
 }

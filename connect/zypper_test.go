@@ -21,7 +21,7 @@ func TestParseProductsXML(t *testing.T) {
 	if len(products) != 2 {
 		t.Errorf("Expected len()==2. Got %d", len(products))
 	}
-	if products[0].ToTriplet() != "SUSE-MicroOS/5.0/x86_64" {
-		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].ToTriplet())
+	if products[0].toTriplet() != "SUSE-MicroOS/5.0/x86_64" {
+		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].toTriplet())
 	}
 }

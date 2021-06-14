@@ -81,7 +81,7 @@ func getStatuses() ([]Status, error) {
 			Arch:       product.Arch,
 			Status:     "Not Registered",
 		}
-		if activation, ok := activations[product.ToTriplet()]; ok {
+		if activation, ok := activations[product.toTriplet()]; ok {
 			status.Status = "Registered"
 			if !activation.isFree() {
 				status.RegCode = activation.RegCode
