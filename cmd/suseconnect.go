@@ -27,7 +27,13 @@ func init() {
 	flag.BoolVar(&status, "s", false, "")
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
+}
 
+func main() {
+	if os.Geteuid() != 0 {
+		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
+		os.Exit(1)
+	}
 	if len(os.Args) < 2 {
 		flag.Usage()
 		os.Exit(1)
@@ -35,13 +41,6 @@ func init() {
 	flag.Parse()
 	if debug {
 		connect.EnableDebug()
-	}
-}
-
-func main() {
-	if os.Geteuid() != 0 {
-		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
-		os.Exit(1)
 	}
 	connect.Debug.Println("cmd line:", os.Args)
 	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
