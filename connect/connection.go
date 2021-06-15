@@ -22,14 +22,14 @@ func parseError(body io.Reader) string {
 }
 
 // DoGET performs http client GET calls
-func DoGET(config Config, creds Credentials, urlSuffix string) ([]byte, error) {
+func DoGET(creds Credentials, urlSuffix string) ([]byte, error) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Insecure},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest("GET", config.BaseURL, nil)
+	req, err := http.NewRequest("GET", CFG.BaseURL, nil)
 	if err != nil {
 		return nil, err
 	}

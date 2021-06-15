@@ -26,7 +26,7 @@ type Config struct {
 // LoadConfig reads and merges any config from cfgPath if it exists.
 // Otherwise just returns config with the default settings.
 func LoadConfig(cfgPath string) Config {
-	cfg := Config{
+	c := Config{
 		Path:     cfgPath,
 		BaseURL:  defaultBaseURL,
 		Language: defaultLang,
@@ -35,16 +35,16 @@ func LoadConfig(cfgPath string) Config {
 	f, err := os.Open(cfgPath)
 	if err != nil {
 		Debug.Println(err)
-		cfg.Path = ""
-		return cfg
+		c.Path = ""
+		return c
 	}
 	defer f.Close()
-	parseConfig(f, &cfg)
-	Debug.Printf("Config after parsing: %+v", cfg)
-	return cfg
+	parseConfig(f, &c)
+	Debug.Printf("Config after parsing: %+v", c)
+	return c
 }
 
-func parseConfig(r io.Reader, cfg *Config) {
+func parseConfig(r io.Reader, c *Config) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -56,13 +56,13 @@ func parseConfig(r io.Reader, cfg *Config) {
 		key, val = strings.TrimSpace(key), strings.TrimSpace(val)
 		switch key {
 		case "url":
-			cfg.BaseURL = val
+			c.BaseURL = val
 		case "language":
-			cfg.Language = val
+			c.Language = val
 		case "insecure":
-			cfg.Insecure, _ = strconv.ParseBool(val)
+			c.Insecure, _ = strconv.ParseBool(val)
 		default:
-			Debug.Printf("Cannot parse line \"%s\" from %s", line, cfg.Path)
+			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
 	}
 }

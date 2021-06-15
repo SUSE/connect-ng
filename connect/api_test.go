@@ -19,9 +19,9 @@ func TestGetActivations(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := Config{BaseURL: ts.URL}
+	CFG.BaseURL = ts.URL
 	creds := Credentials{}
-	activations, err := GetActivations(config, creds)
+	activations, err := GetActivations(creds)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -49,9 +49,9 @@ func TestGetActivationsRequest(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := Config{BaseURL: ts.URL}
+	CFG.BaseURL = ts.URL
 	creds := Credentials{Username: user, Password: password}
-	if _, err := GetActivations(config, creds); err != nil {
+	if _, err := GetActivations(creds); err != nil {
 		t.Errorf("Unexpected error [%s]", err)
 	}
 
@@ -68,9 +68,9 @@ func TestGetActivationsError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	config := Config{BaseURL: ts.URL}
+	CFG.BaseURL = ts.URL
 	creds := Credentials{}
-	if _, err := GetActivations(config, creds); err == nil {
+	if _, err := GetActivations(creds); err == nil {
 		t.Error("Expecting error. Got none.")
 	}
 }

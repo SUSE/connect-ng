@@ -12,14 +12,15 @@ func TestDoGetInsecure(t *testing.T) {
 	ts.StartTLS()
 	defer ts.Close()
 
-	config := Config{BaseURL: ts.URL, Insecure: false}
-	_, err := DoGET(config, Credentials{}, "/")
+	CFG.BaseURL = ts.URL
+	CFG.Insecure = false
+	_, err := DoGET(Credentials{}, "/")
 	if err == nil {
 		t.Error("Expecting certificate error. Got none.")
 	}
 
-	config.Insecure = true
-	_, err = DoGET(config, Credentials{}, "/")
+	CFG.Insecure = true
+	_, err = DoGET(Credentials{}, "/")
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
