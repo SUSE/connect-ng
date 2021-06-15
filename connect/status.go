@@ -1,10 +1,10 @@
 package connect
 
 import (
+	"bytes"
 	_ "embed" //golint
 	"encoding/json"
 	"fmt"
-	"strings"
 	"text/template"
 )
 
@@ -102,10 +102,10 @@ func getStatusText(statuses []Status) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var outWriter strings.Builder
-	err = t.Execute(&outWriter, statuses)
+	var output bytes.Buffer
+	err = t.Execute(&output, statuses)
 	if err != nil {
 		return "", err
 	}
-	return outWriter.String(), nil
+	return output.String(), nil
 }
