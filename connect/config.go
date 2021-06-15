@@ -64,12 +64,14 @@ func parseConfig(r io.Reader, c *Config) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
-		idx := strings.Index(line, ":")
-		if idx == -1 || len(line) < idx+1 {
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) < 2 {
 			continue
 		}
-		key, val := line[:idx], line[idx+1:]
-		key, val = strings.TrimSpace(key), strings.TrimSpace(val)
+		key, val := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		if strings.HasPrefix(key, "#") {
+			continue
+		}
 		switch key {
 		case "url":
 			c.BaseURL = val
