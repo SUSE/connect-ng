@@ -16,6 +16,7 @@ var (
 	statusText  bool
 	debug       bool
 	writeConfig bool
+	url         string
 )
 
 func init() {
@@ -29,6 +30,7 @@ func init() {
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
+	flag.StringVar(&url, "url", "", "")
 }
 
 func main() {
@@ -46,6 +48,10 @@ func main() {
 	}
 	connect.Debug.Println("cmd line:", os.Args)
 	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
+	if url != "" {
+		connect.CFG.BaseURL = url
+		writeConfig = true
+	}
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
 	} else if statusText {

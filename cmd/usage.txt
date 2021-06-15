@@ -9,6 +9,10 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --status-text        Get current system registration status in text
                              format.
+        --url [URL]          URL of registration server
+                             (e.g. https://scc.suse.com).
+                             Implies --write-config so that subsequent
+                             invocations use the same registration server.
         --write-config       Write options to config file at /etc/SUSEConnect.
 
 Common options:
