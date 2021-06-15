@@ -24,7 +24,7 @@ badkey: badval
 
 func TestParseConfig(t *testing.T) {
 	r := strings.NewReader(cfg1)
-	expect := Config{"", "https://smt-azure.susecloud.net", "en_US.UTF-8", false}
+	expect := Config{BaseURL: "https://smt-azure.susecloud.net", Language: "en_US.UTF-8"}
 	c := Config{}
 	parseConfig(r, &c)
 	if c != expect {
@@ -34,7 +34,7 @@ func TestParseConfig(t *testing.T) {
 
 func TestParseConfig2(t *testing.T) {
 	r := strings.NewReader(cfg2)
-	expect := Config{"", "http://example.com", "en_US.UTF-8", true}
+	expect := Config{BaseURL: "http://example.com", Language: "en_US.UTF-8", Insecure: true}
 	c := Config{}
 	parseConfig(r, &c)
 	if c != expect {

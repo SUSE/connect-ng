@@ -23,6 +23,7 @@ type Config struct {
 	BaseURL  string
 	Language string
 	Insecure bool
+	FsRoot   string
 }
 
 func (c Config) toYAML() []byte {

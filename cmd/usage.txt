@@ -16,5 +16,7 @@ Manage subscriptions at https://scc.suse.com
         --write-config       Write options to config file at /etc/SUSEConnect.
 
 Common options:
+        --root [PATH]        Path to the root folder, uses the same parameter
+                             for zypper.
         --debug              Provide debug output.
     -h, --help               Show this message.

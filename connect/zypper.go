@@ -33,7 +33,11 @@ const (
 )
 
 func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
-	cmd := append([]string{zypperPath}, strings.Split(args, " ")...)
+	cmd := []string{zypperPath}
+	if CFG.FsRoot != "" {
+		cmd = append(cmd, "--root", CFG.FsRoot)
+	}
+	cmd = append(cmd, strings.Split(args, " ")...)
 	return execute(cmd, quiet, validExitCodes)
 }
 

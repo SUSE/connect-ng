@@ -18,6 +18,7 @@ var (
 	debug       bool
 	writeConfig bool
 	baseURL     string
+	fsRoot      string
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
+	flag.StringVar(&fsRoot, "root", "", "")
 }
 
 func main() {
@@ -56,6 +58,13 @@ func main() {
 		}
 		connect.CFG.BaseURL = baseURL
 		writeConfig = true
+	}
+	if fsRoot != "" {
+		if fsRoot[0] != '/' {
+			fmt.Fprintln(os.Stderr, "The path specified in the --root option must be absolute.")
+			os.Exit(1)
+		}
+		connect.CFG.FsRoot = fsRoot
 	}
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
