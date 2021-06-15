@@ -15,6 +15,8 @@ var cfg2 = `---
 url :	http://example.com
  language : en_US.UTF-8
 # comment
+  # indented comment
+  # comment with: colon
 :
 badkey: badval
 
