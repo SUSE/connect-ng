@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"gitlab.suse.de/doreilly/go-connect/connect"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -16,7 +17,7 @@ var (
 	statusText  bool
 	debug       bool
 	writeConfig bool
-	url         string
+	baseURL     string
 )
 
 func init() {
@@ -30,7 +31,7 @@ func init() {
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
-	flag.StringVar(&url, "url", "", "")
+	flag.StringVar(&baseURL, "url", "", "")
 }
 
 func main() {
@@ -48,8 +49,12 @@ func main() {
 	}
 	connect.Debug.Println("cmd line:", os.Args)
 	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
-	if url != "" {
-		connect.CFG.BaseURL = url
+	if baseURL != "" {
+		if err := validateURL(baseURL); err != nil {
+			fmt.Fprintf(os.Stderr, "URL \"%s\" not valid: %s\n", baseURL, err)
+			os.Exit(1)
+		}
+		connect.CFG.BaseURL = baseURL
 		writeConfig = true
 	}
 	if status {
@@ -63,4 +68,15 @@ func main() {
 			os.Exit(1)
 		}
 	}
+}
+
+func validateURL(s string) error {
+	u, err := url.Parse(s)
+	if err != nil {
+		return err
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return fmt.Errorf("Missing scheme or host")
+	}
+	return nil
 }
