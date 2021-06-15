@@ -9,6 +9,7 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --status-text        Get current system registration status in text
                              format.
+        --write-config       Write options to config file at /etc/SUSEConnect.
 
 Common options:
         --debug              Provide debug output.

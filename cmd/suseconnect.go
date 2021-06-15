@@ -11,10 +11,11 @@ import (
 
 var (
 	//go:embed usage.txt
-	usageText  string
-	status     bool
-	statusText bool
-	debug      bool
+	usageText   string
+	status      bool
+	statusText  bool
+	debug       bool
+	writeConfig bool
 )
 
 func init() {
@@ -27,6 +28,7 @@ func init() {
 	flag.BoolVar(&status, "s", false, "")
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
+	flag.BoolVar(&writeConfig, "write-config", false, "")
 }
 
 func main() {
@@ -46,13 +48,13 @@ func main() {
 	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
-		return
-	}
-	if statusText {
+	} else if statusText {
 		fmt.Print(connect.GetProductStatuses("text"))
-		return
 	}
-	// unknown args
-	flag.Usage()
-	os.Exit(1)
+	if writeConfig {
+		if err := connect.CFG.Save(); err != nil {
+			fmt.Fprintf(os.Stderr, "Problem writing configuration: %s", err)
+			os.Exit(1)
+		}
+	}
 }

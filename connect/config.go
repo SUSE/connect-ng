@@ -2,6 +2,8 @@ package connect
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -23,6 +25,21 @@ type Config struct {
 	Insecure bool
 }
 
+func (c Config) toYAML() []byte {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, "---\n")
+	fmt.Fprintf(&buf, "url: %s\n", c.BaseURL)
+	fmt.Fprintf(&buf, "insecure: %v\n", c.Insecure)
+	fmt.Fprintf(&buf, "language: %s\n", c.Language)
+	return buf.Bytes()
+}
+
+// Save saves the config to Path
+func (c Config) Save() error {
+	data := c.toYAML()
+	return os.WriteFile(c.Path, data, 0644)
+}
+
 // LoadConfig reads and merges any config from cfgPath if it exists.
 // Otherwise just returns config with the default settings.
 func LoadConfig(cfgPath string) Config {
@@ -35,7 +52,6 @@ func LoadConfig(cfgPath string) Config {
 	f, err := os.Open(cfgPath)
 	if err != nil {
 		Debug.Println(err)
-		c.Path = ""
 		return c
 	}
 	defer f.Close()
