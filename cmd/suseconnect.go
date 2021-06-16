@@ -51,6 +51,7 @@ func main() {
 	}
 	connect.Debug.Println("cmd line:", os.Args)
 	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
+	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			fmt.Fprintf(os.Stderr, "URL \"%s\" not valid: %s\n", baseURL, err)

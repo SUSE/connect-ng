@@ -41,24 +41,21 @@ func (c Config) Save() error {
 	return os.WriteFile(c.Path, data, 0644)
 }
 
-// LoadConfig reads and merges any config from cfgPath if it exists.
-// Otherwise just returns config with the default settings.
-func LoadConfig(cfgPath string) Config {
-	c := Config{
-		Path:     cfgPath,
-		BaseURL:  defaultBaseURL,
-		Language: defaultLang,
-		Insecure: defaultInsecure,
-	}
-	f, err := os.Open(cfgPath)
+// Load sets the defaults and tries to read
+// and merge settings from /etc/SUSEConnect
+func (c *Config) Load() {
+	c.Path = defaultConfigPath
+	c.BaseURL = defaultBaseURL
+	c.Language = defaultLang
+	c.Insecure = defaultInsecure
+	f, err := os.Open(defaultConfigPath)
 	if err != nil {
 		Debug.Println(err)
-		return c
+		return
 	}
 	defer f.Close()
-	parseConfig(f, &c)
+	parseConfig(f, c)
 	Debug.Printf("Config after parsing: %+v", c)
-	return c
 }
 
 func parseConfig(r io.Reader, c *Config) {
