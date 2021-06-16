@@ -19,11 +19,12 @@ const (
 
 // Config holds the config!
 type Config struct {
-	Path     string
-	BaseURL  string
-	Language string
-	Insecure bool
-	FsRoot   string
+	Path      string
+	BaseURL   string
+	Language  string
+	Insecure  bool
+	Namespace string
+	FsRoot    string
 }
 
 func (c Config) toYAML() []byte {
@@ -32,6 +33,9 @@ func (c Config) toYAML() []byte {
 	fmt.Fprintf(&buf, "url: %s\n", c.BaseURL)
 	fmt.Fprintf(&buf, "insecure: %v\n", c.Insecure)
 	fmt.Fprintf(&buf, "language: %s\n", c.Language)
+	if c.Namespace != "" {
+		fmt.Fprintf(&buf, "namespace: %s\n", c.Namespace)
+	}
 	return buf.Bytes()
 }
 
@@ -75,6 +79,8 @@ func parseConfig(r io.Reader, c *Config) {
 			c.BaseURL = val
 		case "language":
 			c.Language = val
+		case "namespace":
+			c.Namespace = val
 		case "insecure":
 			c.Insecure, _ = strconv.ParseBool(val)
 		default:

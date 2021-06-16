@@ -4,10 +4,11 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"gitlab.suse.de/doreilly/go-connect/connect"
 	"net/url"
 	"os"
 	"strings"
+
+	"gitlab.suse.de/doreilly/go-connect/connect"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 	deregister  bool
 	baseURL     string
 	fsRoot      string
+	namespace   string
 )
 
 func init() {
@@ -37,6 +39,7 @@ func init() {
 	flag.BoolVar(&deregister, "d", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
+	flag.StringVar(&namespace, "namespace", "", "")
 }
 
 func main() {
@@ -69,6 +72,10 @@ func main() {
 			os.Exit(1)
 		}
 		connect.CFG.FsRoot = fsRoot
+	}
+	if namespace != "" {
+		connect.CFG.Namespace = namespace
+		writeConfig = true
 	}
 	if status {
 		fmt.Println(connect.GetProductStatuses("json"))
