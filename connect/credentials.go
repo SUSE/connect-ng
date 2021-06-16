@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"errors"
 	"io"
 	"os"
 	"regexp"
@@ -12,9 +11,8 @@ const (
 )
 
 var (
-	errParseCredientials = errors.New("Unable to parse credentials")
-	userMatch            = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
-	passMatch            = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
+	userMatch = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
+	passMatch = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
 )
 
 // Credentials stores the SCC credentials
@@ -42,7 +40,7 @@ func parseCredientials(r io.Reader) (Credentials, error) {
 	uMatch := userMatch.FindStringSubmatch(string(content))
 	pMatch := passMatch.FindStringSubmatch(string(content))
 	if len(uMatch) != 2 || len(pMatch) != 2 {
-		return Credentials{}, errParseCredientials
+		return Credentials{}, ErrMalformedSccCredFile
 	}
 	return Credentials{Username: uMatch[1], Password: pMatch[1]}, nil
 }
