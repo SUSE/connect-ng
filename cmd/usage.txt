@@ -5,6 +5,11 @@ and allows online management of subscriptions and organizations.
 
 Manage subscriptions at https://scc.suse.com
 
+    -d, --deregister         De-registers the system and base product, or in
+                             conjunction with --product, a single extension, and
+                             removes all its services installed by SUSEConnect.
+                             After de-registration the system no longer consumes
+                             a subscription slot in SCC.
     -s, --status             Get current system registration status in json
                              format.
         --status-text        Get current system registration status in text

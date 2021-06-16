@@ -17,6 +17,7 @@ var (
 	statusText  bool
 	debug       bool
 	writeConfig bool
+	deregister  bool
 	baseURL     string
 	fsRoot      string
 )
@@ -32,6 +33,8 @@ func init() {
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
+	flag.BoolVar(&deregister, "deregister", false, "")
+	flag.BoolVar(&deregister, "d", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 }
@@ -71,12 +74,30 @@ func main() {
 		fmt.Println(connect.GetProductStatuses("json"))
 	} else if statusText {
 		fmt.Print(connect.GetProductStatuses("text"))
+	} else if deregister {
+		err := connect.Deregister()
+		exitOnError(err)
 	}
 	if writeConfig {
 		if err := connect.CFG.Save(); err != nil {
 			fmt.Fprintf(os.Stderr, "Problem writing configuration: %s", err)
 			os.Exit(1)
 		}
+	}
+}
+
+func exitOnError(err error) {
+	switch err {
+	case nil:
+		return
+	case connect.ErrSystemNotRegistered:
+		fmt.Fprintln(os.Stderr, "Deregistration failed. Check if the system has been")
+		fmt.Fprintln(os.Stderr, "registered using the --status-text option or use the")
+		fmt.Fprintln(os.Stderr, "--regcode parameter to register it.")
+		os.Exit(69)
+	default:
+		fmt.Fprintf(os.Stderr, "Command exited with error: %s\n", err)
+		os.Exit(1)
 	}
 }
 
