@@ -57,7 +57,7 @@ func main() {
 	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
-			fmt.Fprintf(os.Stderr, "URL \"%s\" not valid: %s\n", baseURL, err)
+			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
 		connect.CFG.BaseURL = baseURL
@@ -65,7 +65,7 @@ func main() {
 	}
 	if fsRoot != "" {
 		if fsRoot[0] != '/' {
-			fmt.Fprintln(os.Stderr, "The path specified in the --root option must be absolute.")
+			fmt.Println("The path specified in the --root option must be absolute.")
 			os.Exit(1)
 		}
 		connect.CFG.FsRoot = fsRoot
@@ -80,7 +80,7 @@ func main() {
 	}
 	if writeConfig {
 		if err := connect.CFG.Save(); err != nil {
-			fmt.Fprintf(os.Stderr, "Problem writing configuration: %s", err)
+			fmt.Printf("Problem writing configuration: %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -91,12 +91,12 @@ func exitOnError(err error) {
 	case nil:
 		return
 	case connect.ErrSystemNotRegistered:
-		fmt.Fprintln(os.Stderr, "Deregistration failed. Check if the system has been")
-		fmt.Fprintln(os.Stderr, "registered using the --status-text option or use the")
-		fmt.Fprintln(os.Stderr, "--regcode parameter to register it.")
+		fmt.Print("Deregistration failed. Check if the system has been ")
+		fmt.Print("registered using the --status-text option or use the ")
+		fmt.Print("--regcode parameter to register it.\n")
 		os.Exit(69)
 	default:
-		fmt.Fprintf(os.Stderr, "Command exited with error: %s\n", err)
+		fmt.Printf("Command exited with error: %s\n", err)
 		os.Exit(1)
 	}
 }
