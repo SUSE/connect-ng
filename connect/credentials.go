@@ -24,13 +24,6 @@ type Credentials struct {
 	Password string
 }
 
-func credentialsExists() bool {
-	if _, err := os.Stat(defaulCredPath); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
 func getCredentials() (Credentials, error) {
 	Debug.Printf("Reading credientials from %s", defaulCredPath)
 	f, err := os.Open(defaulCredPath)
