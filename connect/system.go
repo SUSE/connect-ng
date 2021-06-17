@@ -22,9 +22,15 @@ func execute(cmd []string, quiet bool, validExitCodes []int) ([]byte, error) {
 	if stderr.Len() > 0 {
 		Debug.Println("Error:", stderr.String())
 	}
-	// TODO zypper --interactive errors
+	// TODO Ruby version also checks stderr for "ABORT request"
 	if err != nil && !containsInt(validExitCodes, exitCode) {
-		return nil, err
+		output := stderr.Bytes()
+		// zypper with formatter option writes to stdout instead of stderr
+		if len(output) == 0 {
+			output = stdout.Bytes()
+		}
+		ee := ExecuteError{Commmand: cmd, ExitCode: exitCode, Output: output, Err: err}
+		return nil, ee
 	}
 	if quiet {
 		return nil, nil

@@ -87,9 +87,14 @@ func main() {
 }
 
 func exitOnError(err error) {
-	switch err {
-	case nil:
+	if err == nil {
 		return
+	}
+	if ze, ok := err.(connect.ZypperError); ok {
+		fmt.Printf("%s\n", ze)
+		os.Exit(ze.ExitCode)
+	}
+	switch err {
 	case connect.ErrSystemNotRegistered:
 		fmt.Print("Deregistration failed. Check if the system has been ")
 		fmt.Print("registered using the --status-text option or use the ")

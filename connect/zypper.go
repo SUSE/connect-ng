@@ -38,7 +38,13 @@ func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
 		cmd = append(cmd, "--root", CFG.FsRoot)
 	}
 	cmd = append(cmd, strings.Split(args, " ")...)
-	return execute(cmd, quiet, validExitCodes)
+	output, err := execute(cmd, quiet, validExitCodes)
+	if err != nil {
+		if ee, ok := err.(ExecuteError); ok {
+			return nil, ZypperError{ExitCode: ee.ExitCode, Output: ee.Output}
+		}
+	}
+	return output, nil
 }
 
 // installedProducts returns installed products
