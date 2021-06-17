@@ -27,6 +27,7 @@ var (
 	token            string
 	product          string
 	instanceDataFile string
+	listExtensions   bool
 )
 
 func init() {
@@ -42,6 +43,7 @@ func init() {
 	flag.BoolVar(&writeConfig, "write-config", false, "")
 	flag.BoolVar(&deregister, "deregister", false, "")
 	flag.BoolVar(&deregister, "d", false, "")
+	flag.BoolVar(&listExtensions, "list-extensions", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
@@ -112,6 +114,10 @@ func main() {
 		output, err := connect.GetProductStatuses("text")
 		exitOnError(err)
 		fmt.Print(output)
+	} else if listExtensions {
+		output, err := connect.GetExtensionsList()
+		exitOnError(err)
+		fmt.Print(output)
 	} else if deregister {
 		err := connect.Deregister()
 		exitOnError(err)
@@ -167,6 +173,10 @@ func exitOnError(err error) {
 		fmt.Print("registered using the --status-text option or use the ")
 		fmt.Print("--regcode parameter to register it.\n")
 		os.Exit(69)
+	case connect.ErrListExtensionsUnregistered:
+		fmt.Print("To list extensions, you must first register the base product, ")
+		fmt.Print("using: SUSEConnect -r <registration code>\n")
+		os.Exit(1)
 	default:
 		fmt.Printf("Command exited with error: %s\n", err)
 		os.Exit(1)
