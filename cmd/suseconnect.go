@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -78,9 +79,13 @@ func main() {
 		writeConfig = true
 	}
 	if status {
-		fmt.Println(connect.GetProductStatuses("json"))
+		output, err := connect.GetProductStatuses("json")
+		exitOnError(err)
+		fmt.Println(output)
 	} else if statusText {
-		fmt.Print(connect.GetProductStatuses("text"))
+		output, err := connect.GetProductStatuses("text")
+		exitOnError(err)
+		fmt.Print(output)
 	} else if deregister {
 		err := connect.Deregister()
 		exitOnError(err)
@@ -102,8 +107,17 @@ func exitOnError(err error) {
 		os.Exit(ze.ExitCode)
 	}
 	if ae, ok := err.(connect.APIError); ok {
-		// TODO check for 401 and smt broken
-		fmt.Printf("%s\n", ae)
+		if ae.Code == http.StatusUnauthorized && connect.IsRegistered() {
+			fmt.Print("Error: Invalid system credentials, probably because the ")
+			fmt.Print("registered system was deleted in SUSE Customer Center. ")
+			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
+			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
+		} else if !connect.URLDefault() && !connect.UpToDate() {
+			fmt.Print("Your Registration Proxy server doesn't support this function. ")
+			fmt.Print("Please update it and try again.")
+		} else {
+			fmt.Printf("%s\n", ae)
+		}
 		os.Exit(67)
 	}
 	switch err {

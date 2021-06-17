@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultConfigPath = "/etc/SUSEConnect"
-	defaultBaseURL    = "https://scc.suse.com/"
+	defaultBaseURL    = "https://scc.suse.com"
 	defaultLang       = "en_US.UTF-8"
 	defaultInsecure   = false
 )

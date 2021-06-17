@@ -6,7 +6,7 @@ import (
 
 // Deregister deregisters the system
 func Deregister() error {
-	if !isRegistered() {
+	if !IsRegistered() {
 		return ErrSystemNotRegistered
 	}
 
@@ -14,6 +14,12 @@ func Deregister() error {
 	return fmt.Errorf("Deregister not implemented yet")
 }
 
-func isRegistered() bool {
+// IsRegistered returns true if the system credentials file exists
+func IsRegistered() bool {
 	return fileExists(defaulCredPath)
+}
+
+// URLDefault returns true if using https://scc.suse.com
+func URLDefault() bool {
+	return CFG.BaseURL == defaultBaseURL
 }

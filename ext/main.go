@@ -9,7 +9,11 @@ import (
 func getstatus(format *C.char) *C.char {
 	connect.CFG.Load()
 	gFormat := C.GoString(format)
-	return C.CString(connect.GetProductStatuses(gFormat))
+	output, err := connect.GetProductStatuses(gFormat)
+	if err != nil {
+		return C.CString(err.Error())
+	}
+	return C.CString(output)
 }
 
 func main() {}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	_ "embed" //golint
 	"encoding/json"
-	"fmt"
 	"text/template"
 )
 
@@ -28,29 +27,24 @@ type Status struct {
 }
 
 // GetProductStatuses returns statuses of installed products
-func GetProductStatuses(format string) string {
+func GetProductStatuses(format string) (string, error) {
 	statuses, err := getStatuses()
 	if err != nil {
-		Error.Println(err)
-		return fmt.Sprintf("ERROR: %s", err)
+		return "", err
 	}
 	if format == "json" {
 		jsonStr, err := json.Marshal(statuses)
 		if err != nil {
-			Error.Println(err)
-			return fmt.Sprintf("ERROR: %s", err)
+			return "", err
 		}
-		return string(jsonStr)
+		return string(jsonStr), nil
 	}
-	if format == "text" {
-		text, err := getStatusText(statuses)
-		if err != nil {
-			Error.Println(err)
-			return fmt.Sprintf("ERROR: %s", err)
-		}
-		return text
+
+	text, err := getStatusText(statuses)
+	if err != nil {
+		return "", err
 	}
-	return `ERROR: parameter must be "json" or "text"`
+	return text, nil
 }
 
 func getStatuses() ([]Status, error) {
@@ -61,7 +55,7 @@ func getStatuses() ([]Status, error) {
 	}
 
 	activations := make(map[string]Activation) // default empty map
-	if isRegistered() {
+	if IsRegistered() {
 		creds, err := getCredentials()
 		if err != nil {
 			return statuses, err
