@@ -67,3 +67,17 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	}
 	return products.Products, nil
 }
+
+// TODO: memoize?
+func baseProduct() (Product, error) {
+	products, err := installedProducts()
+	if err != nil {
+		return Product{}, err
+	}
+	for _, product := range products {
+		if product.IsBase {
+			return product, nil
+		}
+	}
+	return Product{}, ErrCannotDetectBaseProduct
+}
