@@ -30,6 +30,8 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --status-text        Get current system registration status in text
                              format.
+        --list-extensions    List all extensions and modules available for
+                             installation on this system.
         --url [URL]          URL of registration server
                              (e.g. https://scc.suse.com).
                              Implies --write-config so that subsequent

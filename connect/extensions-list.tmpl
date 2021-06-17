@@ -1,0 +1,21 @@
+{{ define "extension" }}
+{{ .Indent }}{{ "\x1b[1m"}}{{ .Product.FriendlyName }}{{"\x1b[0m" -}}
+{{ if not .Product.Available }}{{ " \x1b[31m(Not available)\x1b[0m" }}{{ end -}}
+{{ if .Activated }}{{ " \x1b[33m(Activated)\x1b[0m" }}{{ end }}
+{{ if .Activated }}{{ .Indent }}Deactivate with: {{ .ConnectBinary }} {{"\x1b[31m-d\x1b[0m"}} -p {{ .Code -}}
+{{ else }}{{ .Indent }}Activate with: {{ .ConnectBinary }} -p {{ .Code }}{{ if not .Product.Free }} -r {{"\x1b[32m\x1b[1mADDITIONAL REGCODE\x1b[0m"}}{{ end }}{{ end }}
+{{ range .Subextensions }}{{ template "extension" . }}{{ end -}}
+{{ end -}}
+{{ "\x1b[1m"}}AVAILABLE EXTENSIONS AND MODULES{{"\x1b[0m" -}}
+{{ range . }}
+{{ template "extension" . }}
+{{ end }}
+{{ "\x1b[1m"}}REMARKS{{"\x1b[0m"}}
+
+{{"\x1b[31m"}}(Not available){{"\x1b[0m"}} The module/extension is {{"\x1b[1m"}}not{{"\x1b[0m"}} enabled on your RMT/SMT
+{{"\x1b[33m"}}(Activated){{"\x1b[0m"}}     The module/extension is activated on your system
+
+{{"\x1b[1m"}}MORE INFORMATION{{"\x1b[0m"}}
+
+You can find more information about available modules here:
+https://www.suse.com/documentation/sles-15/singlehtml/art_modules/art_modules.html
