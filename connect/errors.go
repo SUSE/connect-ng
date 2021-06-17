@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	ErrMalformedSccCredFile   = errors.New("Unable to parse credentials")
-	ErrMissingCredentialsFile = errors.New("Credentials file is missing")
-	ErrSystemNotRegistered    = errors.New("System not registered")
+	ErrMalformedSccCredFile    = errors.New("Unable to parse credentials")
+	ErrMissingCredentialsFile  = errors.New("Credentials file is missing")
+	ErrSystemNotRegistered     = errors.New("System not registered")
+	ErrCannotDetectBaseProduct = errors.New("Unable to detect base product")
 )
 
 // ExecuteError is returned from execute() on error
