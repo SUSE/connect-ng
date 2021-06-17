@@ -44,3 +44,16 @@ func GetActivations() (map[string]Activation, error) {
 	}
 	return activeMap, nil
 }
+
+func GetProduct(productQuery Product) (Product, error) {
+	resp, err := callHTTP("GET", "/connect/systems/products", nil, productQuery.toQuery(), authSystem)
+	remoteProduct := Product{}
+	if err != nil {
+		return remoteProduct, err
+	}
+	err = json.Unmarshal(resp, &remoteProduct)
+	if err != nil {
+		return remoteProduct, err
+	}
+	return remoteProduct, nil
+}
