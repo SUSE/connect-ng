@@ -2,7 +2,7 @@ package main
 
 import (
 	"C"
-	"gitlab.suse.de/doreilly/go-connect/connect"
+	"github.com/SUSE/connect-ng/connect"
 )
 
 //export getstatus

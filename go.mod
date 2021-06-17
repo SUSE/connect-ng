@@ -1,3 +1,3 @@
-module gitlab.suse.de/doreilly/go-connect
+module github.com/SUSE/connect-ng
 
 go 1.16

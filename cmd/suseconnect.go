@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.suse.de/doreilly/go-connect/connect"
+	"github.com/SUSE/connect-ng/connect"
 )
 
 var (
