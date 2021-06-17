@@ -84,3 +84,44 @@ func TestUpToDateOkay(t *testing.T) {
 		t.Error("Expecting UpToDate()==true, got false")
 	}
 }
+
+func TestGetProduct(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readTestFile("product.json", t))
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
+	product, err := GetProduct(productQuery)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	if l := len(product.Extensions); l != 1 {
+		t.Fatalf("len(product.Extensions) == %d, expected 1", l)
+	}
+	if l := len(product.Extensions[0].Extensions); l != 8 {
+		t.Fatalf("len(product.Extensions[0].Extensions) == %d, expected 8", l)
+	}
+
+}
+
+func TestGetProductError(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
+		http.Error(w, errMsg, http.StatusUnprocessableEntity)
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	productQuery := Product{Name: "Dummy"}
+	_, err := GetProduct(productQuery)
+	if ae, ok := err.(APIError); ok {
+		if ae.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("Expecting APIError(422). Got %s", err)
+		}
+	}
+}

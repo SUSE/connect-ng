@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -27,7 +28,7 @@ func TestParseConfig(t *testing.T) {
 	expect := Config{BaseURL: "https://smt-azure.susecloud.net", Language: "en_US.UTF-8"}
 	c := Config{}
 	parseConfig(r, &c)
-	if c != expect {
+	if !reflect.DeepEqual(c, expect) {
 		t.Errorf("got %+v, expected %+v", c, expect)
 	}
 }
@@ -37,7 +38,7 @@ func TestParseConfig2(t *testing.T) {
 	expect := Config{BaseURL: "http://example.com", Language: "en_US.UTF-8", Insecure: true}
 	c := Config{}
 	parseConfig(r, &c)
-	if c != expect {
+	if !reflect.DeepEqual(c, expect) {
 		t.Errorf("got %+v, expected %+v", c, expect)
 	}
 }
