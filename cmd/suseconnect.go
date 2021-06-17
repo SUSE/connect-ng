@@ -101,6 +101,11 @@ func exitOnError(err error) {
 		fmt.Printf("%s\n", ze)
 		os.Exit(ze.ExitCode)
 	}
+	if ae, ok := err.(connect.APIError); ok {
+		// TODO check for 401 and smt broken
+		fmt.Printf("%s\n", ae)
+		os.Exit(67)
+	}
 	switch err {
 	case connect.ErrSystemNotRegistered:
 		fmt.Print("Deregistration failed. Check if the system has been ")

@@ -33,3 +33,13 @@ type ZypperError struct {
 func (ze ZypperError) Error() string {
 	return fmt.Sprintf("Error: zypper returned %d with '%s'", ze.ExitCode, ze.Output)
 }
+
+// APIError is returned on failed HTTP requests
+type APIError struct {
+	Code    int
+	Message string
+}
+
+func (ae APIError) Error() string {
+	return fmt.Sprintf("Error: Registration server returned '%s' (%d)", ae.Message, ae.Code)
+}

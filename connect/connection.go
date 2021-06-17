@@ -3,7 +3,6 @@ package connect
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -48,7 +47,7 @@ func DoGET(creds Credentials, urlSuffix string) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		errMsg := parseError(resp.Body)
-		return nil, fmt.Errorf("%s: %s", resp.Status, errMsg)
+		return nil, APIError{Message: errMsg, Code: resp.StatusCode}
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
