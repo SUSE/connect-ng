@@ -74,3 +74,15 @@ func TestGetActivationsError(t *testing.T) {
 		t.Error("Expecting error. Got none.")
 	}
 }
+
+func TestUpToDateOkay(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "", http.StatusUnprocessableEntity)
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	if !UpToDate() {
+		t.Error("Expecting UpToDate()==true, got false")
+	}
+}
