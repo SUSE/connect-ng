@@ -13,7 +13,6 @@ import (
 const (
 	defaultConfigPath = "/etc/SUSEConnect"
 	defaultBaseURL    = "https://scc.suse.com"
-	defaultLang       = "en_US.UTF-8"
 	defaultInsecure   = false
 )
 
@@ -32,7 +31,9 @@ func (c Config) toYAML() []byte {
 	fmt.Fprintf(&buf, "---\n")
 	fmt.Fprintf(&buf, "url: %s\n", c.BaseURL)
 	fmt.Fprintf(&buf, "insecure: %v\n", c.Insecure)
-	fmt.Fprintf(&buf, "language: %s\n", c.Language)
+	if c.Language != "" {
+		fmt.Fprintf(&buf, "language: %s\n", c.Language)
+	}
 	if c.Namespace != "" {
 		fmt.Fprintf(&buf, "namespace: %s\n", c.Namespace)
 	}
@@ -50,7 +51,6 @@ func (c Config) Save() error {
 func (c *Config) Load() {
 	c.Path = defaultConfigPath
 	c.BaseURL = defaultBaseURL
-	c.Language = defaultLang
 	c.Insecure = defaultInsecure
 	f, err := os.Open(defaultConfigPath)
 	if err != nil {
