@@ -5,6 +5,11 @@ import (
 	"net/http"
 )
 
+const (
+	// APIVersion is the SCC API version
+	APIVersion = "v4"
+)
+
 // UpToDate Checks if API endpoint is up-to-date,
 // useful when dealing with RegistrationProxy errors
 func UpToDate() bool {
