@@ -7,20 +7,20 @@ import (
 	"testing"
 )
 
-func TestDoGetInsecure(t *testing.T) {
+func TestCallHTTPSecure(t *testing.T) {
 	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	ts.StartTLS()
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
 	CFG.Insecure = false
-	_, err := DoGET(Credentials{}, "/")
+	_, err := callHTTP("GET", "/", nil, nil, Credentials{})
 	if err == nil {
 		t.Error("Expecting certificate error. Got none.")
 	}
 
 	CFG.Insecure = true
-	_, err = DoGET(Credentials{}, "/")
+	_, err = callHTTP("GET", "/", nil, nil, Credentials{})
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}

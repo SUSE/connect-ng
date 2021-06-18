@@ -32,21 +32,31 @@ func addHeaders(req *http.Request) {
 	// REVISIT Close - unlike Ruby, Go does not close by default
 }
 
-// DoGET performs http client GET calls
-func DoGET(creds Credentials, urlSuffix string) ([]byte, error) {
+func successCode(code int) bool {
+	return code >= 200 && code < 300
+}
+
+func callHTTP(verb, path string, body io.Reader, query map[string]string, creds Credentials) ([]byte, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest("GET", CFG.BaseURL, nil)
+	req, err := http.NewRequest(verb, CFG.BaseURL, body)
 	if err != nil {
 		return nil, err
 	}
-	req.URL.Path = urlSuffix
+	req.URL.Path = path
 	req.SetBasicAuth(creds.Username, creds.Password)
 	addHeaders(req)
+
+	values := req.URL.Query()
+	for n, v := range query {
+		values.Add(n, v)
+	}
+	req.URL.RawQuery = values.Encode()
+
 	reqBlob, _ := httputil.DumpRequestOut(req, true)
 	Debug.Printf("%s\n", reqBlob)
 
@@ -58,13 +68,13 @@ func DoGET(creds Credentials, urlSuffix string) ([]byte, error) {
 	respBlob, _ := httputil.DumpResponse(resp, true)
 	Debug.Printf("%s\n", respBlob)
 
-	if resp.StatusCode != http.StatusOK {
+	if !successCode(resp.StatusCode) {
 		errMsg := parseError(resp.Body)
 		return nil, APIError{Message: errMsg, Code: resp.StatusCode}
 	}
-	body, err := io.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return body, nil
+	return resBody, nil
 }
