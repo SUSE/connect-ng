@@ -24,7 +24,9 @@ func addHeaders(req *http.Request) {
 	req.Header.Add("Content-Type", "application/json")
 	accept := "application/json,application/vnd.scc.suse.com." + APIVersion + "+json"
 	req.Header.Add("Accept", accept)
-	req.Header.Add("Accept-Language", CFG.Language)
+	if CFG.Language != "" {
+		req.Header.Add("Accept-Language", CFG.Language)
+	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
 	req.Header.Add("User-Agent", AppName+"/"+Version)
 	// REVISIT Close - unlike Ruby, Go does not close by default

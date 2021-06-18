@@ -78,6 +78,11 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
+	if lang, ok := os.LookupEnv("LANG"); ok {
+		if lang != "" {
+			connect.CFG.Language = lang
+		}
+	}
 	if status {
 		output, err := connect.GetProductStatuses("json")
 		exitOnError(err)
