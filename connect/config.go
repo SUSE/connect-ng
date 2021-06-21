@@ -18,12 +18,15 @@ const (
 
 // Config holds the config!
 type Config struct {
-	Path      string
-	BaseURL   string
-	Language  string
-	Insecure  bool
-	Namespace string
-	FsRoot    string
+	Path             string
+	BaseURL          string
+	Language         string
+	Insecure         bool
+	Namespace        string
+	FsRoot           string
+	Token            string
+	Product          Product
+	InstanceDataFile string
 }
 
 func (c Config) toYAML() []byte {

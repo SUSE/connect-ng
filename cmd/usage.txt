@@ -5,11 +5,24 @@ and allows online management of subscriptions and organizations.
 
 Manage subscriptions at https://scc.suse.com
 
+    -p, --product [PRODUCT]  Specify a product for activation/deactivation. Only
+                             one product can be processed at a time. Defaults to
+                             the base SUSE Linux Enterprise product on this
+                             system. Product identifiers can be obtained
+                             with `--list-extensions`.
+                             Format: <name>/<version>/<architecture>
+    -r, --regcode [REGCODE]  Subscription registration code for the product to
+                             be registered.
+                             Relates that product to the specified subscription,
+                             and enables software repositories for that product.
     -d, --deregister         De-registers the system and base product, or in
                              conjunction with --product, a single extension, and
                              removes all its services installed by SUSEConnect.
                              After de-registration the system no longer consumes
                              a subscription slot in SCC.
+        --instance-data  [path to file]
+                             Path to the XML file holding the public key and
+                             instance data for cloud registration with SMT.
         --namespace [NAMESPACE]
                              Namespace option for use with SMT staging
                              environments.

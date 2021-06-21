@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/SUSE/connect-ng/connect"
@@ -14,15 +15,18 @@ import (
 
 var (
 	//go:embed usage.txt
-	usageText   string
-	status      bool
-	statusText  bool
-	debug       bool
-	writeConfig bool
-	deregister  bool
-	baseURL     string
-	fsRoot      string
-	namespace   string
+	usageText        string
+	status           bool
+	statusText       bool
+	debug            bool
+	writeConfig      bool
+	deregister       bool
+	baseURL          string
+	fsRoot           string
+	namespace        string
+	token            string
+	product          string
+	instanceDataFile string
 )
 
 func init() {
@@ -41,15 +45,16 @@ func init() {
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
+	flag.StringVar(&token, "regcode", "", "")
+	flag.StringVar(&token, "r", "", "")
+	flag.StringVar(&product, "product", "", "")
+	flag.StringVar(&product, "p", "", "")
+	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 }
 
 func main() {
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
-		os.Exit(1)
-	}
-	if len(os.Args) < 2 {
-		flag.Usage()
 		os.Exit(1)
 	}
 	flag.Parse()
@@ -78,6 +83,22 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
+	if token != "" {
+		connect.CFG.Token = token
+	}
+	if product != "" {
+		if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, product); !match {
+			fmt.Print("Please provide the product identifier in this format: ")
+			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
+			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
+			os.Exit(1)
+		}
+		parts := strings.Split(product, "/")
+		connect.CFG.Product = connect.Product{Name: parts[0], Version: parts[1], Arch: parts[2]}
+	}
+	if instanceDataFile != "" {
+		connect.CFG.InstanceDataFile = instanceDataFile
+	}
 	if lang, ok := os.LookupEnv("LANG"); ok {
 		if lang != "" {
 			connect.CFG.Language = lang
@@ -94,6 +115,21 @@ func main() {
 	} else if deregister {
 		err := connect.Deregister()
 		exitOnError(err)
+	} else {
+		if instanceDataFile != "" && connect.URLDefault() {
+			fmt.Print("Please use --instance-data only in combination ")
+			fmt.Print("with --url pointing to your RMT or SMT server\n")
+			os.Exit(1)
+		} else if token != "" && instanceDataFile != "" {
+			fmt.Print("Please use either --regcode or --instance-data\n")
+			os.Exit(1)
+		} else if connect.URLDefault() && token == "" && product == "" {
+			flag.Usage()
+			os.Exit(1)
+		} else {
+			// TODO call register()
+			fmt.Println("register() to be implemented")
+		}
 	}
 	if writeConfig {
 		if err := connect.CFG.Save(); err != nil {
