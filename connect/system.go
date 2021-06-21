@@ -56,3 +56,11 @@ func fileExists(path string) bool {
 	}
 	return true
 }
+
+func removeFile(path string) error {
+	Debug.Print("Removing file: ", path)
+	if !fileExists(path) {
+		return nil
+	}
+	return os.Remove(path)
+}
