@@ -14,9 +14,10 @@ func Deregister() error {
 	return fmt.Errorf("Deregister not implemented yet")
 }
 
-// IsRegistered returns true if the system credentials file exists
+// IsRegistered returns true if there is a valid credentials file
 func IsRegistered() bool {
-	return fileExists(defaulCredPath)
+	_, err := getCredentials()
+	return err == nil
 }
 
 // URLDefault returns true if using https://scc.suse.com
