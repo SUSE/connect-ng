@@ -29,13 +29,16 @@ func execute(cmd []string, quiet bool, validExitCodes []int) ([]byte, error) {
 		if len(output) == 0 {
 			output = stdout.Bytes()
 		}
+		output = bytes.TrimSuffix(output, []byte("\n"))
 		ee := ExecuteError{Commmand: cmd, ExitCode: exitCode, Output: output, Err: err}
 		return nil, ee
 	}
 	if quiet {
 		return nil, nil
 	}
-	return stdout.Bytes(), nil
+	out := stdout.Bytes()
+	out = bytes.TrimSuffix(out, []byte("\n"))
+	return out, nil
 }
 
 func containsInt(s []int, i int) bool {
