@@ -4,7 +4,7 @@ build:
 	go build cmd/suseconnect.go
 
 test:
-	go test ./connect
+	go test -v ./connect
 
 build-so:
 	go build -buildmode=c-shared -o libsuseconnect.so ext/main.go
