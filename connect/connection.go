@@ -8,6 +8,14 @@ import (
 	"net/http/httputil"
 )
 
+type authType int
+
+const (
+	authNone authType = iota
+	authSystem
+	authToken
+)
+
 // parseError returns the error message from a SCC error response
 func parseError(body io.Reader) string {
 	var m map[string]interface{}
@@ -32,11 +40,25 @@ func addHeaders(req *http.Request) {
 	// REVISIT Close - unlike Ruby, Go does not close by default
 }
 
+func addAuthHeader(req *http.Request, auth authType) error {
+	switch auth {
+	case authSystem:
+		c, err := getCredentials()
+		if err != nil {
+			return err
+		}
+		req.SetBasicAuth(c.Username, c.Password)
+	case authToken:
+		req.Header.Add("Authorization", "Token token="+CFG.Token)
+	}
+	return nil
+}
+
 func successCode(code int) bool {
 	return code >= 200 && code < 300
 }
 
-func callHTTP(verb, path string, body io.Reader, query map[string]string, creds Credentials) ([]byte, error) {
+func callHTTP(verb, path string, body io.Reader, query map[string]string, auth authType) ([]byte, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
 		Proxy:           http.ProxyFromEnvironment,
@@ -48,7 +70,10 @@ func callHTTP(verb, path string, body io.Reader, query map[string]string, creds 
 		return nil, err
 	}
 	req.URL.Path = path
-	req.SetBasicAuth(creds.Username, creds.Password)
+
+	if err := addAuthHeader(req, auth); err != nil {
+		return nil, err
+	}
 	addHeaders(req)
 
 	values := req.URL.Query()

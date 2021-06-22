@@ -9,6 +9,11 @@ import (
 
 func TestGetActivations(t *testing.T) {
 	response := readTestFile("activations.json", t)
+	CFG.FsRoot = t.TempDir()
+	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
@@ -16,8 +21,7 @@ func TestGetActivations(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	creds := Credentials{}
-	activations, err := GetActivations(creds)
+	activations, err := GetActivations()
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -37,7 +41,10 @@ func TestGetActivationsRequest(t *testing.T) {
 		url        = "/connect/systems/activations"
 		gotRequest *http.Request
 	)
-
+	CFG.FsRoot = t.TempDir()
+	if err := writeSystemCredentials(user, password); err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r // make request available outside this func after call
 		w.Header().Set("Content-Type", "application/json")
@@ -46,9 +53,8 @@ func TestGetActivationsRequest(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	creds := Credentials{Username: user, Password: password}
-	if _, err := GetActivations(creds); err != nil {
-		t.Errorf("Unexpected error [%s]", err)
+	if _, err := GetActivations(); err != nil {
+		t.Fatalf("Unexpected error [%s]", err)
 	}
 
 	gotURL := gotRequest.URL.String()
@@ -59,14 +65,17 @@ func TestGetActivationsRequest(t *testing.T) {
 }
 
 func TestGetActivationsError(t *testing.T) {
+	CFG.FsRoot = t.TempDir()
+	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 	}))
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	creds := Credentials{}
-	if _, err := GetActivations(creds); err == nil {
+	if _, err := GetActivations(); err == nil {
 		t.Error("Expecting error. Got none.")
 	}
 }

@@ -56,11 +56,7 @@ func getStatuses() ([]Status, error) {
 
 	activations := make(map[string]Activation) // default empty map
 	if IsRegistered() {
-		creds, err := getCredentials()
-		if err != nil {
-			return statuses, err
-		}
-		activations, err = GetActivations(creds)
+		activations, err = GetActivations()
 		if err != nil {
 			return statuses, err
 		}
