@@ -6,13 +6,19 @@ import (
 	"os/exec"
 )
 
+var execCommand = exec.Command
+
 func execute(cmd []string, quiet bool, validExitCodes []int) ([]byte, error) {
 	Debug.Printf("Executing: %s Quiet: %v\n", cmd, quiet)
 	var stderr, stdout bytes.Buffer
-	comm := exec.Command(cmd[0], cmd[1:]...)
+	comm := execCommand(cmd[0], cmd[1:]...)
 	comm.Stdout = &stdout
 	comm.Stderr = &stderr
-	comm.Env = append(os.Environ(), "LC_ALL=C")
+	// init env only if not set by (mocked) execCommand()
+	if len(comm.Env) == 0 {
+		comm.Env = os.Environ()
+	}
+	comm.Env = append(comm.Env, "LC_ALL=C")
 	err := comm.Run()
 	exitCode := comm.ProcessState.ExitCode()
 	Debug.Printf("Return code: %d\n", exitCode)
