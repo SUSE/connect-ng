@@ -15,7 +15,7 @@ const (
 func UpToDate() bool {
 	// REVIST 404 case - see original
 	// Should fail in any case. 422 error means that the endpoint is there and working right
-	_, err := callHTTP("GET", "/connect/repositories/installer", nil, nil, Credentials{})
+	_, err := callHTTP("GET", "/connect/repositories/installer", nil, nil, authNone)
 	if err == nil {
 		return false
 	}
@@ -28,9 +28,9 @@ func UpToDate() bool {
 }
 
 // GetActivations returns a map keyed by "Identifier/Version/Arch"
-func GetActivations(creds Credentials) (map[string]Activation, error) {
+func GetActivations() (map[string]Activation, error) {
 	activeMap := make(map[string]Activation)
-	resp, err := callHTTP("GET", "/connect/systems/activations", nil, nil, creds)
+	resp, err := callHTTP("GET", "/connect/systems/activations", nil, nil, authSystem)
 	if err != nil {
 		return activeMap, err
 	}

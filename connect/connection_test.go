@@ -14,13 +14,13 @@ func TestCallHTTPSecure(t *testing.T) {
 
 	CFG.BaseURL = ts.URL
 	CFG.Insecure = false
-	_, err := callHTTP("GET", "/", nil, nil, Credentials{})
+	_, err := callHTTP("GET", "/", nil, nil, authNone)
 	if err == nil {
 		t.Error("Expecting certificate error. Got none.")
 	}
 
 	CFG.Insecure = true
-	_, err = callHTTP("GET", "/", nil, nil, Credentials{})
+	_, err = callHTTP("GET", "/", nil, nil, authNone)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
