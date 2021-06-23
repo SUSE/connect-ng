@@ -31,3 +31,38 @@ func TestLscpu2mapVirtual(t *testing.T) {
 		t.Errorf("Hypervisor vendor should be KVM")
 	}
 }
+
+func TestFindCloudProviderAWS(t *testing.T) {
+	got := findCloudProvider(readTestFile("dmidecode_aws.txt", t))
+	if got != "amazon" {
+		t.Errorf("findCloudProvider()==%s, expected amazon", got)
+	}
+}
+
+func TestFindCloudProviderAWSLarge(t *testing.T) {
+	got := findCloudProvider(readTestFile("dmidecode_aws_large.txt", t))
+	if got != "Amazon" {
+		t.Errorf("findCloudProvider()==%s, expected Amazon", got)
+	}
+}
+
+func TestFindCloudProviderAzure(t *testing.T) {
+	got := findCloudProvider(readTestFile("dmidecode_azure.txt", t))
+	if got != "Microsoft" {
+		t.Errorf("findCloudProvider()==%s, expected Microsoft", got)
+	}
+}
+
+func TestFindCloudProviderGoogle(t *testing.T) {
+	got := findCloudProvider(readTestFile("dmidecode_google.txt", t))
+	if got != "Google" {
+		t.Errorf("findCloudProvider()==%s, expected Google", got)
+	}
+}
+
+func TestFindCloudProviderNoCloud(t *testing.T) {
+	got := findCloudProvider(readTestFile("dmidecode_qemu.txt", t))
+	if got != "" {
+		t.Errorf("findCloudProvider()==%s, expected \"\"", got)
+	}
+}

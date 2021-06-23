@@ -3,7 +3,13 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"regexp"
 	"strings"
+)
+
+var (
+	cloudEx = `Version: .*(amazon)|Manufacturer: (Amazon)|Manufacturer: (Google)|Manufacturer: (Microsoft) Corporation`
+	cloudRe = regexp.MustCompile(cloudEx)
 )
 
 func lscpu() (map[string]string, error) {
@@ -27,4 +33,23 @@ func lscpu2map(b []byte) map[string]string {
 		m[key] = val
 	}
 	return m
+}
+
+func cloudProvider() (string, error) {
+	output, err := execute([]string{"dmidecode", "-t", "system"}, false, nil)
+	if err != nil {
+		return "", err
+	}
+	return findCloudProvider(output), nil
+}
+
+// findCloudProvider returns the cloud provider from "dmidecode -t system" output
+func findCloudProvider(b []byte) string {
+	match := cloudRe.FindSubmatch(b)
+	for i, m := range match {
+		if i != 0 && len(m) > 0 {
+			return string(m)
+		}
+	}
+	return ""
 }
