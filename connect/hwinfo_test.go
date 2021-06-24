@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"net"
 	"testing"
 )
 
@@ -64,5 +65,25 @@ func TestFindCloudProviderNoCloud(t *testing.T) {
 	got := findCloudProvider(readTestFile("dmidecode_qemu.txt", t))
 	if got != "" {
 		t.Errorf("findCloudProvider()==%s, expected \"\"", got)
+	}
+}
+
+func TestPrivateIP(t *testing.T) {
+	var tests = []struct {
+		ip      string
+		private bool
+	}{
+		{"10.0.1.1", true},
+		{"192.168.100.10", true},
+		{"172.18.10.10", true},
+		{"8.8.8.8", false},
+		{"172.15.0.1", false},
+	}
+	for _, test := range tests {
+		ip := net.ParseIP(test.ip)
+		got := privateIP(ip)
+		if got != test.private {
+			t.Errorf("Got privateIP(%s)==%v, expected %v", test.ip, got, test.private)
+		}
 	}
 }

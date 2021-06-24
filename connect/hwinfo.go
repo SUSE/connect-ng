@@ -3,6 +3,7 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"net"
 	"os"
 	"regexp"
 	"strings"
@@ -91,4 +92,30 @@ func uuid() (string, error) {
 		return "", nil
 	}
 	return out, nil
+}
+
+// getPrivateIPAddr returns the first private IP address on the host
+func getPrivateIPAddr() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+	for _, addr := range addrs {
+		ip, _, _ := net.ParseCIDR(addr.String())
+		if privateIP(ip) {
+			return ip.String(), nil
+		}
+	}
+	return "", nil
+}
+
+// privateIP returns true if ip is in a RFC1918 range
+func privateIP(ip net.IP) bool {
+	for _, block := range []string{"10.0.0.0/8", "192.168.0.0/16", "172.16.0.0/12"} {
+		_, ipNet, _ := net.ParseCIDR(block)
+		if ipNet.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
