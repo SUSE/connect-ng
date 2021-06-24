@@ -4,18 +4,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
 func TestGetActivations(t *testing.T) {
+	response := readTestFile("activations.json", t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		f, err := os.Open("../testdata/activations.json")
-		if err != nil {
-			t.Fatal(err)
-		}
-		io.Copy(w, f)
+		w.Write(response)
 	}))
 	defer ts.Close()
 
