@@ -3,6 +3,7 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -11,6 +12,14 @@ var (
 	cloudEx = `Version: .*(amazon)|Manufacturer: (Amazon)|Manufacturer: (Google)|Manufacturer: (Microsoft) Corporation`
 	cloudRe = regexp.MustCompile(cloudEx)
 )
+
+func arch() (string, error) {
+	output, err := execute([]string{"uname", "-i"}, false, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
+}
 
 func lscpu() (map[string]string, error) {
 	output, err := execute([]string{"lscpu"}, false, nil)
@@ -52,4 +61,34 @@ func findCloudProvider(b []byte) string {
 		}
 	}
 	return ""
+}
+
+func hypervisor() (string, error) {
+	output, err := execute([]string{"systemd-detect-virt", "-v"}, false, []int{0, 1})
+	if err != nil {
+		return "", err
+	}
+	if bytes.Equal(output, []byte("none")) {
+		return "", nil
+	}
+	return string(output), nil
+}
+
+func uuid() (string, error) {
+	if fileExists("/sys/hypervisor/uuid") {
+		content, err := os.ReadFile("/sys/hypervisor/uuid")
+		if err != nil {
+			return "", err
+		}
+		return string(content), nil
+	}
+	output, err := execute([]string{"dmidecode", "-s", "system-uuid"}, false, nil)
+	if err != nil {
+		return "", err
+	}
+	out := string(output)
+	if strings.Contains(out, "Not Settable") || strings.Contains(out, "Not Present") {
+		return "", nil
+	}
+	return out, nil
 }
