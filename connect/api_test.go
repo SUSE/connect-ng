@@ -9,10 +9,7 @@ import (
 
 func TestGetActivations(t *testing.T) {
 	response := readTestFile("activations.json", t)
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1"); err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
+	createTestCredentials("", "", t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -41,10 +38,8 @@ func TestGetActivationsRequest(t *testing.T) {
 		url        = "/connect/systems/activations"
 		gotRequest *http.Request
 	)
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials(user, password); err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
+	createTestCredentials(user, password, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r // make request available outside this func after call
 		w.Header().Set("Content-Type", "application/json")
@@ -65,10 +60,8 @@ func TestGetActivationsRequest(t *testing.T) {
 }
 
 func TestGetActivationsError(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1"); err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
+	createTestCredentials("", "", t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 	}))

@@ -15,3 +15,18 @@ func readTestFile(name string, t *testing.T) []byte {
 	}
 	return data
 }
+
+func createTestCredentials(username, password string, t *testing.T) {
+	if username == "" {
+		username = "test"
+	}
+	if password == "" {
+		password = "test"
+	}
+	CFG.FsRoot = t.TempDir()
+	err := writeSystemCredentials(username, password)
+	if err != nil {
+		_, filename, num, _ := runtime.Caller(1)
+		t.Fatalf("\n%s:%d: %s", filepath.Base(filename), num, err)
+	}
+}
