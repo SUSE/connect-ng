@@ -119,3 +119,18 @@ func privateIP(ip net.IP) bool {
 	}
 	return false
 }
+
+func hostname() string {
+	name, err := os.Hostname()
+	// TODO the Ruby version has this "(none)" check - why?
+	if err == nil && name != "" && name != "(none)" {
+		return name
+	}
+	Debug.Print(err)
+	ip, err := getPrivateIPAddr()
+	if err != nil {
+		Debug.Print(err)
+		return ""
+	}
+	return ip
+}
