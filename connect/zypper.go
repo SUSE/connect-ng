@@ -81,3 +81,11 @@ func baseProduct() (Product, error) {
 	}
 	return Product{}, ErrCannotDetectBaseProduct
 }
+
+func zypperDistroTarget() (string, error) {
+	output, err := zypperRun("targetos", false, []int{zypperOK})
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
+}

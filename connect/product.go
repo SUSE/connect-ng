@@ -1,5 +1,9 @@
 package connect
 
+import (
+	"strings"
+)
+
 // Product represents an installed product or product information from API
 type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
@@ -25,4 +29,13 @@ func (p Product) toQuery() map[string]string {
 		"version":    p.Version,
 		"arch":       p.Arch,
 	}
+}
+
+func (p Product) distroTarget() string {
+	identifier := strings.ToLower(p.Name)
+	if strings.HasPrefix(identifier, "sle") {
+		identifier = "sle"
+	}
+	version := strings.Split(p.Version, ".")[0]
+	return identifier + "-" + version + "-" + p.Arch
 }
