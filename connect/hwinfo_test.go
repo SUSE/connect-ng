@@ -87,3 +87,19 @@ func TestPrivateIP(t *testing.T) {
 		}
 	}
 }
+
+func TestReadValues2map(t *testing.T) {
+	m := readValues2map(readTestFile("read_values_s.txt", t))
+	expect := map[string]string{
+		"VM00 CPUs Total":      "1",
+		"LPAR CPUs Total":      "6",
+		"VM00 IFLs":            "1",
+		"LPAR CPUs IFL":        "6",
+		"VM00 Control Program": "z/VM    6.1.0",
+	}
+	for k, v := range expect {
+		if m[k] != expect[k] {
+			t.Errorf("m[%s]==%s, expected %s", k, m[k], v)
+		}
+	}
+}

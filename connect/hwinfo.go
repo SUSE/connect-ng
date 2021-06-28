@@ -134,3 +134,28 @@ func hostname() string {
 	}
 	return ip
 }
+
+// readValues calls read_values from SUSE/s390-tools
+func readValues(arg string) ([]byte, error) {
+	output, err := execute([]string{"read_values", arg}, false, nil)
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+// readValues2map parses the output of "read_values -s" on s390
+func readValues2map(b []byte) map[string]string {
+	br := bufio.NewScanner(bytes.NewReader(b))
+	m := make(map[string]string)
+	for br.Scan() {
+		line := br.Text()
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key, val := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		m[key] = val
+	}
+	return m
+}
