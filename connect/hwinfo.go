@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -13,6 +14,62 @@ var (
 	cloudEx = `Version: .*(amazon)|Manufacturer: (Amazon)|Manufacturer: (Google)|Manufacturer: (Microsoft) Corporation`
 	cloudRe = regexp.MustCompile(cloudEx)
 )
+
+const (
+	archX86  = "x86_64"
+	archARM  = "aarch64"
+	archS390 = "s390x"
+)
+
+type hwinfo struct {
+	Hostname      string `json:"hostname"`
+	Cpus          int    `json:"cpus"`
+	Sockets       int    `json:"sockets"`
+	Hypervisor    string `json:"hypervisor"`
+	Arch          string `json:"arch"`
+	UUID          string `json:"uuid"`
+	CloudProvider string `json:"cloud_provider"`
+}
+
+func getHwinfo() (hwinfo, error) {
+	hw := hwinfo{}
+	var err error
+	if hw.Arch, err = arch(); err != nil {
+		return hwinfo{}, err
+	}
+	hw.Hostname = hostname()
+	if hw.CloudProvider, err = cloudProvider(); err != nil {
+		return hwinfo{}, err
+	}
+
+	var lscpuM map[string]string
+	if hw.Arch == archX86 || hw.Arch == archARM {
+		if lscpuM, err = lscpu(); err != nil {
+			return hwinfo{}, err
+		}
+		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
+		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
+		if hw.UUID, err = uuid(); err != nil {
+			return hwinfo{}, err
+		}
+	}
+
+	if hw.Arch == archX86 {
+		hw.Hypervisor = lscpuM["Hypervisor vendor"]
+	}
+
+	if hw.Arch == archARM {
+		if hw.Hypervisor, err = hypervisor(); err != nil {
+			return hwinfo{}, err
+		}
+	}
+
+	if hw.Arch == archS390 {
+		// TODO hwinfoS390(&hw)
+	}
+
+	return hw, nil
+}
 
 func arch() (string, error) {
 	output, err := execute([]string{"uname", "-i"}, false, nil)
