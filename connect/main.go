@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -27,4 +28,16 @@ func init() {
 
 func EnableDebug() {
 	Debug.SetOutput(os.Stderr)
+}
+
+func greenText(text string) string {
+	return fmt.Sprintf("\x1b[32m%s\x1b[0m", text)
+}
+
+func redText(text string) string {
+	return fmt.Sprintf("\x1b[31m%s\x1b[0m", text)
+}
+
+func bold(text string) string {
+	return fmt.Sprintf("\x1b[1m%s\x1b[0m", text)
 }
