@@ -178,7 +178,7 @@ func exitOnError(err error) {
 		fmt.Print("using: SUSEConnect -r <registration code>\n")
 		os.Exit(1)
 	default:
-		fmt.Printf("Command exited with error: %s\n", err)
+		fmt.Printf("SUSEConnect error: %s\n", err)
 		os.Exit(1)
 	}
 }
