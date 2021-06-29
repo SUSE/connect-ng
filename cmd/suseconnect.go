@@ -144,8 +144,8 @@ func main() {
 			flag.Usage()
 			os.Exit(1)
 		} else {
-			// TODO call register()
-			fmt.Println("register() to be implemented")
+			err := connect.Register()
+			exitOnError(err)
 		}
 	}
 	if writeConfig {

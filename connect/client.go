@@ -2,7 +2,21 @@ package connect
 
 import (
 	"fmt"
+	"os"
 )
+
+// Register announces the system, activates the
+// product on SCC and adds the service to the system
+func Register() error {
+	printInformation("register")
+	err := announceOrUpdate()
+	if err != nil {
+		return err
+	}
+
+	// TODO remainder of Register()
+	return nil
+}
 
 // Deregister deregisters the system
 func Deregister() error {
@@ -96,6 +110,35 @@ func removeOrRefreshService(service Service) error {
 	}
 	fmt.Println("-> Removing service from system ...")
 	return removeService(service.Name)
+}
+
+// UpdateSystem resend the system's hardware details on SCC
+func UpdateSystem(distroTarget, instanceDataFile string) error {
+	fmt.Printf("\nUpdating system details on %s ...\n", CFG.BaseURL)
+	var instanceData []byte
+	if instanceDataFile != "" {
+		var err error
+		instanceData, err = os.ReadFile(instanceDataFile)
+		if err != nil {
+			return err
+		}
+	}
+	sysInfoBody, err := makeSysInfoBody(distroTarget, CFG.Namespace, instanceData)
+	if err != nil {
+		return err
+	}
+	return updateSystem(sysInfoBody)
+}
+
+// announceOrUpdate Announces the system to the server, receiving and storing its
+// credentials. When already announced, sends the current hardware details to the server
+func announceOrUpdate() error {
+	if IsRegistered() {
+		return UpdateSystem("", "")
+	}
+
+	// TODO remainder of announceOrUpdate()
+	return nil
 }
 
 // IsRegistered returns true if there is a valid credentials file
