@@ -65,10 +65,49 @@ func getHwinfo() (hwinfo, error) {
 	}
 
 	if hw.Arch == archS390 {
-		// TODO hwinfoS390(&hw)
+		hwinfoS390(&hw)
 	}
 
 	return hw, nil
+}
+
+func hwinfoS390(hw *hwinfo) error {
+	rvsOut, err := readValues("s")
+	if err != nil {
+		return err
+	}
+	rvs := readValues2map(rvsOut)
+
+	if cpus, ok := rvs["VM00 CPUs Total"]; ok {
+		hw.Cpus, _ = strconv.Atoi(cpus)
+	} else if cpus, ok := rvs["LPAR CPUs Total"]; ok {
+		hw.Cpus, _ = strconv.Atoi(cpus)
+	}
+
+	if sockets, ok := rvs["VM00 IFLs"]; ok {
+		hw.Sockets, _ = strconv.Atoi(sockets)
+	} else if sockets, ok := rvs["LPAR CPUs IFL"]; ok {
+		hw.Sockets, _ = strconv.Atoi(sockets)
+	}
+
+	if hypervisor, ok := rvs["VM00 Control Program"]; ok {
+		// Strip and remove recurring whitespaces e.g. " z/VM    6.1.0" => "z/VM 6.1.0"
+		subs := strings.Fields(hypervisor)
+		hw.Hypervisor = strings.Join(subs, " ")
+	} else {
+		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
+	}
+
+	rvuOut, err := readValues("u")
+	if err != nil {
+		return err
+	}
+	hw.UUID = string(rvuOut)
+	if hw.UUID == "" {
+		Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
+	}
+
+	return nil
 }
 
 func arch() (string, error) {
