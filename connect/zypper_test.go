@@ -57,6 +57,19 @@ func TestParseProductsXML(t *testing.T) {
 	}
 }
 
+func TestParseServicesXML(t *testing.T) {
+	services, err := parseServicesXML(readTestFile("services.xml", t))
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if len(services) != 1 {
+		t.Errorf("Expected len()==1. Got %d", len(services))
+	}
+	if services[0].Name != "SUSE_Linux_Enterprise_Micro_5.0_x86_64" {
+		t.Errorf("Expected SUSE_Linux_Enterprise_Micro_5.0_x86_64 Got %s", services[0].Name)
+	}
+}
+
 func TestInstalledProducts(t *testing.T) {
 	zypperExecTestCase = testCaseInstalledProducts
 	execCommand = zypperExecMock

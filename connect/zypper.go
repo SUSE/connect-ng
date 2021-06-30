@@ -67,6 +67,26 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	return products.Products, nil
 }
 
+func installedServices() ([]Service, error) {
+	args := []string{"--xmlout", "--non-interactive", "services", "-d"}
+	// Don't fail when zypper exits with 6 (no repositories)
+	output, err := zypperRun(args, false, []int{zypperOK, zypperErrNoRepos})
+	if err != nil {
+		return []Service{}, err
+	}
+	return parseServicesXML(output)
+}
+
+func parseServicesXML(xmlDoc []byte) ([]Service, error) {
+	var services struct {
+		Services []Service `xml:"service-list>service"`
+	}
+	if err := xml.Unmarshal(xmlDoc, &services); err != nil {
+		return []Service{}, err
+	}
+	return services.Services, nil
+}
+
 // TODO: memoize?
 func baseProduct() (Product, error) {
 	products, err := installedProducts()
