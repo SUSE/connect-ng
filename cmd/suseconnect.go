@@ -21,6 +21,7 @@ var (
 	debug            bool
 	writeConfig      bool
 	deregister       bool
+	cleanup          bool
 	baseURL          string
 	fsRoot           string
 	namespace        string
@@ -44,6 +45,7 @@ func init() {
 	flag.BoolVar(&writeConfig, "write-config", false, "")
 	flag.BoolVar(&deregister, "deregister", false, "")
 	flag.BoolVar(&deregister, "d", false, "")
+	flag.BoolVar(&cleanup, "cleanup", false, "")
 	flag.BoolVar(&listExtensions, "list-extensions", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
@@ -126,6 +128,9 @@ func main() {
 		fmt.Print(output)
 	} else if deregister {
 		err := connect.Deregister()
+		exitOnError(err)
+	} else if cleanup {
+		err := connect.Cleanup()
 		exitOnError(err)
 	} else {
 		if instanceDataFile != "" && connect.URLDefault() {
