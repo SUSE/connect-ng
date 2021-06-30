@@ -11,20 +11,12 @@ type Activation struct {
 	Type      string    `json:"type"`
 	StartsAt  time.Time `json:"starts_at"`
 	ExpiresAt time.Time `json:"expires_at"`
-	Service   struct {
-		Product struct {
-			Name       string `json:"name"`
-			Version    string `json:"version"`
-			Arch       string `json:"arch"`
-			Identifier string `json:"identifier"`
-			Free       bool   `json:"free"`
-		} `json:"product"`
-	} `json:"service"`
+	Service   Service   `json:"service"`
 }
 
 func (a Activation) toTriplet() string {
 	p := a.Service.Product
-	return p.Identifier + "/" + p.Version + "/" + p.Arch
+	return p.Name + "/" + p.Version + "/" + p.Arch
 }
 
 func (a Activation) isFree() bool {

@@ -9,14 +9,14 @@ type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
-	Summary string `xml:"summary,attr"`
-	IsBase  bool   `xml:"isbase,attr"`
+	Summary string `xml:"summary,attr" json:"-"`
+	IsBase  bool   `xml:"isbase,attr" json:"-"`
 
-	FriendlyName string `json:"friendly_name"`
+	FriendlyName string `json:"friendly_name,omitempty"`
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
 	// optional extension products
-	Extensions []Product `json:"extensions"`
+	Extensions []Product `json:"extensions,omitempty"`
 }
 
 func (p Product) toTriplet() string {
