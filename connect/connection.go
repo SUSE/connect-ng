@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"io"
@@ -58,14 +59,14 @@ func successCode(code int) bool {
 	return code >= 200 && code < 300
 }
 
-func callHTTP(verb, path string, body io.Reader, query map[string]string, auth authType) ([]byte, error) {
+func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest(verb, CFG.BaseURL, body)
+	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
