@@ -30,12 +30,12 @@ func printInformation(action string) {
 	if URLDefault() {
 		server = "SUSE Customer Center"
 	} else {
-		server = CFG.BaseURL
+		server = "registration proxy " + CFG.BaseURL
 	}
 	if action == "register" {
-		fmt.Println("Registering system to", server)
+		fmt.Printf(bold("Registering system to %s\n"), server)
 	} else {
-		fmt.Println("Deregistering system from", server)
+		fmt.Printf(bold("Deregistering system from %s\n"), server)
 	}
 	if CFG.FsRoot != "" {
 		fmt.Println("Rooted at:", CFG.FsRoot)
