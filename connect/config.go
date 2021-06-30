@@ -27,6 +27,7 @@ type Config struct {
 	Token            string
 	Product          Product
 	InstanceDataFile string
+	Email            string
 }
 
 func (c Config) toYAML() []byte {

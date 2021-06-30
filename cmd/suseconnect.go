@@ -28,6 +28,7 @@ var (
 	product          string
 	instanceDataFile string
 	listExtensions   bool
+	email            string
 )
 
 func init() {
@@ -52,6 +53,8 @@ func init() {
 	flag.StringVar(&product, "product", "", "")
 	flag.StringVar(&product, "p", "", "")
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
+	flag.StringVar(&email, "email", "", "")
+	flag.StringVar(&email, "e", "", "")
 }
 
 func main() {
@@ -100,6 +103,9 @@ func main() {
 	}
 	if instanceDataFile != "" {
 		connect.CFG.InstanceDataFile = instanceDataFile
+	}
+	if email != "" {
+		connect.CFG.Email = email
 	}
 	if lang, ok := os.LookupEnv("LANG"); ok {
 		if lang != "" {
