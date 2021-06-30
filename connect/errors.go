@@ -9,6 +9,7 @@ var (
 	ErrMalformedSccCredFile       = errors.New("Unable to parse credentials")
 	ErrMissingCredentialsFile     = errors.New("Credentials file is missing")
 	ErrSystemNotRegistered        = errors.New("System not registered")
+	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
 	ErrCannotDetectBaseProduct    = errors.New("Unable to detect base product")
 	ErrListExtensionsUnregistered = errors.New("System not registered")
 )
