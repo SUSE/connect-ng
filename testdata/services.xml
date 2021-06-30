@@ -1,0 +1,22 @@
+<?xml version='1.0'?>
+<stream>
+    <service-list>
+        <service alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64" name="SUSE_Linux_Enterprise_Micro_5.0_x86_64" enabled="1" autorefresh="1" url="https://scc.suse.com/access/services/2187?credentials=SUSE_Linux_Enterprise_Micro_5.0_x86_64" type="ris" ttl_sec="86400">
+            <repo alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64:SUSE-MicroOS-5.0-Debuginfo-Pool" name="SUSE-MicroOS-5.0-Debuginfo-Pool" priority="99" enabled="0" autorefresh="0" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="1">
+                <url>https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product_debug?UgRjCEauVAVO6a7gAsnwTGCB-cu-4C-XNwr7RByDub-mK-IomOXVeGMpmnUtwnO3858EkFHLFcPSvDqkzUTHy58fDtgS8mSd3Xzv1mqsC6YfDg2J76FGawOWjRLtzjZxpWgeb5po7dXibuEtw5TSjnSE</url>
+            </repo>
+            <repo alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64:SUSE-MicroOS-5.0-Debuginfo-Updates" name="SUSE-MicroOS-5.0-Debuginfo-Updates" priority="99" enabled="0" autorefresh="1" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="1">
+                <url>https://updates.suse.com/SUSE/Updates/SUSE-MicroOS/5.0/x86_64/update_debug?4eF_Ti-lnHBKrJYNHzqHsI6j1yySqzPxXfYFCnBgzgm1nK4mEiy5MkI8wNyOC3MtTbzMissTkxyv8PksxZoIQ7_zSQ6IZ2X3uWv6-d2S5fER0qjkriExMrdMomEsBv6Dkvh4YI3a0Yl62MrZEEjI0Q</url>
+            </repo>
+            <repo alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64:SUSE-MicroOS-5.0-Pool" name="SUSE-MicroOS-5.0-Pool" type="rpm-md" priority="99" enabled="1" autorefresh="0" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="0">
+                <url>https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product?pO5gYsm13mf3R-q-FnkAN-xWozBPNQGQY7KvT4uKqAsOwZPyrniMfnciXOqUVgAXdzp5zwFcdOLLdN5H2LNEj6g0z8L3bbubNZm2gIBBSDUxLlvuDxYONou8y2oHIqRD9RfkYncCjIa1N_9D</url>
+            </repo>
+            <repo alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64:SUSE-MicroOS-5.0-Source-Pool" name="SUSE-MicroOS-5.0-Source-Pool" priority="99" enabled="0" autorefresh="0" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="1">
+                <url>https://updates.suse.com/SUSE/Products/SUSE-MicroOS/5.0/x86_64/product_source?sE0QR_k48Q__13GPJ77C6tO-_PJcWZ_fmrIskNimSW4K77Oht5Woq12_2OayHHHaPO25KSP0j6U4lAnF3iYh51nk7SScUrdXHloF63BgJ4KK4AamvGRseGvWVhm9AiAz9no1aLkScHOzMNOk9SM6o5BfyQ</url>
+            </repo>
+            <repo alias="SUSE_Linux_Enterprise_Micro_5.0_x86_64:SUSE-MicroOS-5.0-Updates" name="SUSE-MicroOS-5.0-Updates" type="rpm-md" priority="99" enabled="1" autorefresh="1" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="0">
+                <url>https://updates.suse.com/SUSE/Updates/SUSE-MicroOS/5.0/x86_64/update?3tVwgD46s3_5N9nGeZ9EmyNBfZI7HodO7UHWxbjncDVQTAdx_0mKe4qazunL5zG3DaRRSADfnw90_yzeyWY_V2uZ-05NA0e0Bt-NKzO3090ZQHNMnBeLc92zzHeywx_7B3e17LJLq8bEaQ</url>
+            </repo>
+        </service>
+    </service-list>
+</stream>
