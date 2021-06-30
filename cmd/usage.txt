@@ -32,6 +32,7 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --list-extensions    List all extensions and modules available for
                              installation on this system.
+    -e, --email <email>      Email address for product registration.
         --url [URL]          URL of registration server
                              (e.g. https://scc.suse.com).
                              Implies --write-config so that subsequent
