@@ -188,6 +188,10 @@ func exitOnError(err error) {
 		fmt.Print("To list extensions, you must first register the base product, ")
 		fmt.Print("using: SUSEConnect -r <registration code>\n")
 		os.Exit(1)
+	case connect.ErrBaseProductDeactivation:
+		fmt.Print("Can not deregister base product. Use SUSEConnect -d to deactivate ")
+		fmt.Print("the whole system.\n")
+		os.Exit(70)
 	default:
 		fmt.Printf("SUSEConnect error: %s\n", err)
 		os.Exit(1)

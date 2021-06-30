@@ -84,3 +84,8 @@ func deactivateProduct(product Product) (Service, error) {
 	err = json.Unmarshal(resp, &remoteService)
 	return remoteService, err
 }
+
+func deregisterSystem() error {
+	_, err := callHTTP("DELETE", "/connect/systems", nil, nil, authSystem)
+	return err
+}

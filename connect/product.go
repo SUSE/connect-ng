@@ -36,6 +36,15 @@ func (p Product) toQuery() map[string]string {
 	}
 }
 
+func (p Product) toExtensionsList() []Product {
+	res := make([]Product, 0)
+	for _, e := range p.Extensions {
+		res = append(res, e)
+		res = append(res, e.toExtensionsList()...)
+	}
+	return res
+}
+
 func (p Product) distroTarget() string {
 	identifier := strings.ToLower(p.Name)
 	if strings.HasPrefix(identifier, "sle") {
