@@ -108,3 +108,14 @@ func zypperDistroTarget() (string, error) {
 	}
 	return string(output), nil
 }
+
+func removeService(serviceName string) error {
+	Debug.Println("Removing service: ", serviceName)
+
+	args := []string{"--non-interactive", "removeservice", serviceName}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	if err != nil {
+		return err
+	}
+	return removeServiceCredentials(serviceName)
+}

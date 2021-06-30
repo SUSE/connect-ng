@@ -117,6 +117,7 @@ func removeSystemCredentials() error {
 }
 
 func removeServiceCredentials(serviceName string) error {
+	Debug.Print("Removing service credentials for: ", serviceName)
 	path := serviceCredentialsFile(serviceName)
 	return removeFile(path)
 }

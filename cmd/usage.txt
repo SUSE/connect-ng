@@ -38,6 +38,8 @@ Manage subscriptions at https://scc.suse.com
                              Implies --write-config so that subsequent
                              invocations use the same registration server.
         --write-config       Write options to config file at /etc/SUSEConnect.
+        --cleanup            Remove old system credentials and all zypper
+                             services installed by SUSEConnect.
 
 Common options:
         --root [PATH]        Path to the root folder, uses the same parameter

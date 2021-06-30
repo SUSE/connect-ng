@@ -2,8 +2,10 @@ package connect
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var execCommand = exec.Command
@@ -69,4 +71,32 @@ func removeFile(path string) error {
 		return nil
 	}
 	return os.Remove(path)
+}
+
+func Cleanup() error {
+	err := removeSystemCredentials()
+	if err != nil {
+		return err
+	}
+
+	// remove all suse services from zypper
+	services, err := installedServices()
+	if err != nil {
+		return err
+	}
+
+	for _, service := range services {
+		// NOTE: this check might not work correctly with SMT depending
+		//       on the configuration (e.g. listen on https but API
+		//       returns URL with http).
+		if !strings.Contains(service.URL, CFG.BaseURL) {
+			fmt.Printf("%s not in %s\n", CFG.BaseURL, service.URL)
+			continue
+		}
+		if err := removeService(service.Name); err != nil {
+			return err
+		}
+
+	}
+	return nil
 }
