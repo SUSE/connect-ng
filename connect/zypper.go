@@ -2,7 +2,6 @@ package connect
 
 import (
 	"encoding/xml"
-	"strings"
 )
 
 const (
@@ -32,12 +31,12 @@ const (
 	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
 )
 
-func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
+func zypperRun(args []string, quiet bool, validExitCodes []int) ([]byte, error) {
 	cmd := []string{zypperPath}
 	if CFG.FsRoot != "" {
 		cmd = append(cmd, "--root", CFG.FsRoot)
 	}
-	cmd = append(cmd, strings.Split(args, " ")...)
+	cmd = append(cmd, args...)
 	output, err := execute(cmd, quiet, validExitCodes)
 	if err != nil {
 		if ee, ok := err.(ExecuteError); ok {
@@ -49,7 +48,7 @@ func zypperRun(args string, quiet bool, validExitCodes []int) ([]byte, error) {
 
 // installedProducts returns installed products
 func installedProducts() ([]Product, error) {
-	args := "--disable-repositories --xmlout --non-interactive products -i"
+	args := []string{"--disable-repositories", "--xmlout", "--non-interactive", "products", "-i"}
 	output, err := zypperRun(args, false, []int{zypperOK})
 	if err != nil {
 		return []Product{}, err
@@ -83,7 +82,7 @@ func baseProduct() (Product, error) {
 }
 
 func zypperDistroTarget() (string, error) {
-	output, err := zypperRun("targetos", false, []int{zypperOK})
+	output, err := zypperRun([]string{"targetos"}, false, []int{zypperOK})
 	if err != nil {
 		return "", err
 	}
