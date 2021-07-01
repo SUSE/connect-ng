@@ -32,7 +32,7 @@ func GetExtensionsList() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	activations, err := GetActivations()
+	activations, err := systemActivations()
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +86,7 @@ func getExtensions() ([]Product, error) {
 		return []Product{}, ErrListExtensionsUnregistered
 	}
 
-	remoteProductData, err := GetProduct(base)
+	remoteProductData, err := showProduct(base)
 	if err != nil {
 		return []Product{}, err
 	}

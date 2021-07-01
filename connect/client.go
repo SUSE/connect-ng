@@ -20,6 +20,12 @@ func IsRegistered() bool {
 	return err == nil
 }
 
+// UpToDate Checks if API endpoint is up-to-date,
+// useful when dealing with RegistrationProxy errors
+func UpToDate() bool {
+	return upToDate()
+}
+
 // URLDefault returns true if using https://scc.suse.com
 func URLDefault() bool {
 	return CFG.BaseURL == defaultBaseURL

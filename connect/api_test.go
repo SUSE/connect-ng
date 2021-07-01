@@ -18,7 +18,7 @@ func TestGetActivations(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	activations, err := GetActivations()
+	activations, err := systemActivations()
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -48,7 +48,7 @@ func TestGetActivationsRequest(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	if _, err := GetActivations(); err != nil {
+	if _, err := systemActivations(); err != nil {
 		t.Fatalf("Unexpected error [%s]", err)
 	}
 
@@ -68,7 +68,7 @@ func TestGetActivationsError(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	if _, err := GetActivations(); err == nil {
+	if _, err := systemActivations(); err == nil {
 		t.Error("Expecting error. Got none.")
 	}
 }
@@ -95,7 +95,7 @@ func TestGetProduct(t *testing.T) {
 
 	CFG.BaseURL = ts.URL
 	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
-	product, err := GetProduct(productQuery)
+	product, err := showProduct(productQuery)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -118,7 +118,7 @@ func TestGetProductError(t *testing.T) {
 
 	CFG.BaseURL = ts.URL
 	productQuery := Product{Name: "Dummy"}
-	_, err := GetProduct(productQuery)
+	_, err := showProduct(productQuery)
 	if ae, ok := err.(APIError); ok {
 		if ae.Code != http.StatusUnprocessableEntity {
 			t.Fatalf("Expecting APIError(422). Got %s", err)

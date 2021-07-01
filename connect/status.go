@@ -60,7 +60,7 @@ func getStatuses() (map[string]Status, error) {
 
 	activations := make(map[string]Activation) // default empty map
 	if IsRegistered() {
-		activations, err = GetActivations()
+		activations, err = systemActivations()
 		if err != nil {
 			return statuses, err
 		}
