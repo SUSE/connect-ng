@@ -52,8 +52,21 @@ func GetProduct(productQuery Product) (Product, error) {
 		return remoteProduct, err
 	}
 	err = json.Unmarshal(resp, &remoteProduct)
+	return remoteProduct, err
+}
+
+func upgradeProduct(product Product) (Service, error) {
+	// NOTE: this can add some extra attributes to json payload which
+	//       seem to be safely ignored by the API.
+	payload, err := json.Marshal(product)
+	remoteService := Service{}
 	if err != nil {
-		return remoteProduct, err
+		return remoteService, err
 	}
-	return remoteProduct, nil
+	resp, err := callHTTP("PUT", "/connect/systems/products", payload, nil, authSystem)
+	if err != nil {
+		return remoteService, err
+	}
+	err = json.Unmarshal(resp, &remoteService)
+	return remoteService, err
 }

@@ -125,3 +125,44 @@ func TestGetProductError(t *testing.T) {
 		}
 	}
 }
+
+func TestUpgradeProduct(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readTestFile("service.json", t))
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	service, err := upgradeProduct(product)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	name := "SUSE_Linux_Enterprise_Micro_5.0_x86_64"
+	if service.Name != name {
+		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
+	}
+	if service.Product.toTriplet() != product.toTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	}
+}
+
+func TestUpgradeProductError(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
+		http.Error(w, errMsg, http.StatusUnprocessableEntity)
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	product := Product{Name: "Dummy"}
+	_, err := upgradeProduct(product)
+	if ae, ok := err.(APIError); ok {
+		if ae.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("Expecting APIError(422). Got %s", err)
+		}
+	}
+}
