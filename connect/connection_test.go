@@ -43,3 +43,22 @@ func TestParseErrorNotJson(t *testing.T) {
 		t.Errorf("parseError(), got: %s, expected \"\"", got)
 	}
 }
+
+func TestAuthToken(t *testing.T) {
+	CFG.Token = "test-token"
+	var gotRequest *http.Request
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRequest = r
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	callHTTP("POST", "", nil, nil, authToken)
+
+	got := gotRequest.Header.Get("Authorization")
+	expected := "Token token=test-token"
+	if got != expected {
+		t.Errorf("Expected: \"%s\", got: \"%s\"", expected, got)
+	}
+}
