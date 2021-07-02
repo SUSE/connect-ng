@@ -1,0 +1,93 @@
+{
+    "id": 1931,
+    "name": "Basesystem_Module_15_SP2_x86_64",
+    "url": "https://scc.suse.com/access/services/1931?credentials=Basesystem_Module_15_SP2_x86_64",
+    "obsoleted_service_name": "",
+    "product": {
+        "id": 1946,
+        "name": "Basesystem Module",
+        "identifier": "sle-module-basesystem",
+        "former_identifier": "sle-module-basesystem",
+        "version": "15.2",
+        "release_type": null,
+        "arch": "x86_64",
+        "friendly_name": "Basesystem Module 15 SP2 x86_64",
+        "friendly_version": "15 SP2",
+        "product_class": "MODULE",
+        "cpe": "cpe:/o:suse:sle-module-basesystem:15:sp2",
+        "free": true,
+        "description": "\\u003cp\\u003e The SUSE Linux Enterprise Basesystem Module delivers the base system of the product. \\u003c/p\\u003e",
+        "release_stage": "released",
+        "eula_url": "",
+        "repositories": [
+            {
+                "id": 3999,
+                "url": "https://updates.suse.com/SUSE/Updates/SLE-Module-Basesystem/15-SP2/x86_64/update/",
+                "name": "SLE-Module-Basesystem15-SP2-Updates",
+                "distro_target": "sle-15-x86_64",
+                "description": "SLE-Module-Basesystem15-SP2-Updates for sle-15-x86_64",
+                "enabled": true,
+                "autorefresh": true,
+                "installer_updates": false
+            },
+            {
+                "id": 4000,
+                "url": "https://updates.suse.com/SUSE/Updates/SLE-Module-Basesystem/15-SP2/x86_64/update_debug/",
+                "name": "SLE-Module-Basesystem15-SP2-Debuginfo-Updates",
+                "distro_target": "sle-15-x86_64",
+                "description": "SLE-Module-Basesystem15-SP2-Debuginfo-Updates for sle-15-x86_64",
+                "enabled": false,
+                "autorefresh": true,
+                "installer_updates": false
+            },
+            {
+                "id": 4001,
+                "url": "https://updates.suse.com/SUSE/Products/SLE-Module-Basesystem/15-SP2/x86_64/product/",
+                "name": "SLE-Module-Basesystem15-SP2-Pool",
+                "distro_target": "sle-15-x86_64",
+                "description": "SLE-Module-Basesystem15-SP2-Pool for sle-15-x86_64",
+                "enabled": true,
+                "autorefresh": false,
+                "installer_updates": false
+            },
+            {
+                "id": 4002,
+                "url": "https://updates.suse.com/SUSE/Products/SLE-Module-Basesystem/15-SP2/x86_64/product_debug/",
+                "name": "SLE-Module-Basesystem15-SP2-Debuginfo-Pool",
+                "distro_target": "sle-15-x86_64",
+                "description": "SLE-Module-Basesystem15-SP2-Debuginfo-Pool for sle-15-x86_64",
+                "enabled": false,
+                "autorefresh": false,
+                "installer_updates": false
+            },
+            {
+                "id": 4003,
+                "url": "https://updates.suse.com/SUSE/Products/SLE-Module-Basesystem/15-SP2/x86_64/product_source/",
+                "name": "SLE-Module-Basesystem15-SP2-Source-Pool",
+                "distro_target": "sle-15-x86_64",
+                "description": "SLE-Module-Basesystem15-SP2-Source-Pool for sle-15-x86_64",
+                "enabled": false,
+                "autorefresh": false,
+                "installer_updates": false
+            }
+        ],
+        "product_type": "module",
+        "predecessor_ids": [
+            1576,
+            1772
+        ],
+        "online_predecessor_ids": [
+            1576,
+            1772
+        ],
+        "offline_predecessor_ids": [
+            1212,
+            1368,
+            1440
+        ],
+        "shortname": "Basesystem-Module",
+        "recommended": false,
+        "migration_extra": false,
+        "extensions": null
+    }
+}
