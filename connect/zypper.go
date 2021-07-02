@@ -119,3 +119,18 @@ func removeService(serviceName string) error {
 	}
 	return removeServiceCredentials(serviceName)
 }
+
+func refreshAllServices() error {
+	args := []string{"--non-interactive", "refs"}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	return err
+}
+
+func removeReleasePackage(identifier string) error {
+	if identifier == "" {
+		return nil
+	}
+	args := []string{"--no-refresh", "--non-interactive", "remove", "-t", "product", identifier}
+	_, err := zypperRun(args, true, []int{zypperOK, zypperInfoCapNotFound})
+	return err
+}
