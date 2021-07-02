@@ -19,6 +19,10 @@ type Product struct {
 	Extensions []Product `json:"extensions,omitempty"`
 }
 
+func (p Product) isEmpty() bool {
+	return p.Name == "" || p.Version == "" || p.Arch == ""
+}
+
 func (p Product) toTriplet() string {
 	return p.Name + "/" + p.Version + "/" + p.Arch
 }
