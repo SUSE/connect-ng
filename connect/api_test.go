@@ -166,3 +166,67 @@ func TestUpgradeProductError(t *testing.T) {
 		}
 	}
 }
+
+func TestDeactivateProduct(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readTestFile("service_inactive.json", t))
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	product := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+	service, err := deactivateProduct(product)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	name := "Basesystem_Module_15_SP2_x86_64"
+	if service.Name != name {
+		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
+	}
+	if service.Product.toTriplet() != product.toTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	}
+}
+
+func TestDeactivateProductSMT(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readTestFile("service_inactive_smt.json", t))
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	service, err := deactivateProduct(product)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	name := "SMT_DUMMY_NOREMOVE_SERVICE"
+	if service.Name != name {
+		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
+	}
+	if !service.Product.isEmpty() {
+		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	}
+}
+
+func TestDeactivateProductError(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
+		http.Error(w, errMsg, http.StatusUnprocessableEntity)
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	product := Product{Name: "Dummy"}
+	_, err := deactivateProduct(product)
+	if ae, ok := err.(APIError); ok {
+		if ae.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("Expecting APIError(422). Got %s", err)
+		}
+	}
+}

@@ -68,3 +68,19 @@ func upgradeProduct(product Product) (Service, error) {
 	err = json.Unmarshal(resp, &remoteService)
 	return remoteService, err
 }
+
+func deactivateProduct(product Product) (Service, error) {
+	// NOTE: this can add some extra attributes to json payload which
+	//       seem to be safely ignored by the API.
+	payload, err := json.Marshal(product)
+	remoteService := Service{}
+	if err != nil {
+		return remoteService, err
+	}
+	resp, err := callHTTP("DELETE", "/connect/systems/products", payload, nil, authSystem)
+	if err != nil {
+		return remoteService, err
+	}
+	err = json.Unmarshal(resp, &remoteService)
+	return remoteService, err
+}
