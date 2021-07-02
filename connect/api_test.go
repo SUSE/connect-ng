@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+func TestAnnounceSystem(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"login":"test-user","password":"test-password"}`)
+	}))
+	defer ts.Close()
+
+	CFG.BaseURL = ts.URL
+	user, password, err := announceSystem(nil)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	if user != "test-user" {
+		t.Errorf("Expected user: \"test-user\", got: \"%s\"", user)
+	}
+	if password != "test-password" {
+		t.Errorf("Expected password: \"test-password\", got: \"%s\"", password)
+	}
+}
+
 func TestGetActivations(t *testing.T) {
 	response := readTestFile("activations.json", t)
 	createTestCredentials("", "", t)
