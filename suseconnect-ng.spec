@@ -28,6 +28,7 @@ Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
+BuildRequires:  go >= 1.16
 
 %description
 This package provides a command line tool for connecting a
@@ -45,7 +46,7 @@ product subscriptions and enable the product repositories/services locally.
 find %_builddir/..
 %goprep %{import_path}
 find %_builddir/..
-go list -m all
+go list all
 %gobuild cmd
 go build -buildmode=c-shared -o %_builddir/go/src/github.com/SUSE/connect-ng/ext/libsuseconnect.so ext/main.go
 find %_builddir/..
