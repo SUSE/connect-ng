@@ -32,7 +32,7 @@ const (
 )
 
 func zypperRun(args []string, quiet bool, validExitCodes []int) ([]byte, error) {
-	cmd := []string{zypperPath}
+	cmd := []string{zypperPath, "--non-interactive"}
 	if CFG.FsRoot != "" {
 		cmd = append(cmd, "--root", CFG.FsRoot)
 	}
@@ -48,7 +48,7 @@ func zypperRun(args []string, quiet bool, validExitCodes []int) ([]byte, error) 
 
 // installedProducts returns installed products
 func installedProducts() ([]Product, error) {
-	args := []string{"--disable-repositories", "--xmlout", "--non-interactive", "products", "-i"}
+	args := []string{"--disable-repositories", "--xmlout", "products", "-i"}
 	output, err := zypperRun(args, false, []int{zypperOK})
 	if err != nil {
 		return []Product{}, err
@@ -68,7 +68,7 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 }
 
 func installedServices() ([]Service, error) {
-	args := []string{"--xmlout", "--non-interactive", "services", "-d"}
+	args := []string{"--xmlout", "services", "-d"}
 	// Don't fail when zypper exits with 6 (no repositories)
 	output, err := zypperRun(args, false, []int{zypperOK, zypperErrNoRepos})
 	if err != nil {
@@ -114,7 +114,7 @@ func addService(serviceURL, serviceName string, refresh bool) error {
 	if err := removeService(serviceName); err != nil {
 		return err
 	}
-	args := []string{"--non-interactive", "addservice", "-t", "ris", serviceURL, serviceName}
+	args := []string{"addservice", "-t", "ris", serviceURL, serviceName}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func addService(serviceURL, serviceName string, refresh bool) error {
 func removeService(serviceName string) error {
 	Debug.Println("Removing service: ", serviceName)
 
-	args := []string{"--non-interactive", "removeservice", serviceName}
+	args := []string{"removeservice", serviceName}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	if err != nil {
 		return err
@@ -143,19 +143,19 @@ func removeService(serviceName string) error {
 }
 
 func enableServiceAutorefresh(serviceName string) error {
-	args := []string{"--non-interactive", "modifyservice", "-r", serviceName}
+	args := []string{"modifyservice", "-r", serviceName}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	return err
 }
 
 func refreshService(serviceName string) error {
-	args := []string{"--non-interactive", "refs", serviceName}
+	args := []string{"refs", serviceName}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	return err
 }
 
 func refreshAllServices() error {
-	args := []string{"--non-interactive", "refs"}
+	args := []string{"refs"}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	return err
 }
@@ -178,7 +178,7 @@ func installReleasePackage(identifier string) error {
 		validExitCodes = append(validExitCodes, zypperInfoReposSkipped)
 	}
 
-	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
+	args = []string{"--no-refresh", "install", "--no-recommends",
 		"--auto-agree-with-product-licenses", "-t", "product", identifier}
 
 	_, err := zypperRun(args, false, validExitCodes)
@@ -189,13 +189,13 @@ func removeReleasePackage(identifier string) error {
 	if identifier == "" {
 		return nil
 	}
-	args := []string{"--no-refresh", "--non-interactive", "remove", "-t", "product", identifier}
+	args := []string{"--no-refresh", "remove", "-t", "product", identifier}
 	_, err := zypperRun(args, true, []int{zypperOK, zypperInfoCapNotFound})
 	return err
 }
 
 func setReleaseVersion(version string) error {
-	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
+	args := []string{"--releasever", version, "ref", "-f"}
 	_, err := zypperRun(args, true, []int{zypperOK})
 	return err
 }
