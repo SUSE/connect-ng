@@ -109,6 +109,28 @@ func zypperDistroTarget() (string, error) {
 	return string(output), nil
 }
 
+func addService(serviceURL, serviceName string, refresh bool) error {
+	// Remove old service which could be modified by a customer
+	if err := removeService(serviceName); err != nil {
+		return err
+	}
+	args := []string{"--non-interactive", "addservice", "-t", "ris", serviceURL, serviceName}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	if err != nil {
+		return err
+	}
+	if err = enableServiceAutorefresh(serviceName); err != nil {
+		return err
+	}
+	if err = writeServiceCredentials(serviceName); err != nil {
+		return err
+	}
+	if refresh {
+		return refreshService(serviceName)
+	}
+	return nil
+}
+
 func removeService(serviceName string) error {
 	Debug.Println("Removing service: ", serviceName)
 
@@ -120,9 +142,46 @@ func removeService(serviceName string) error {
 	return removeServiceCredentials(serviceName)
 }
 
+func enableServiceAutorefresh(serviceName string) error {
+	args := []string{"--non-interactive", "modifyservice", "-r", serviceName}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	return err
+}
+
+func refreshService(serviceName string) error {
+	args := []string{"--non-interactive", "refs", serviceName}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	return err
+}
+
 func refreshAllServices() error {
 	args := []string{"--non-interactive", "refs"}
 	_, err := zypperRun(args, true, []int{zypperOK})
+	return err
+}
+
+func installReleasePackage(identifier string) error {
+	if identifier == "" {
+		return nil
+	}
+	// return if the rpm is already installed
+	args := []string{"rpm", "-q", identifier + "-release"}
+	if _, err := execute(args, false, nil); err == nil {
+		return nil
+	}
+
+	// In the case of packagehub we accept some repos to fail the initial refresh,
+	// because the signing key is not yet imported. It is part of the -release package,
+	// so the repos will be trusted after the release package is installed.
+	validExitCodes := []int{zypperOK}
+	if identifier == "PackageHub" {
+		validExitCodes = append(validExitCodes, zypperInfoReposSkipped)
+	}
+
+	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
+		"--auto-agree-with-product-licenses", "-t", "product", identifier}
+
+	_, err := zypperRun(args, false, validExitCodes)
 	return err
 }
 
