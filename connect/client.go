@@ -19,6 +19,27 @@ func Register() error {
 	return nil
 }
 
+// registerProduct activates the product, adds the service and installs the release package
+func registerProduct(product Product, installReleasePkg bool) error {
+	fmt.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	service, err := activateProduct(product, CFG.Email)
+	if err != nil {
+		return err
+	}
+	fmt.Println("-> Adding service to system ...")
+	// TODO no_zypper_refs
+	if err := addService(service.URL, service.Name, true); err != nil {
+		return err
+	}
+	if installReleasePkg {
+		fmt.Println("-> Installing release package ...")
+		if err := installReleasePackage(product.Name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Deregister deregisters the system
 func Deregister() error {
 	if fileExists("/usr/sbin/registercloudguest") {
