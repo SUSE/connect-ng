@@ -87,6 +87,36 @@ func upgradeProduct(product Product) (Service, error) {
 	return remoteService, err
 }
 
+func activateProduct(product Product, email string) (Service, error) {
+	var payload = struct {
+		Indentifier string `json:"identifier"`
+		Version     string `json:"version"`
+		Arch        string `json:"arch"`
+		ReleaseType string `json:"release_type"`
+		Token       string `json:"token"`
+		Email       string `json:"email"`
+	}{
+		product.Name,
+		product.Version,
+		product.Arch,
+		product.ReleaseType,
+		CFG.Token,
+		email,
+	}
+
+	service := Service{}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return service, err
+	}
+	resp, err := callHTTP("POST", "/connect/systems/products", body, nil, authSystem)
+	if err != nil {
+		return service, err
+	}
+	err = json.Unmarshal(resp, &service)
+	return service, err
+}
+
 func deactivateProduct(product Product) (Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
