@@ -107,3 +107,42 @@ func deregisterSystem() error {
 	_, err := callHTTP("DELETE", "/connect/systems", nil, nil, authSystem)
 	return err
 }
+
+// updateSystem updates the system's hardware information on SCC
+// https://scc.suse.com/connect/v4/documentation#/systems/put_systems
+// The body parameter is produced by makeSysInfoBody()
+func updateSystem(body []byte) error {
+	_, err := callHTTP("PUT", "/connect/systems", body, nil, authSystem)
+	return err
+}
+
+// makeSysInfoBody returns the JSON payload needed for the announce/update system calls
+func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byte, error) {
+	var payload struct {
+		Hostname     string `json:"hostname"`
+		DistroTarget string `json:"distro_target"`
+		InstanceData string `json:"instance_data,omitempty"`
+		Namespace    string `json:"namespace,omitempty"`
+		Hwinfo       hwinfo `json:"hwinfo"`
+	}
+	if distroTarget != "" {
+		payload.DistroTarget = distroTarget
+	} else {
+		var err error
+		payload.DistroTarget, err = zypperDistroTarget()
+		if err != nil {
+			return nil, err
+		}
+	}
+	payload.InstanceData = string(instanceData)
+	payload.Namespace = namespace
+
+	hw, err := getHwinfo()
+	if err != nil {
+		return nil, err
+	}
+	payload.Hostname = hw.Hostname
+	payload.Hwinfo = hw
+
+	return json.Marshal(payload)
+}
