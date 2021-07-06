@@ -12,6 +12,7 @@ var (
 	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
 	ErrCannotDetectBaseProduct    = errors.New("Unable to detect base product")
 	ErrListExtensionsUnregistered = errors.New("System not registered")
+	ErrNoProxyCredentials         = errors.New("Unable to read proxy credentials")
 )
 
 // ExecuteError is returned from execute() on error

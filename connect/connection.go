@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 )
 
 type authType int
@@ -59,10 +60,23 @@ func successCode(code int) bool {
 	return code >= 200 && code < 300
 }
 
+func proxyWithAuth(req *http.Request) (*url.URL, error) {
+	proxyURL, err := http.ProxyFromEnvironment(req)
+	// nil proxyUrl indicates no proxy configured
+	if proxyURL == nil || err != nil {
+		return proxyURL, err
+	}
+	// add or replace proxy credentials if configured
+	if c, err := readCurlrcCredentials(curlrcCredentialsFile()); err == nil {
+		proxyURL.User = url.UserPassword(c.Username, c.Password)
+	}
+	return proxyURL, nil
+}
+
 func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
-		Proxy:           http.ProxyFromEnvironment,
+		Proxy:           proxyWithAuth,
 	}
 	client := &http.Client{Transport: tr}
 
