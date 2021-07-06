@@ -15,7 +15,30 @@ func Register() error {
 		return err
 	}
 
-	// TODO remainder of Register()
+	installReleasePkg := true
+	product := CFG.Product
+	if product.isEmpty() {
+		product, err = baseProduct()
+		if err != nil {
+			return err
+		}
+		installReleasePkg = false
+	}
+
+	if err = registerProduct(product, installReleasePkg); err != nil {
+		return err
+	}
+
+	if product.IsBase {
+		p, err := showProduct(product)
+		if err != nil {
+			return err
+		}
+		if err := registerProductTree(p); err != nil {
+			return err
+		}
+	}
+	fmt.Print(bold(greenText("\nSuccessfully registered system\n")))
 	return nil
 }
 
@@ -149,6 +172,20 @@ func removeOrRefreshService(service Service) error {
 	return removeService(service.Name)
 }
 
+// AnnounceSystem announce system via SCC/Registration Proxy
+func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, error) {
+	fmt.Printf(bold("\nAnnouncing system to " + CFG.BaseURL + " ...\n"))
+	instanceData, err := readInstanceData(instanceDataFile)
+	if err != nil {
+		return "", "", err
+	}
+	sysInfoBody, err := makeSysInfoBody(distroTgt, CFG.Namespace, instanceData)
+	if err != nil {
+		return "", "", err
+	}
+	return announceSystem(sysInfoBody)
+}
+
 // UpdateSystem resend the system's hardware details on SCC
 func UpdateSystem(distroTarget, instanceDataFile string) error {
 	fmt.Printf("\nUpdating system details on %s ...\n", CFG.BaseURL)
@@ -170,8 +207,15 @@ func announceOrUpdate() error {
 		return UpdateSystem("", "")
 	}
 
-	// TODO remainder of announceOrUpdate()
-	return nil
+	distroTgt := ""
+	if !CFG.Product.isEmpty() {
+		distroTgt = CFG.Product.distroTarget()
+	}
+	login, password, err := AnnounceSystem(distroTgt, CFG.InstanceDataFile)
+	if err != nil {
+		return err
+	}
+	return writeSystemCredentials(login, password)
 }
 
 // IsRegistered returns true if there is a valid credentials file
