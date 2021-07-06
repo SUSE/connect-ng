@@ -75,3 +75,24 @@ func TestWriteReadDeleteService(t *testing.T) {
 		t.Error("File was not deleted: ", path)
 	}
 }
+
+func TestParseCurlrcCredentials(t *testing.T) {
+	var tests = []struct {
+		input       string
+		expectCreds Credentials
+		expectErr   error
+	}{
+		{"--proxy-user \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
+		{"--proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
+		{"proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
+		{"proxy-user=\"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
+		{"", Credentials{}, ErrNoProxyCredentials},
+	}
+
+	for _, test := range tests {
+		got, err := parseCurlrcCredentials(strings.NewReader(test.input))
+		if err != test.expectErr || got != test.expectCreds {
+			t.Errorf("parseCurlrcCredentials() == %+v, %s, expected %+v, %s, input: %s", got, err, test.expectCreds, test.expectErr, test.input)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -12,11 +13,13 @@ import (
 const (
 	defaulCredentialsDir  = "/etc/zypp/credentials.d"
 	globalCredentialsFile = "/etc/zypp/credentials.d/SCCcredentials"
+	curlrcUserFile        = ".curlrc"
 )
 
 var (
-	userMatch = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
-	passMatch = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
+	userMatch   = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
+	passMatch   = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
+	curlrcMatch = regexp.MustCompile(`^\s*-*proxy-user[ =]*"(.+):(.+)"\s*$`)
 )
 
 // Credentials stores the SCC or service credentials
@@ -37,6 +40,15 @@ func systemCredentialsFile() string {
 
 func serviceCredentialsFile(service string) string {
 	return filepath.Join(CFG.FsRoot, defaulCredentialsDir, service)
+}
+
+func curlrcCredentialsFile() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		// TODO: handle error? log?
+		return ""
+	}
+	return filepath.Join(home, curlrcUserFile)
 }
 
 // getCredentials reads the system credentials from the SCCcredentials file
@@ -120,4 +132,32 @@ func removeServiceCredentials(serviceName string) error {
 	Debug.Print("Removing service credentials for: ", serviceName)
 	path := serviceCredentialsFile(serviceName)
 	return removeFile(path)
+}
+
+func readCurlrcCredentials(path string) (Credentials, error) {
+	Debug.Print("Reading proxy credentials: ", path)
+	f, err := os.Open(path)
+	if err != nil {
+		return Credentials{}, err
+	}
+	defer f.Close()
+	creds, err := parseCurlrcCredentials(f)
+	if err != nil {
+		return Credentials{}, err
+	}
+	creds.Filename = path
+	Debug.Print("Proxy credentials read: ", creds)
+	return creds, nil
+}
+
+func parseCurlrcCredentials(r io.Reader) (Credentials, error) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		match := curlrcMatch.FindStringSubmatch(line)
+		if len(match) == 3 {
+			return Credentials{Username: match[1], Password: match[2]}, nil
+		}
+	}
+	return Credentials{}, ErrNoProxyCredentials
 }
