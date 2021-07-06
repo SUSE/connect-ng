@@ -40,6 +40,21 @@ func registerProduct(product Product, installReleasePkg bool) error {
 	return nil
 }
 
+// registerProductTree traverses (depth-first search) the product
+// tree and registers the recommended and available products
+func registerProductTree(product Product) error {
+	for _, extension := range product.Extensions {
+		// SCC does not return the Available attribute, only SMT & RMT do.
+		if extension.Recommended && (URLDefault() || extension.Available) {
+			if err := registerProduct(extension, true); err != nil {
+				return err
+			}
+			return registerProductTree(extension)
+		}
+	}
+	return nil
+}
+
 // Deregister deregisters the system
 func Deregister() error {
 	if fileExists("/usr/sbin/registercloudguest") {

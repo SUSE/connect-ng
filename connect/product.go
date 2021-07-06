@@ -16,6 +16,7 @@ type Product struct {
 	ReleaseType  string `json:"release_type,omitempty"`
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
+	Recommended  bool   `json:"recommended"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
 }
