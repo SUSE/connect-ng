@@ -23,6 +23,11 @@ Manage subscriptions at https://scc.suse.com
         --instance-data  [path to file]
                              Path to the XML file holding the public key and
                              instance data for cloud registration with SMT.
+    -e, --email <email>      Email address for product registration.
+        --url [URL]          URL of registration server
+                             (e.g. https://scc.suse.com).
+                             Implies --write-config so that subsequent
+                             invocations use the same registration server.
         --namespace [NAMESPACE]
                              Namespace option for use with SMT staging
                              environments.
@@ -32,11 +37,6 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --list-extensions    List all extensions and modules available for
                              installation on this system.
-    -e, --email <email>      Email address for product registration.
-        --url [URL]          URL of registration server
-                             (e.g. https://scc.suse.com).
-                             Implies --write-config so that subsequent
-                             invocations use the same registration server.
         --write-config       Write options to config file at /etc/SUSEConnect.
         --cleanup            Remove old system credentials and all zypper
                              services installed by SUSEConnect.
