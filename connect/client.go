@@ -3,6 +3,7 @@ package connect
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // Register announces the system, activates the
@@ -115,13 +116,9 @@ func removeOrRefreshService(service Service) error {
 // UpdateSystem resend the system's hardware details on SCC
 func UpdateSystem(distroTarget, instanceDataFile string) error {
 	fmt.Printf("\nUpdating system details on %s ...\n", CFG.BaseURL)
-	var instanceData []byte
-	if instanceDataFile != "" {
-		var err error
-		instanceData, err = os.ReadFile(instanceDataFile)
-		if err != nil {
-			return err
-		}
+	instanceData, err := readInstanceData(instanceDataFile)
+	if err != nil {
+		return err
 	}
 	sysInfoBody, err := makeSysInfoBody(distroTarget, CFG.Namespace, instanceData)
 	if err != nil {
@@ -176,4 +173,15 @@ func printInformation(action string) {
 	if CFG.Email != "" {
 		fmt.Println("Using E-Mail:", CFG.Email)
 	}
+}
+
+func readInstanceData(instanceDataFile string) ([]byte, error) {
+	if instanceDataFile == "" {
+		return nil, nil
+	}
+	instanceData, err := os.ReadFile(filepath.Join(CFG.FsRoot, instanceDataFile))
+	if err != nil {
+		return nil, err
+	}
+	return instanceData, nil
 }
