@@ -156,13 +156,30 @@ func main() {
 	}
 }
 
+func maybeBrokenSMTError() error {
+	if !connect.URLDefault() && !connect.UpToDate() {
+		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
+			"Please update it and try again.")
+	}
+	return nil
+}
+
 func exitOnError(err error) {
 	if err == nil {
 		return
 	}
 	if ze, ok := err.(connect.ZypperError); ok {
-		fmt.Printf("%s\n", ze)
+		fmt.Println(ze)
 		os.Exit(ze.ExitCode)
+	}
+	if je, ok := err.(connect.JSONError); ok {
+		if err := maybeBrokenSMTError(); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Print("Error: Cannot parse response from server\n")
+			fmt.Println(je)
+		}
+		os.Exit(66)
 	}
 	if ae, ok := err.(connect.APIError); ok {
 		if ae.Code == http.StatusUnauthorized && connect.IsRegistered() {
@@ -170,11 +187,10 @@ func exitOnError(err error) {
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
 			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
-		} else if !connect.URLDefault() && !connect.UpToDate() {
-			fmt.Print("Your Registration Proxy server doesn't support this function. ")
-			fmt.Print("Please update it and try again.")
+		} else if err := maybeBrokenSMTError(); err != nil {
+			fmt.Println(err)
 		} else {
-			fmt.Printf("%s\n", ae)
+			fmt.Println(ae)
 		}
 		os.Exit(67)
 	}

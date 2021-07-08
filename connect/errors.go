@@ -48,3 +48,12 @@ type APIError struct {
 func (ae APIError) Error() string {
 	return fmt.Sprintf("Error: Registration server returned '%s' (%d)", ae.Message, ae.Code)
 }
+
+// JSONError is returned on failed JSON decoding
+type JSONError struct {
+	Err error
+}
+
+func (je JSONError) Error() string {
+	return fmt.Sprintf("JSON Error: %v", je.Err)
+}
