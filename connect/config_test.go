@@ -9,7 +9,8 @@ import (
 var cfg1 = `---
 insecure: false
 url: https://smt-azure.susecloud.net
-language: en_US.UTF-8`
+language: en_US.UTF-8
+no_zypper_refs: true`
 
 var cfg2 = `---
  insecure: true
@@ -25,7 +26,7 @@ badkey: badval
 
 func TestParseConfig(t *testing.T) {
 	r := strings.NewReader(cfg1)
-	expect := Config{BaseURL: "https://smt-azure.susecloud.net", Language: "en_US.UTF-8"}
+	expect := Config{BaseURL: "https://smt-azure.susecloud.net", Language: "en_US.UTF-8", NoZypperRefresh: true}
 	c := Config{}
 	parseConfig(r, &c)
 	if !reflect.DeepEqual(c, expect) {
