@@ -15,12 +15,13 @@ SUSEConnect communicates with SCC over this [REST API](https://github.com/SUSE/c
 ### Build
 Requires Go 1.16 for [embed](https://pkg.go.dev/embed).
 ```
-go build cmd/suseconnect.go
+make build
 ```
+This will create a `out/suseconnect` binary.
 
 ### Build in container
 ```
 cd connect-ng
-podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16 go build -v cmd/suseconnect.go
+podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16 make build
 ```
-This will leave a `suseconnect` binary on the host.
+This will create a `out/suseconnect` binary on the host.

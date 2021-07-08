@@ -1,1 +1,1 @@
-addFilter("unstripped-binary-or-object /usr/bin/cmd")
+addFilter("unstripped-binary-or-object /usr/bin/suseconnect")

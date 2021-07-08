@@ -5,7 +5,7 @@
 
 import ctypes
 
-so = ctypes.cdll.LoadLibrary('./libsuseconnect.so')
+so = ctypes.cdll.LoadLibrary('./out/libsuseconnect.so')
 getstatus = so.getstatus
 getstatus.argtypes = [ctypes.c_char_p]
 getstatus.restype = ctypes.c_void_p

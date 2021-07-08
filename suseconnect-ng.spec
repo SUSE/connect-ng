@@ -47,15 +47,16 @@ find %_builddir/..
 %goprep %{import_path}
 find %_builddir/..
 go list all
-%gobuild cmd
-go build -buildmode=c-shared -o %_builddir/go/src/github.com/SUSE/connect-ng/ext/libsuseconnect.so ext/main.go
+%gobuild suseconnect
+# only to test that it compiles, nothing from it is installed for now
+make -C %_builddir/go/src/github.com/SUSE/connect-ng build-so-example
 find %_builddir/..
 
 %install
 %goinstall
-ln -s cmd %buildroot/%_bindir/SUSEConnect
+ln -s suseconnect %buildroot/%_bindir/SUSEConnect
 mkdir %buildroot/%_sbindir
-ln -s ../bin/cmd %buildroot/%_sbindir/SUSEConnect
+ln -s ../bin/suseconnect %buildroot/%_sbindir/SUSEConnect
 #TODO package ruby module
 #cp /home/abuild/rpmbuild/BUILD/go/src/github.com/SUSE/connect-ng/ext/libsuseconnect.so %_libdir/libsuseconnect.so
 #TODO man pages not yet available in source, these are the names frome the ruby version
@@ -72,7 +73,7 @@ rm -rf %buildroot/usr/share/go
 %files
 %license LICENSE LICENSE.LGPL
 %doc README.md
-%_bindir/cmd
+%_bindir/suseconnect
 %_bindir/SUSEConnect
 %_sbindir/SUSEConnect
 
