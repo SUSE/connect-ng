@@ -5,8 +5,11 @@ SUSEConnect-ng is a work-in-progress project to rewrite [SUSEConnect](https://gi
 SUSEConnect is a command line tool for connecting a client system to the SUSE Customer Center.
 It will connect the system to your product subscriptions and enable the product repositories/services locally.
 
-SUSEConnect is distributed as RPM for all SUSE distributions and gets built in
-the [openSUSE build service](https://build.opensuse.org/package/show/systemsmanagement:SCC/SUSEConnect).
+SUSEConnect-ng reduces the size of its runtime dependencies compared to the
+replaced SUSEConnect.
+
+SUSEConnect-ng is distributed as RPM for all SUSE distributions and gets built in
+the [openSUSE build service](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng).
 
 Please visit https://scc.suse.com to see and manage your subscriptions.
 
