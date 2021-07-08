@@ -61,13 +61,14 @@ ln -s ../bin/cmd %buildroot/%_sbindir/SUSEConnect
 #/usr/share/man/man5/SUSEConnect.5.gz
 #/usr/share/man/man8/SUSEConnect.8.gz
 
-%gofilelist
 find %_builddir/..
+# we currently do not ship the source for any go module
+rm -rf %buildroot/usr/share/go
 
 %check
 %gotest github.com/SUSE/connect-ng/connect
 
-%files -f file.lst
+%files
 %license LICENSE LICENSE.LGPL
 %doc README.md
 %_bindir/cmd
