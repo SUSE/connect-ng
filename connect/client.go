@@ -187,7 +187,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, 
 
 // UpdateSystem resend the system's hardware details on SCC
 func UpdateSystem(distroTarget, instanceDataFile string) error {
-	fmt.Printf("\nUpdating system details on %s ...\n", CFG.BaseURL)
+	fmt.Printf(bold("\nUpdating system details on %s ...\n"), CFG.BaseURL)
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
 		return err
