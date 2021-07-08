@@ -34,6 +34,8 @@ BuildRequires:  go >= 1.16
 This package provides a command line tool for connecting a
 client system to the SUSE Customer Center. It will connect the system to your
 product subscriptions and enable the product repositories/services locally.
+suseconnect-ng reduces the size of its runtime dependencies compared to the
+replaced SUSEConnect.
 
 
 %{go_nostrip}
