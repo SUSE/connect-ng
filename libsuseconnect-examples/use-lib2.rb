@@ -4,7 +4,7 @@ require 'ffi'
 
 module SUSEConnect
   extend FFI::Library
-  ffi_lib './libsuseconnect.so'
+  ffi_lib './out/libsuseconnect.so'
 
   attach_function :getstatus, [:string], :pointer
   attach_function :free, [ :pointer ], :void
