@@ -50,8 +50,7 @@ func registerProduct(product Product, installReleasePkg bool) error {
 		return err
 	}
 	fmt.Println("-> Adding service to system ...")
-	// TODO no_zypper_refs
-	if err := addService(service.URL, service.Name, true); err != nil {
+	if err := addService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
 		return err
 	}
 	if installReleasePkg {

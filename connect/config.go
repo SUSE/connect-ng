@@ -28,6 +28,7 @@ type Config struct {
 	Product          Product
 	InstanceDataFile string
 	Email            string
+	NoZypperRefresh  bool
 }
 
 func (c Config) toYAML() []byte {
@@ -87,6 +88,8 @@ func parseConfig(r io.Reader, c *Config) {
 			c.Namespace = val
 		case "insecure":
 			c.Insecure, _ = strconv.ParseBool(val)
+		case "no_zypper_refs":
+			c.NoZypperRefresh, _ = strconv.ParseBool(val)
 		default:
 			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
