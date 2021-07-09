@@ -99,8 +99,7 @@ func (c Credentials) write() error {
 		}
 	}
 	buf := bytes.Buffer{}
-	fmt.Fprintln(&buf, "username=", c.Username)
-	fmt.Fprintln(&buf, "password=", c.Password)
+	fmt.Fprintf(&buf, "username=%s\npassword=%s\n", c.Username, c.Password)
 	return os.WriteFile(c.Filename, buf.Bytes(), 0600)
 }
 
