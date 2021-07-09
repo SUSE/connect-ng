@@ -19,6 +19,7 @@ func TestCallHTTPSecure(t *testing.T) {
 		t.Error("Expecting certificate error. Got none.")
 	}
 
+	httpclient = nil // force new http client+transport creation
 	CFG.Insecure = true
 	_, err = callHTTP("GET", "/", nil, nil, authNone)
 	if err != nil {
