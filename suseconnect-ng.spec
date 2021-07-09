@@ -29,6 +29,7 @@ Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
+Conflicts:      SUSEConnect
 
 %description
 This package provides a command line tool for connecting a
