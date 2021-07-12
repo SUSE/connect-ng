@@ -10,3 +10,9 @@
 - When proxy credentials are incorrect, go version returns different error
   message than the original ruby one. Both are misleading and don't indicate
   any proxy related problems.
+- When doing API calls, ruby version tries to parse all non-empty responses
+  as JSON before checking HTTP return codes. With incorrect configuration
+  and/or proxy with invalid credentials this leads to different error messages
+  when response is non-JSON and has non-success HTTP return code.
+  Go version will handle this as "API error" while ruby version will fail to
+  parse the response and handle this as "JSON error".

@@ -23,7 +23,7 @@ func announceSystem(body []byte) (string, string, error) {
 		Passoword string `json:"password"`
 	}
 	if err = json.Unmarshal(resp, &creds); err != nil {
-		return "", "", err
+		return "", "", JSONError{err}
 	}
 	return creds.Login, creds.Passoword, nil
 }
@@ -51,9 +51,8 @@ func systemActivations() (map[string]Activation, error) {
 		return activeMap, err
 	}
 	var activations []Activation
-	err = json.Unmarshal(resp, &activations)
-	if err != nil {
-		return activeMap, err
+	if err = json.Unmarshal(resp, &activations); err != nil {
+		return activeMap, JSONError{err}
 	}
 	for _, activation := range activations {
 		activeMap[activation.toTriplet()] = activation
@@ -67,8 +66,10 @@ func showProduct(productQuery Product) (Product, error) {
 	if err != nil {
 		return remoteProduct, err
 	}
-	err = json.Unmarshal(resp, &remoteProduct)
-	return remoteProduct, err
+	if err = json.Unmarshal(resp, &remoteProduct); err != nil {
+		return remoteProduct, JSONError{err}
+	}
+	return remoteProduct, nil
 }
 
 func upgradeProduct(product Product) (Service, error) {
@@ -83,8 +84,10 @@ func upgradeProduct(product Product) (Service, error) {
 	if err != nil {
 		return remoteService, err
 	}
-	err = json.Unmarshal(resp, &remoteService)
-	return remoteService, err
+	if err = json.Unmarshal(resp, &remoteService); err != nil {
+		return remoteService, JSONError{err}
+	}
+	return remoteService, nil
 }
 
 func activateProduct(product Product, email string) (Service, error) {
@@ -114,7 +117,10 @@ func activateProduct(product Product, email string) (Service, error) {
 		return service, err
 	}
 	err = json.Unmarshal(resp, &service)
-	return service, err
+	if err != nil {
+		return service, JSONError{err}
+	}
+	return service, nil
 }
 
 func deactivateProduct(product Product) (Service, error) {
@@ -129,8 +135,10 @@ func deactivateProduct(product Product) (Service, error) {
 	if err != nil {
 		return remoteService, err
 	}
-	err = json.Unmarshal(resp, &remoteService)
-	return remoteService, err
+	if err = json.Unmarshal(resp, &remoteService); err != nil {
+		return remoteService, JSONError{err}
+	}
+	return remoteService, nil
 }
 
 func deregisterSystem() error {
