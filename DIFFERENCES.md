@@ -17,3 +17,10 @@
   Go version will handle this as "API error" while ruby version will fail to
   parse the response and handle this as "JSON error".
 - The Go HTTP client tries to reuse connections with keep-alive.
+- Docs for GET APIs call for URL-encoded query params. Ruby version sends a
+  JSON query in body (like for other verbs). Go implementation follows docs.
+  This difference is mostly visible in `connect.showProduct()` API call.
+- The connect.syncProducts() returns deserialized slice of Product
+  objects. Original code returns raw body.
+- Original `SUSEConnect --rollback` ignores CLI arguments like `--debug`.
+  This is a bug and it's already fixed in the Go version.

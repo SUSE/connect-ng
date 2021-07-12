@@ -193,3 +193,9 @@ func removeReleasePackage(identifier string) error {
 	_, err := zypperRun(args, true, []int{zypperOK, zypperInfoCapNotFound})
 	return err
 }
+
+func setReleaseVersion(version string) error {
+	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
+	_, err := zypperRun(args, true, []int{zypperOK})
+	return err
+}
