@@ -6,10 +6,9 @@
 {{ else }}{{ .Indent }}Activate with: {{ .ConnectBinary }} -p {{ .Code }}{{ if not .Product.Free }} -r {{"\x1b[32m\x1b[1mADDITIONAL REGCODE\x1b[0m"}}{{ end }}{{ end }}
 {{ range .Subextensions }}{{ template "extension" . }}{{ end -}}
 {{ end -}}
-{{ "\x1b[1m"}}AVAILABLE EXTENSIONS AND MODULES{{"\x1b[0m" -}}
-{{ range . }}
-{{ template "extension" . }}
-{{ end }}
+{{ "\x1b[1m"}}AVAILABLE EXTENSIONS AND MODULES{{"\x1b[0m" }}
+{{ range . }}{{ template "extension" . }}{{ end }}
+
 {{ "\x1b[1m"}}REMARKS{{"\x1b[0m"}}
 
 {{"\x1b[31m"}}(Not available){{"\x1b[0m"}} The module/extension is {{"\x1b[1m"}}not{{"\x1b[0m"}} enabled on your RMT/SMT
