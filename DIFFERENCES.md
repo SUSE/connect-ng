@@ -24,3 +24,5 @@
   objects. Original code returns raw body.
 - Original `SUSEConnect --rollback` ignores CLI arguments like `--debug`.
   This is a bug and it's already fixed in the Go version.
+- With --debug the Go version sends all debug output to stderr. The Ruby
+  version sends http debug to stderr, and other debug to stdout.
