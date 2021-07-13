@@ -16,3 +16,4 @@
   when response is non-JSON and has non-success HTTP return code.
   Go version will handle this as "API error" while ruby version will fail to
   parse the response and handle this as "JSON error".
+- The Go HTTP client tries to reuse connections with keep-alive.

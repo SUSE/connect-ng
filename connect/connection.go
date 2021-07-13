@@ -18,6 +18,10 @@ const (
 	authToken
 )
 
+var (
+	httpclient *http.Client
+)
+
 // parseError returns the error message from a SCC error response
 func parseError(body io.Reader) string {
 	var m map[string]interface{}
@@ -39,7 +43,6 @@ func addHeaders(req *http.Request) {
 	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
 	req.Header.Add("User-Agent", AppName+"/"+Version)
-	// REVISIT Close - unlike Ruby, Go does not close by default
 }
 
 func addAuthHeader(req *http.Request, auth authType) error {
@@ -74,12 +77,13 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 }
 
 func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
-		Proxy:           proxyWithAuth,
+	if httpclient == nil {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
+			Proxy:           proxyWithAuth,
+		}
+		httpclient = &http.Client{Transport: tr}
 	}
-	client := &http.Client{Transport: tr}
-
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -100,7 +104,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	reqBlob, _ := httputil.DumpRequestOut(req, true)
 	Debug.Printf("%s\n", reqBlob)
 
-	resp, err := client.Do(req)
+	resp, err := httpclient.Do(req)
 	if err != nil {
 		return nil, err
 	}
