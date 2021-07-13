@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -49,6 +50,19 @@ func TestWriteReadDeleteSystem(t *testing.T) {
 	path := systemCredentialsFile()
 	if fileExists(path) {
 		t.Error("File was not deleted: ", path)
+	}
+}
+
+func TestWriteCredentials(t *testing.T) {
+	CFG.FsRoot = t.TempDir()
+	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	expected := "username=user1\npassword=pass1\n"
+	contents, _ := os.ReadFile(systemCredentialsFile())
+	got := string(contents)
+	if got != expected {
+		t.Errorf("Expected %#v, got %#v", expected, got)
 	}
 }
 
