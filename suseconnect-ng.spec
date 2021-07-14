@@ -71,7 +71,7 @@ find %_builddir/..
 rm -rf %buildroot/usr/share/go
 
 %check
-%gotest github.com/SUSE/connect-ng/connect
+%gotest github.com/SUSE/connect-ng/internal/connect
 
 %files
 %license LICENSE LICENSE.LGPL
