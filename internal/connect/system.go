@@ -73,6 +73,11 @@ func removeFile(path string) error {
 	return os.Remove(path)
 }
 
+func isRootFSWritable() bool {
+	_, err := execute([]string{"test", "-w", "/"}, true, []int{zypperOK})
+	return err == nil
+}
+
 func Cleanup() error {
 	err := removeSystemCredentials()
 	if err != nil {

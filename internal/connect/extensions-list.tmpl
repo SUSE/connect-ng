@@ -2,8 +2,8 @@
 {{ .Indent }}{{ "\x1b[1m"}}{{ .Product.FriendlyName }}{{"\x1b[0m" -}}
 {{ if not .Product.Available }}{{ " \x1b[31m(Not available)\x1b[0m" }}{{ end -}}
 {{ if .Activated }}{{ " \x1b[33m(Activated)\x1b[0m" }}{{ end }}
-{{ if .Activated }}{{ .Indent }}Deactivate with: {{ .ConnectBinary }} {{"\x1b[31m-d\x1b[0m"}} -p {{ .Code -}}
-{{ else }}{{ .Indent }}Activate with: {{ .ConnectBinary }} -p {{ .Code }}{{ if not .Product.Free }} -r {{"\x1b[32m\x1b[1mADDITIONAL REGCODE\x1b[0m"}}{{ end }}{{ end }}
+{{ if .Activated }}{{ .Indent }}Deactivate with: {{ .ConnectCmd }} {{"\x1b[31m-d\x1b[0m"}} -p {{ .Code -}}
+{{ else }}{{ .Indent }}Activate with: {{ .ConnectCmd }} -p {{ .Code }}{{ if not .Product.Free }} -r {{"\x1b[32m\x1b[1mADDITIONAL REGCODE\x1b[0m"}}{{ end }}{{ end }}
 {{ range .Subextensions }}{{ template "extension" . }}{{ end -}}
 {{ end -}}
 {{ "\x1b[1m"}}AVAILABLE EXTENSIONS AND MODULES{{"\x1b[0m" }}
