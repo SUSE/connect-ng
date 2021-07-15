@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/SUSE/connect-ng/connect"
+	"github.com/SUSE/connect-ng/internal/connect"
 )
 
 var (

@@ -2,7 +2,7 @@ package main
 
 import (
 	"C"
-	"github.com/SUSE/connect-ng/connect"
+	"github.com/SUSE/connect-ng/internal/connect"
 )
 
 //export getstatus

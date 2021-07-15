@@ -7,7 +7,7 @@ build: out
 	go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
 test:
-	go test -v ./connect
+	go test -v ./internal/connect
 
 build-so: out
 	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
