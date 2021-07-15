@@ -81,8 +81,7 @@ func getExtensions() ([]Product, error) {
 		return []Product{}, err
 	}
 
-	// TODO: maybe make status constants?
-	if statuses[base.toTriplet()].Status != "Registered" {
+	if statuses[base.toTriplet()].Status != registered {
 		return []Product{}, ErrListExtensionsUnregistered
 	}
 

@@ -7,6 +7,11 @@ import (
 	"text/template"
 )
 
+const (
+	registered    = "Registered"
+	notRegistered = "Not Registered"
+)
+
 var (
 	//go:embed status-text.tmpl
 	statusTemplate string
@@ -72,10 +77,10 @@ func getStatuses() (map[string]Status, error) {
 			Identifier: product.Name,
 			Version:    product.Version,
 			Arch:       product.Arch,
-			Status:     "Not Registered",
+			Status:     notRegistered,
 		}
 		if activation, ok := activations[product.toTriplet()]; ok {
-			status.Status = "Registered"
+			status.Status = registered
 			if !activation.isFree() {
 				status.RegCode = activation.RegCode
 				layout := "2006-01-02 15:04:05 MST"
