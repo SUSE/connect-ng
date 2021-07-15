@@ -90,6 +90,10 @@ func upgradeProduct(product Product) (Service, error) {
 	return remoteService, nil
 }
 
+func downgradeProduct(product Product) (Service, error) {
+	return upgradeProduct(product)
+}
+
 func activateProduct(product Product, email string) (Service, error) {
 	var payload = struct {
 		Indentifier string `json:"identifier"`
@@ -144,6 +148,24 @@ func deactivateProduct(product Product) (Service, error) {
 func deregisterSystem() error {
 	_, err := callHTTP("DELETE", "/connect/systems", nil, nil, authSystem)
 	return err
+}
+
+func syncProducts(products []Product) ([]Product, error) {
+	remoteProducts := make([]Product, 0)
+	var payload struct {
+		Products []Product `json:"products"`
+	}
+	payload.Products = products
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return remoteProducts, err
+	}
+	resp, err := callHTTP("POST", "/connect/systems/products/synchronize", body, nil, authSystem)
+	err = json.Unmarshal(resp, &remoteProducts)
+	if err != nil {
+		return remoteProducts, JSONError{err}
+	}
+	return remoteProducts, nil
 }
 
 // updateSystem updates the system's hardware information on SCC

@@ -40,6 +40,8 @@ Manage subscriptions at https://scc.suse.com
         --write-config       Write options to config file at /etc/SUSEConnect.
         --cleanup            Remove old system credentials and all zypper
                              services installed by SUSEConnect.
+        --rollback           Revert the registration state in case of a failed
+                             migration.
 
 Common options:
         --root [PATH]        Path to the root folder, uses the same parameter
