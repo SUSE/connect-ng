@@ -15,10 +15,9 @@ var (
 
 // helper struct to simplify extensions list template
 type displayExtension struct {
-	Product       Product
-	Code          string
-	Activated     bool
-	Subextensions []displayExtension
+	Product   Product
+	Code      string
+	Activated bool
 
 	Indent     string
 	ConnectCmd string
@@ -56,24 +55,29 @@ func printExtensions(extensions []Product, activations map[string]Activation, ro
 	return output.String(), nil
 }
 
+// this function takes a tree of products and returns a flattened version
+// with some additional info to make the output template as simple as possible
 func preformatExtensions(extensions []Product, activations map[string]Activation, cmd string, level int) []displayExtension {
-	var ret []displayExtension
-
-	for _, e := range extensions {
-		_, activated := activations[e.toTriplet()]
-		ret = append(ret, displayExtension{
-			Product:       e,
-			Code:          e.toTriplet(),
-			Activated:     activated,
-			Subextensions: preformatExtensions(e.Extensions, activations, cmd, level+1),
-			Indent:        strings.Repeat("    ", level),
-			ConnectCmd:    cmd,
-		})
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Product.FriendlyName < ret[j].Product.FriendlyName
+	// sort (copy of) input by name
+	sorted := make([]Product, len(extensions))
+	copy(sorted, extensions)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].FriendlyName < sorted[j].FriendlyName
 	})
 
+	var ret []displayExtension
+	for _, e := range sorted {
+		_, activated := activations[e.toTriplet()]
+		ret = append(ret, displayExtension{
+			Product:    e,
+			Code:       e.toTriplet(),
+			Activated:  activated,
+			Indent:     strings.Repeat("    ", level),
+			ConnectCmd: cmd,
+		})
+		// add subextensions
+		ret = append(ret, preformatExtensions(e.Extensions, activations, cmd, level+1)...)
+	}
 	return ret
 }
 
