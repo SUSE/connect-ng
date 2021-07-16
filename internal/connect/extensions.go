@@ -20,8 +20,8 @@ type displayExtension struct {
 	Activated     bool
 	Subextensions []displayExtension
 
-	Indent        string
-	ConnectBinary string
+	Indent     string
+	ConnectCmd string
 }
 
 func GetExtensionsList() (string, error) {
@@ -42,14 +42,18 @@ func GetExtensionsList() (string, error) {
 		return "", err
 	}
 	var output bytes.Buffer
-	err = t.Execute(&output, preformatExtensions(extensions, activations, 1))
+	cmd := "SUSEConnect"
+	if !isRootFSWritable() {
+		cmd = "transactional-update register"
+	}
+	err = t.Execute(&output, preformatExtensions(extensions, activations, cmd, 1))
 	if err != nil {
 		return "", err
 	}
 	return output.String(), nil
 }
 
-func preformatExtensions(extensions []Product, activations map[string]Activation, level int) []displayExtension {
+func preformatExtensions(extensions []Product, activations map[string]Activation, cmd string, level int) []displayExtension {
 	var ret []displayExtension
 
 	for _, e := range extensions {
@@ -58,10 +62,9 @@ func preformatExtensions(extensions []Product, activations map[string]Activation
 			Product:       e,
 			Code:          e.toTriplet(),
 			Activated:     activated,
-			Subextensions: preformatExtensions(e.Extensions, activations, level+1),
+			Subextensions: preformatExtensions(e.Extensions, activations, cmd, level+1),
 			Indent:        strings.Repeat("    ", level),
-			// TODO: root_fs_writable? ? 'SUSEConnect' : 'transactional-update register'
-			ConnectBinary: "SUSEConnect",
+			ConnectCmd:    cmd,
 		})
 	}
 	sort.Slice(ret, func(i, j int) bool {
