@@ -70,7 +70,7 @@ func getHwinfo() (hwinfo, error) {
 }
 
 func hwinfoS390(hw *hwinfo) error {
-	rvsOut, err := readValues("s")
+	rvsOut, err := readValues("-s")
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func hwinfoS390(hw *hwinfo) error {
 		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
 	}
 
-	rvuOut, err := readValues("u")
+	rvuOut, err := readValues("-u")
 	if err != nil {
 		return err
 	}
