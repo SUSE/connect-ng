@@ -68,6 +68,24 @@ func TestFindCloudProviderNoCloud(t *testing.T) {
 	}
 }
 
+func TestIsUUID(t *testing.T) {
+	var tests = []struct {
+		s      string
+		expect bool
+	}{
+		{"4C4C4544-0059-4810-8034-C2C04F335931", true},
+		{"4C4C4544-0059-7777-8034-C2C04F335931", true},
+		{"ec293a33-b805-7eef-b7c8-d1238386386f", true},
+		{"failed:\n", false},
+	}
+	for _, test := range tests {
+		got := isUUID(test.s)
+		if got != test.expect {
+			t.Errorf("Got isUUID(%s)==%v, expected %v", test.s, got, test.expect)
+		}
+	}
+}
+
 func TestPrivateIP(t *testing.T) {
 	var tests = []struct {
 		ip      string
