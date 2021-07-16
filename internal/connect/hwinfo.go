@@ -38,9 +38,7 @@ func getHwinfo() (hwinfo, error) {
 		return hwinfo{}, err
 	}
 	hw.Hostname = hostname()
-	if hw.CloudProvider, err = cloudProvider(); err != nil {
-		return hwinfo{}, err
-	}
+	hw.CloudProvider = cloudProvider()
 
 	var lscpuM map[string]string
 	if hw.Arch == archX86 || hw.Arch == archARM {
@@ -141,12 +139,12 @@ func lscpu2map(b []byte) map[string]string {
 	return m
 }
 
-func cloudProvider() (string, error) {
+func cloudProvider() string {
 	output, err := execute([]string{"dmidecode", "-t", "system"}, false, nil)
 	if err != nil {
-		return "", err
+		return ""
 	}
-	return findCloudProvider(output), nil
+	return findCloudProvider(output)
 }
 
 // findCloudProvider returns the cloud provider from "dmidecode -t system" output
