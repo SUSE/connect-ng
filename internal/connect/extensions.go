@@ -36,14 +36,17 @@ func GetExtensionsList() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return printExtensions(extensions, activations, isRootFSWritable())
+}
 
+func printExtensions(extensions []Product, activations map[string]Activation, rootFSWritable bool) (string, error) {
 	t, err := template.New("extensions-list").Parse(extensionsListTemplate)
 	if err != nil {
 		return "", err
 	}
 	var output bytes.Buffer
 	cmd := "SUSEConnect"
-	if !isRootFSWritable() {
+	if !rootFSWritable {
 		cmd = "transactional-update register"
 	}
 	err = t.Execute(&output, preformatExtensions(extensions, activations, cmd, 1))
