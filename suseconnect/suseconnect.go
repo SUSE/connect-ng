@@ -36,7 +36,7 @@ var (
 func init() {
 	// display help like the ruby SUSEConnect
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, usageText)
+		fmt.Print(usageText)
 	}
 
 	flag.BoolVar(&status, "status", false, "")
