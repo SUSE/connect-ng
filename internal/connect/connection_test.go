@@ -37,6 +37,17 @@ func TestParseError(t *testing.T) {
 	}
 }
 
+func TestParseErrorLocalized(t *testing.T) {
+	s := `{"type":"error","error":"No subscription with this Registration Code found",
+		  "localized_error":"Keine Subscription mit diesem Registrierungscode gefunden"}`
+	body := strings.NewReader(s)
+	expected := "Keine Subscription mit diesem Registrierungscode gefunden"
+	got := parseError(body)
+	if got != expected {
+		t.Errorf("parseError(), got: %s, expected: %s", got, expected)
+	}
+}
+
 func TestParseErrorNotJson(t *testing.T) {
 	body := strings.NewReader("not json")
 	got := parseError(body)
