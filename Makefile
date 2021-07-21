@@ -18,6 +18,9 @@ build-so-example: build-so
 build-arm: out
 	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
+build-s390: out
+	GOOS=linux GOARCH=s390x go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+
 clean:
 	go clean
 

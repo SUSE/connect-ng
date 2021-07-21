@@ -38,9 +38,7 @@ func getHwinfo() (hwinfo, error) {
 		return hwinfo{}, err
 	}
 	hw.Hostname = hostname()
-	if hw.CloudProvider, err = cloudProvider(); err != nil {
-		return hwinfo{}, err
-	}
+	hw.CloudProvider = cloudProvider()
 
 	var lscpuM map[string]string
 	if hw.Arch == archX86 || hw.Arch == archARM {
@@ -65,14 +63,17 @@ func getHwinfo() (hwinfo, error) {
 	}
 
 	if hw.Arch == archS390 {
-		hwinfoS390(&hw)
+		if err := cpuinfoS390(&hw); err != nil {
+			return hwinfo{}, err
+		}
+		hw.UUID = uuidS390()
 	}
 
 	return hw, nil
 }
 
-func hwinfoS390(hw *hwinfo) error {
-	rvsOut, err := readValues("s")
+func cpuinfoS390(hw *hwinfo) error {
+	rvsOut, err := readValues("-s")
 	if err != nil {
 		return err
 	}
@@ -96,15 +97,6 @@ func hwinfoS390(hw *hwinfo) error {
 		hw.Hypervisor = strings.Join(subs, " ")
 	} else {
 		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
-	}
-
-	rvuOut, err := readValues("u")
-	if err != nil {
-		return err
-	}
-	hw.UUID = string(rvuOut)
-	if hw.UUID == "" {
-		Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
 	}
 
 	return nil
@@ -141,12 +133,12 @@ func lscpu2map(b []byte) map[string]string {
 	return m
 }
 
-func cloudProvider() (string, error) {
+func cloudProvider() string {
 	output, err := execute([]string{"dmidecode", "-t", "system"}, false, nil)
 	if err != nil {
-		return "", err
+		return ""
 	}
-	return findCloudProvider(output), nil
+	return findCloudProvider(output)
 }
 
 // findCloudProvider returns the cloud provider from "dmidecode -t system" output
@@ -171,6 +163,7 @@ func hypervisor() (string, error) {
 	return string(output), nil
 }
 
+// uuid returns the system uuid on x86 and arm
 func uuid() (string, error) {
 	if fileExists("/sys/hypervisor/uuid") {
 		content, err := os.ReadFile("/sys/hypervisor/uuid")
@@ -188,6 +181,27 @@ func uuid() (string, error) {
 		return "", nil
 	}
 	return out, nil
+}
+
+// uuidS390 returns the system uuid on S390 or "" if it cannot be found
+func uuidS390() string {
+	out, err := readValues("-u")
+	if err != nil {
+		return ""
+	}
+	uuid := string(out)
+	if isUUID(uuid) {
+		return uuid
+	}
+	Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
+	return ""
+}
+
+// isUUID returns true if s is a valid uuid
+func isUUID(s string) bool {
+	exp := `^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`
+	uuidRe := regexp.MustCompile(exp)
+	return uuidRe.MatchString(s)
 }
 
 // getPrivateIPAddr returns the first private IP address on the host
