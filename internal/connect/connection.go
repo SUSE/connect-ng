@@ -27,6 +27,9 @@ func parseError(body io.Reader) string {
 	var m map[string]interface{}
 	dec := json.NewDecoder(body)
 	if err := dec.Decode(&m); err == nil {
+		if errMsg, ok := m["localized_error"].(string); ok {
+			return errMsg
+		}
 		if errMsg, ok := m["error"].(string); ok {
 			return errMsg
 		}
