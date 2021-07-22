@@ -45,7 +45,7 @@ func addHeaders(req *http.Request) {
 		req.Header.Add("Accept-Language", CFG.Language)
 	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
-	req.Header.Add("User-Agent", AppName+"/"+Version)
+	req.Header.Add("User-Agent", AppName+"/"+GetShortenedVersion())
 }
 
 func addAuthHeader(req *http.Request, auth authType) error {

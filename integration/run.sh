@@ -5,6 +5,8 @@ then
   exit 1
 fi
 
+shortversion=$(git describe --tags --abbrev=0 --match='v*' | sed 's:^v::' )
+
 if true; then
 
 remote=$(pwd)
@@ -33,4 +35,6 @@ fi
 cd /tmp/connect
 # cucumber picks up /tmp/connect/bin/SUSEConnect from the earlier bundle install if it is not removed here
 rm bin/SUSEConnect
+# the tests match the exact version defined in the ruby code, replace it with ours
+sed -i "s|VERSION = '[^']*'|VERSION = '$shortversion'|g" lib/suse/connect/version.rb
 cucumber

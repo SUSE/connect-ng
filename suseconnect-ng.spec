@@ -49,6 +49,7 @@ replaced SUSEConnect.
 
 %build
 find %_builddir/..
+echo %{version} > internal/connect/version.txt
 %goprep %{import_path}
 find %_builddir/..
 go list all

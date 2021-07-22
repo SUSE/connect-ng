@@ -10,8 +10,6 @@ import (
 const (
 	// AppName holds the name of this SUSE connect client
 	AppName = "SUSEConnect-ng" // REVISIT
-	// Version is the current version
-	Version = "0.0.1" // REVISIT
 )
 
 var (
