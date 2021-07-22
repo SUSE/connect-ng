@@ -20,7 +20,7 @@ var (
 	statusText       bool
 	debug            bool
 	writeConfig      bool
-	deregister       bool
+	deRegister       bool
 	cleanup          bool
 	rollback         bool
 	baseURL          string
@@ -44,8 +44,8 @@ func init() {
 	flag.BoolVar(&statusText, "status-text", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
-	flag.BoolVar(&deregister, "deregister", false, "")
-	flag.BoolVar(&deregister, "d", false, "")
+	flag.BoolVar(&deRegister, "de-register", false, "")
+	flag.BoolVar(&deRegister, "d", false, "")
 	flag.BoolVar(&cleanup, "cleanup", false, "")
 	flag.BoolVar(&listExtensions, "list-extensions", false, "")
 	flag.BoolVar(&rollback, "rollback", false, "")
@@ -128,7 +128,7 @@ func main() {
 		output, err := connect.GetExtensionsList()
 		exitOnError(err)
 		fmt.Print(output)
-	} else if deregister {
+	} else if deRegister {
 		err := connect.Deregister()
 		exitOnError(err)
 	} else if cleanup {
