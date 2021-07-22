@@ -15,7 +15,7 @@ Manage subscriptions at https://scc.suse.com
                              be registered.
                              Relates that product to the specified subscription,
                              and enables software repositories for that product.
-    -d, --deregister         De-registers the system and base product, or in
+    -d, --de-register        De-registers the system and base product, or in
                              conjunction with --product, a single extension, and
                              removes all its services installed by SUSEConnect.
                              After de-registration the system no longer consumes
