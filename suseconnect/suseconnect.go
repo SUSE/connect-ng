@@ -31,6 +31,7 @@ var (
 	instanceDataFile string
 	listExtensions   bool
 	email            string
+	version          bool
 )
 
 func init() {
@@ -49,6 +50,7 @@ func init() {
 	flag.BoolVar(&cleanup, "cleanup", false, "")
 	flag.BoolVar(&listExtensions, "list-extensions", false, "")
 	flag.BoolVar(&rollback, "rollback", false, "")
+	flag.BoolVar(&version, "version", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
@@ -137,6 +139,9 @@ func main() {
 	} else if rollback {
 		err := connect.Rollback()
 		exitOnError(err)
+        } else if version {
+		fmt.Println(connect.GetShortenedVersion())
+		os.Exit(0)
 	} else {
 		if instanceDataFile != "" && connect.URLDefault() {
 			fmt.Print("Please use --instance-data only in combination ")

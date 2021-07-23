@@ -42,6 +42,7 @@ Manage subscriptions at https://scc.suse.com
                              services installed by SUSEConnect.
         --rollback           Revert the registration state in case of a failed
                              migration.
+        --version            Print program version.
 
 Common options:
         --root [PATH]        Path to the root folder, uses the same parameter
