@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -19,6 +20,22 @@ type Product struct {
 	Recommended  bool   `json:"recommended"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
+}
+
+// UnmarshalJSON custom unmarshaller for Product.
+// Only SMT/RMT send the "available" field in their JSON responses.
+// SCC does not, and the default Unmarshal() sets Available to the
+// boolean zero-value which is false. This sets it to true instead.
+func (p *Product) UnmarshalJSON(data []byte) error {
+	type product Product // use type alias to prevent infinite recursion
+	prod := product{
+		Available: true,
+	}
+	if err := json.Unmarshal(data, &prod); err != nil {
+		return err
+	}
+	*p = Product(prod)
+	return nil
 }
 
 func (p Product) isEmpty() bool {

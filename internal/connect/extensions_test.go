@@ -53,12 +53,17 @@ func TestPrintExtensions(t *testing.T) {
 	if found, _ := regexp.MatchString(cmd, output2); found {
 		t.Errorf("Unexpected '%s' found in output", cmd)
 	}
+}
 
-	// test "(Not available)" is not printed when using SCC
-	CFG.BaseURL = defaultBaseURL
-	output3, _ := printExtensions(extensions, activations, true)
+func TestPrintExtensionsSCC(t *testing.T) {
+	extensions := make([]Product, 0)
+	extensionsData := readTestFile("extensions-scc.json", t)
+	json.Unmarshal(extensionsData, &extensions)
+	activations := map[string]Activation{}
+	activations["SUSE-Manager-Server/3.2/x86_64"] = Activation{}
+	output, _ := printExtensions(extensions, activations, true)
 	pattern := `(?m)^.*SUSE Manager Retail Branch Server 3.2 x86_64.*(Not available).*$`
-	if found, _ := regexp.MatchString(pattern, output3); found {
+	if found, _ := regexp.MatchString(pattern, output); found {
 		t.Errorf("Pattern: '%s' should not be found in output", pattern)
 	}
 }

@@ -1,0 +1,34 @@
+[
+    {
+        "friendly_name": "SUSE Manager Server 3.2 x86_64",
+        "extensions": [],
+        "free": true,
+        "identifier": "SUSE-Manager-Server",
+        "arch": "x86_64",
+        "version": "3.2"
+    },
+    {
+        "friendly_name": "SUSE Manager Proxy 3.2 x86_64",
+        "extensions": [
+            {
+                "friendly_name": "SUSE Manager Retail Branch Server 3.2 x86_64",
+                "version": "3.2",
+                "identifier": "SUSE-Manager-Retail-Branch-Server",
+                "arch": "x86_64",
+                "extensions": [],
+                "free": true
+            }
+        ],
+        "free": true,
+        "version": "3.2",
+        "identifier": "SUSE-Manager-Proxy",
+        "arch": "x86_64"
+    },
+    {
+        "free": false,
+        "version": "8",
+        "identifier": "suse-openstack-cloud",
+        "arch": "x86_64",
+        "friendly_name": "SUSE OpenStack Cloud 8 x86_64"
+    }
+]

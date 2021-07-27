@@ -66,8 +66,7 @@ func registerProduct(product Product, installReleasePkg bool) error {
 // tree and registers the recommended and available products
 func registerProductTree(product Product) error {
 	for _, extension := range product.Extensions {
-		// SCC does not return the Available attribute, only SMT & RMT do.
-		if extension.Recommended && (URLDefault() || extension.Available) {
+		if extension.Recommended && extension.Available {
 			if err := registerProduct(extension, true); err != nil {
 				return err
 			}

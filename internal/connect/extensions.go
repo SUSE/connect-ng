@@ -67,9 +67,6 @@ func preformatExtensions(extensions []Product, activations map[string]Activation
 
 	var ret []displayExtension
 	for _, e := range sorted {
-		if URLDefault() {
-			e.Available = true // Only SMT/RMT return this field
-		}
 		_, activated := activations[e.toTriplet()]
 		ret = append(ret, displayExtension{
 			Product:    e,
