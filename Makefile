@@ -17,6 +17,9 @@ build: out internal/connect/version.txt
 test: internal/connect/version.txt
 	go test -v ./internal/connect
 
+gofmt:
+	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
+
 build-so: out internal/connect/version.txt
 	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
 
@@ -32,4 +35,3 @@ build-s390: out internal/connect/version.txt
 clean:
 	go clean
 	rm internal/connect/version.txt
-
