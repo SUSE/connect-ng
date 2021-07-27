@@ -95,6 +95,7 @@ rm -rf %buildroot/usr/share/go
 
 %check
 %gotest github.com/SUSE/connect-ng/internal/connect
+make -C %_builddir/go/src/github.com/SUSE/connect-ng gofmt
 
 %files
 %license LICENSE LICENSE.LGPL
