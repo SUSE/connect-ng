@@ -7,7 +7,7 @@ import (
 
 var (
 	//go:embed version.txt
-	version        string
+	version string
 )
 
 func GetShortenedVersion() string {

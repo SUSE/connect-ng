@@ -139,7 +139,7 @@ func main() {
 	} else if rollback {
 		err := connect.Rollback()
 		exitOnError(err)
-        } else if version {
+	} else if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
 	} else {
