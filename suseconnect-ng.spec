@@ -32,6 +32,26 @@ BuildRequires:  go >= 1.16
 Conflicts:      SUSEConnect
 Obsoletes:      SUSEConnect
 Provides:       SUSEConnect
+%if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
+Requires:       ca-certificates
+%else
+Requires:       ca-certificates-mozilla
+%endif
+Requires:       coreutils
+# ExclusiveArch from this package
+%ifarch %ix86 ia64 x86_64 %arm aarch64
+Requires:       dmidecode
+%endif
+# ExclusiveArch from this package
+%ifarch s390x
+Requires:       s390-tools
+%endif
+Requires:       systemd
+Requires:       zypper
+# lscpu is only used on those
+%ifarch x86_64 aarch64
+Requires:       util-linux
+%endif
 
 %description
 This package provides a command line tool for connecting a
