@@ -17,12 +17,10 @@ var (
 	CFG Config
 	// Debug logger for debugging output
 	Debug *log.Logger
-	Error *log.Logger
 )
 
 func init() {
 	Debug = log.New(io.Discard, "", 0)
-	Error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 // EnableDebug turns on debugging output
