@@ -78,6 +78,7 @@ func isRootFSWritable() bool {
 	return err == nil
 }
 
+// Cleanup removes system credentials and installed services
 func Cleanup() error {
 	err := removeSystemCredentials()
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 )
 
+// Rollback restores system state to before failed migration
 func Rollback() error {
 	fmt.Println("Starting to sync system product activations to the server. This can take some time...")
 

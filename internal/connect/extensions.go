@@ -23,6 +23,7 @@ type displayExtension struct {
 	ConnectCmd string
 }
 
+// GetExtensionsList returns the text output for --list-extensions
 func GetExtensionsList() (string, error) {
 	if !IsRegistered() {
 		return "", ErrListExtensionsUnregistered
