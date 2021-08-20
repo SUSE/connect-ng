@@ -250,3 +250,44 @@ func TestDeactivateProductError(t *testing.T) {
 		}
 	}
 }
+
+func TestProductMigrations(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(readTestFile("migrations.json", t))
+	}))
+	defer ts.Close()
+	CFG.BaseURL = ts.URL
+
+	migrations, err := productMigrations(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(migrations) != 2 {
+		t.Fatalf("len(migrations) == %d, expected 2", len(migrations))
+	}
+	newestBase := migrations[0][0].toTriplet()
+	expected := "SLES/15.4/x86_64"
+	if newestBase != expected {
+		t.Fatalf("Got: %s, expected: %s", newestBase, expected)
+	}
+}
+
+func TestSortMigrations(t *testing.T) {
+	migration1 := []Product{
+		{Name: "python", IsBase: false, Version: "15.2", Arch: "x86_64"},
+		{Name: "SLES", IsBase: true, Version: "15.2", Arch: "x86_64"},
+	}
+	migration2 := []Product{
+		{Name: "python", IsBase: false, Version: "15.3", Arch: "x86_64"},
+		{Name: "SLES", IsBase: true, Version: "15.3", Arch: "x86_64"},
+	}
+	migrations := [][]Product{migration1, migration2}
+
+	sortMigrations(migrations)
+	firstProduct := migrations[0][0].toTriplet()
+	expected := "SLES/15.3/x86_64"
+	if firstProduct != expected {
+		t.Fatalf("Got: %s expected: %s", firstProduct, expected)
+	}
+}

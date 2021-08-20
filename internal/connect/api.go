@@ -3,6 +3,7 @@ package connect
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 )
 
 const (
@@ -205,4 +206,41 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byt
 	payload.Hwinfo = hw
 
 	return json.Marshal(payload)
+}
+
+// productMigrations returns the online migration paths for the installed products
+func productMigrations(installed []Product) ([][]Product, error) {
+	migrations := make([][]Product, 0)
+	var payload struct {
+		InstalledProducts []Product `json:"installed_products"`
+	}
+	payload.InstalledProducts = installed
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return migrations, err
+	}
+	resp, err := callHTTP("POST", "/connect/systems/products/migrations", body, nil, authSystem)
+	if err != nil {
+		return migrations, err
+	}
+	err = json.Unmarshal(resp, &migrations)
+	if err != nil {
+		return migrations, err
+	}
+	sortMigrations(migrations)
+	return migrations, nil
+}
+
+// sortMigrations sorts the migration paths returned by API
+func sortMigrations(migrations [][]Product) {
+	// sort each migration's products so the base product is first
+	for _, migration := range migrations {
+		sort.Slice(migration, func(i, j int) bool {
+			return migration[i].IsBase
+		})
+	}
+	// sort migrations so the one with the newest base product is first
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i][0].Version > migrations[j][0].Version
+	})
 }
