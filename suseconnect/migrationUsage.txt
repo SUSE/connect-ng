@@ -1,0 +1,7 @@
+Usage: zypper migration [options]
+    -v, --[no-]verbose               Increase verbosity
+    -q, --[no-]quiet                 Suppress normal output, print only error messages
+    -n, --non-interactive            Do not ask anything, use default answers automatically
+    -l, --auto-agree-with-licenses   Automatically say 'yes' to third party license confirmation prompt
+        --no-snapshots               Do not create snapshots.
+        --[no-]selfupdate            Do not update the update stack first

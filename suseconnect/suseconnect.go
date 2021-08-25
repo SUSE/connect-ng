@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -14,30 +15,43 @@ import (
 )
 
 var (
-	//go:embed usage.txt
-	usageText        string
-	status           bool
-	statusText       bool
-	debug            bool
-	writeConfig      bool
-	deRegister       bool
-	cleanup          bool
-	rollback         bool
-	baseURL          string
-	fsRoot           string
-	namespace        string
-	token            string
-	product          string
-	instanceDataFile string
-	listExtensions   bool
-	email            string
-	version          bool
+	//go:embed connectUsage.txt
+	connectUsageText string
 )
 
-func init() {
+// multi-call entry points
+func main() {
+	switch filepath.Base(os.Args[0]) {
+	case "zypper-migration":
+		migrationMain()
+	default:
+		connectMain()
+	}
+}
+
+func connectMain() {
+	var (
+		status           bool
+		statusText       bool
+		debug            bool
+		writeConfig      bool
+		deRegister       bool
+		cleanup          bool
+		rollback         bool
+		baseURL          string
+		fsRoot           string
+		namespace        string
+		token            string
+		product          string
+		instanceDataFile string
+		listExtensions   bool
+		email            string
+		version          bool
+	)
+
 	// display help like the ruby SUSEConnect
 	flag.Usage = func() {
-		fmt.Print(usageText)
+		fmt.Print(connectUsageText)
 	}
 
 	flag.BoolVar(&status, "status", false, "")
@@ -61,9 +75,7 @@ func init() {
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
-}
 
-func main() {
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
