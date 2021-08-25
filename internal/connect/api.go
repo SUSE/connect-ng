@@ -161,6 +161,9 @@ func syncProducts(products []Product) ([]Product, error) {
 		return remoteProducts, err
 	}
 	resp, err := callHTTP("POST", "/connect/systems/products/synchronize", body, nil, authSystem)
+	if err != nil {
+		return remoteProducts, err
+	}
 	err = json.Unmarshal(resp, &remoteProducts)
 	if err != nil {
 		return remoteProducts, JSONError{err}
