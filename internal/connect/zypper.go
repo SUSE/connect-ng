@@ -2,6 +2,7 @@ package connect
 
 import (
 	"encoding/xml"
+	"strings"
 )
 
 const (
@@ -37,6 +38,7 @@ func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 		cmd = append(cmd, "--root", CFG.FsRoot)
 	}
 	cmd = append(cmd, args...)
+	QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
 	output, err := execute(cmd, validExitCodes)
 	if err != nil {
 		if ee, ok := err.(ExecuteError); ok {

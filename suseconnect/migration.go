@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
@@ -16,7 +17,8 @@ var (
 
 // logger shortcuts
 var (
-	Debug *log.Logger = connect.Debug
+	Debug    *log.Logger = connect.Debug
+	QuietOut *log.Logger = connect.QuietOut
 )
 
 func migrationMain() {
@@ -58,6 +60,13 @@ func migrationMain() {
 	if verbose {
 		connect.EnableDebug()
 	}
+
+	if !quiet {
+		QuietOut.SetOutput(os.Stdout)
+	}
+
+	connect.CFG.Load()
+
 	if !isSnapperConfigured() {
 		noSnapshots = true
 		Debug.Println("Snapper not configured")
@@ -103,7 +112,7 @@ func migrationMain() {
 		//     exit 1
 		//   end
 	}
-	// print "\n" unless options[:quiet]
+	QuietOut.Print("\n")
 
 	// # This is only necessary, if we run with --root option
 	// cmd = "zypper " +
