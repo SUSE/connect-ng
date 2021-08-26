@@ -79,7 +79,7 @@ func getStatuses() (map[string]Status, error) {
 			Arch:       product.Arch,
 			Status:     notRegistered,
 		}
-		if activation, ok := activations[product.toTriplet()]; ok {
+		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = registered
 			if !activation.isFree() {
 				status.RegCode = activation.RegCode
@@ -90,7 +90,7 @@ func getStatuses() (map[string]Status, error) {
 				status.Type = activation.Type
 			}
 		}
-		statuses[product.toTriplet()] = status
+		statuses[product.ToTriplet()] = status
 	}
 	return statuses, nil
 }

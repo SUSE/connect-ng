@@ -42,7 +42,8 @@ func (p Product) isEmpty() bool {
 	return p.Name == "" || p.Version == "" || p.Arch == ""
 }
 
-func (p Product) toTriplet() string {
+// ToTriplet returns <name>/<version>/<arch> string for product
+func (p Product) ToTriplet() string {
 	return p.Name + "/" + p.Version + "/" + p.Arch
 }
 

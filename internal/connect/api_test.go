@@ -164,8 +164,8 @@ func TestUpgradeProduct(t *testing.T) {
 	if service.Name != name {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
-	if service.Product.toTriplet() != product.toTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	if service.Product.ToTriplet() != product.ToTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 
@@ -205,8 +205,8 @@ func TestDeactivateProduct(t *testing.T) {
 	if service.Name != name {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
-	if service.Product.toTriplet() != product.toTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	if service.Product.ToTriplet() != product.ToTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 
@@ -229,7 +229,7 @@ func TestDeactivateProductSMT(t *testing.T) {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
 	if !service.Product.isEmpty() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 

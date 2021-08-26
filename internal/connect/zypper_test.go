@@ -12,8 +12,8 @@ func TestParseProductsXML(t *testing.T) {
 	if len(products) != 2 {
 		t.Errorf("Expected len()==2. Got %d", len(products))
 	}
-	if products[0].toTriplet() != "SUSE-MicroOS/5.0/x86_64" {
-		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].toTriplet())
+	if products[0].ToTriplet() != "SUSE-MicroOS/5.0/x86_64" {
+		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].ToTriplet())
 	}
 }
 
@@ -42,8 +42,8 @@ func TestInstalledProducts(t *testing.T) {
 	if len(products) != 2 {
 		t.Errorf("Expected len()==2. Got %d", len(products))
 	}
-	if products[0].toTriplet() != "SUSE-MicroOS/5.0/x86_64" {
-		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].toTriplet())
+	if products[0].ToTriplet() != "SUSE-MicroOS/5.0/x86_64" {
+		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].ToTriplet())
 	}
 }
 
@@ -56,8 +56,8 @@ func TestBaseProduct(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if base.toTriplet() != "SUSE-MicroOS/5.0/x86_64" {
-		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", base.toTriplet())
+	if base.ToTriplet() != "SUSE-MicroOS/5.0/x86_64" {
+		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", base.ToTriplet())
 	}
 }
 

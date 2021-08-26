@@ -160,7 +160,8 @@ func refreshAllServices() error {
 	return err
 }
 
-func installReleasePackage(identifier string) error {
+// InstallReleasePackage ensures the <product-id>-release package is installed.
+func InstallReleasePackage(identifier string) error {
 	if identifier == "" {
 		return nil
 	}

@@ -55,7 +55,7 @@ func registerProduct(product Product, installReleasePkg bool) error {
 	}
 	if installReleasePkg {
 		fmt.Println("-> Installing release package ...")
-		if err := installReleasePackage(product.Name); err != nil {
+		if err := InstallReleasePackage(product.Name); err != nil {
 			return err
 		}
 	}
@@ -143,7 +143,7 @@ func deregisterProduct(product Product) error {
 	if err != nil {
 		return err
 	}
-	if product.toTriplet() == base.toTriplet() {
+	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
 	fmt.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
