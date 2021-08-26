@@ -11,7 +11,7 @@ type Product struct {
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
 	Summary string `xml:"summary,attr" json:"-"`
-	IsBase  bool   `xml:"isbase,attr" json:"-"`
+	IsBase  bool   `xml:"isbase,attr" json:"base"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
 	ReleaseType  string `json:"release_type,omitempty"`

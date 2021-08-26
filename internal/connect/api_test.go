@@ -250,3 +250,20 @@ func TestDeactivateProductError(t *testing.T) {
 		}
 	}
 }
+
+func TestProductMigrations(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(readTestFile("migrations.json", t))
+	}))
+	defer ts.Close()
+	CFG.BaseURL = ts.URL
+
+	migrations, err := productMigrations(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(migrations) != 2 {
+		t.Fatalf("len(migrations) == %d, expected 2", len(migrations))
+	}
+}

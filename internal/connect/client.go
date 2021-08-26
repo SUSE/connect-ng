@@ -263,3 +263,8 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 	}
 	return instanceData, nil
 }
+
+// ProductMigrations returns the online migration paths for the installed products
+func ProductMigrations(installed []Product) ([]MigrationPath, error) {
+	return productMigrations(installed)
+}
