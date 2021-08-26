@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
@@ -138,6 +139,14 @@ func migrationMain() {
 		os.Exit(1)
 	}
 
+	// This is not fully correct name as installedIDs could also contain some products
+	// which are activated but not installed. This matches the original implementation.
+	installedIDs := make(map[string]struct{}, 0)
+	for _, prod := range systemProducts {
+		installedIDs[prod.ToTriplet()] = struct{}{}
+	}
+
+	allMigrations := make([]connect.MigrationPath, 0)
 	// if options[:to_product]
 	//   begin
 	//     identifier, version, arch = options[:to_product].split('/')
@@ -152,54 +161,57 @@ func migrationMain() {
 	//     exit 1
 	//   end
 	// else
-	//   begin
-	//     migrations_all = SUSE::Connect::YaST.system_migrations system_products
-	//   rescue => e
-	//     print "Can't get available migrations from server: #{e.class}: #{e.message}\n"
-	//     exit 1
-	//   end
-	// end
+	{
+		allMigrations, err = connect.ProductMigrations(systemProducts)
+		if err != nil {
+			fmt.Printf("Can't get available migrations from server: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
-	// #preprocess the migrations lists
-	// migrations = Array.new
-	// migrations_unavailable = Array.new
-	// migrations_all.each do |migration|
-	//   migr_available = true
-	//   migration.each do |p|
-	//     p.available = !defined?(p.available) || p.available
-	//     p.already_installed = !! system_products.detect { |ip| ip.identifier.eql?(p.identifier) && ip.version.eql?(p.version) && ip.arch.eql?(p.arch) }
-	//     if !p.available
-	//       migr_available = false
-	//     end
-	//   end
-	//   # put already_installed products last and base products first
-	//   migration = migration.sort_by.with_index { |p, idx| [p.already_installed ? 1 : 0, p.base ? 0 : 1, idx] }
-	//   if migr_available
-	//     migrations << migration
-	//   else
-	//     migrations_unavailable << migration
-	//   end
-	// end
+	// preprocess the migrations lists
+	migrations := make([]connect.MigrationPath, 0)
+	unavailableMigrations := make([]connect.MigrationPath, 0)
+	for _, m := range allMigrations {
+		mAvailable := true
+		for _, p := range m {
+			mAvailable = mAvailable && p.Available
+		}
+		// sort migrations to put already installed products last and base products first
+		sort.SliceStable(m, func(i, j int) bool {
+			// first check installation status
+			_, firstInstalled := installedIDs[m[i].ToTriplet()]
+			_, secondInstalled := installedIDs[m[j].ToTriplet()]
+			if firstInstalled != secondInstalled {
+				return !firstInstalled
+			}
+			// if installation status is the same, check 'base' field
+			firstBase := m[i].IsBase
+			secondBase := m[j].IsBase
+			return firstBase && !secondBase
+		})
 
-	// if migrations_unavailable.length > 0 && !options[:quiet]
-	//   print "Unavailable migrations (product is not mirrored):\n\n"
-	//   migrations_unavailable.each do |migration|
-	//     migration.each do |p|
-	//       print "        #{p.friendly_name}" + (p.available ? "" : " (not available)") + (p.already_installed ? " (already installed)" : "") + "\n"
-	//     end
-	//     print "\n"
-	//   end
-	//   print "\n"
-	// end
+		if mAvailable {
+			migrations = append(migrations, m)
+		} else {
+			unavailableMigrations = append(unavailableMigrations, m)
+		}
+	}
 
-	// if migrations.length == 0
-	//   print "No migration available.\n\n" unless options[:quiet]
-	//   if migrations_unavailable.length > 0
-	//     # no need to print a msg - unavailable migrations are listed above
-	//     exit 1
-	//   end
-	//   exit 0
-	// end
+	if len(unavailableMigrations) > 0 && !quiet {
+		printMigrations(unavailableMigrations,
+			installedIDs,
+			"Unavailable migrations (product is not mirrored):")
+	}
+
+	if len(migrations) == 0 {
+		QuietOut.Print("No migration available.\n\n")
+		if len(unavailableMigrations) > 0 {
+			// no need to print a msg - unavailable migrations are listed above
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	// migration_num = options[:migration]
 	// if options[:non_interactive] && migration_num == 0
@@ -477,4 +489,24 @@ func checkSystemProducts() ([]connect.Product, error) {
 	}
 	Debug.Print("\n")
 	return systemProducts, nil
+}
+
+func printMigrations(migrations []connect.MigrationPath,
+	installedIDs map[string]struct{},
+	header string) {
+	fmt.Printf("%s\n\n", header)
+	for _, m := range migrations {
+		for _, p := range m {
+			suffix := ""
+			if !p.Available {
+				suffix = suffix + " (not available)"
+			}
+			if _, installed := installedIDs[p.ToTriplet()]; installed {
+				suffix = suffix + " (already installed)"
+			}
+			fmt.Printf("        %s%s\n", p.FriendlyName, suffix)
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
 }
