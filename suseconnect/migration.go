@@ -127,46 +127,16 @@ func migrationMain() {
 	//   exit 1
 	// end
 
-	// begin
-	//   system_products = SUSE::Connect::Migration::system_products
+	systemProducts, err := checkSystemProducts()
+	if err != nil {
+		fmt.Printf("Can't determine the list of installed products: %v\n", err)
+		os.Exit(1)
+	}
 
-	//   release_package_missing = false
-	//   system_products.each do |ident|
-	//     begin
-	//       # if a release package for registered product is missing -> try install it
-	//       SUSE::Connect::Migration.install_release_package(ident.identifier)
-	//     rescue => e
-	//       release_package_missing = true
-	//       print "Can't install release package for registered product #{ident.identifier}\n" unless options[:quiet]
-	//       print "#{e.class}: #{e.message}\n" unless options[:quiet]
-	//     end
-	//   end
-
-	//   if release_package_missing
-	//     # some release packages are missing and can't be installed
-	//     print "Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.\n" unless options[:quiet]
-	//     SUSE::Connect::Migration.rollback
-
-	//     # re-read the list of products
-	//     system_products = SUSE::Connect::Migration::system_products
-	//   end
-
-	//   if options[:verbose]
-	//     print "Installed products:\n"
-	//     system_products.each {|p|
-	//       printf "  %-25s %s\n", "#{p.identifier}/#{p.version}/#{p.arch}", p.summary
-	//     }
-	//     print "\n"
-	//   end
-	// rescue => e
-	//   print "Can't determine the list of installed products: #{e.class}: #{e.message}\n"
-	//   exit 1
-	// end
-
-	// if system_products.length == 0
-	//   print "No products found, migration is not possible.\n"
-	//   exit 1
-	// end
+	if len(systemProducts) == 0 {
+		fmt.Println("No products found, migration is not possible.")
+		os.Exit(1)
+	}
 
 	// if options[:to_product]
 	//   begin
@@ -469,4 +439,42 @@ func isSnapperConfigured() bool {
 	// TODO
 	// system "/usr/bin/snapper --no-dbus list-configs 2>/dev/null | grep -q \"^root \""
 	return false
+}
+
+func checkSystemProducts() ([]connect.Product, error) {
+	systemProducts, err := connect.SystemProducts()
+	if err != nil {
+		return systemProducts, err
+	}
+
+	releasePackageMissing := false
+	for _, p := range systemProducts {
+		// if a release package for registered product is missing -> try install it
+		err := connect.InstallReleasePackage(p.Name)
+		if err != nil {
+			releasePackageMissing = true
+			QuietOut.Printf("Can't install release package for registered product %s\n", p.Name)
+			QuietOut.Printf("%v\n", err)
+		}
+	}
+
+	if releasePackageMissing {
+		// some release packages are missing and can't be installed
+		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
+		if err := connect.Rollback(); err != nil {
+			return systemProducts, err
+		}
+		// re-read the list of products
+		systemProducts, err := connect.SystemProducts()
+		if err != nil {
+			return systemProducts, err
+		}
+	}
+
+	Debug.Println("Installed products:")
+	for _, p := range systemProducts {
+		Debug.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
+	}
+	Debug.Print("\n")
+	return systemProducts, nil
 }

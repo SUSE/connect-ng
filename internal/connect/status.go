@@ -107,3 +107,32 @@ func getStatusText(statuses map[string]Status) (string, error) {
 	}
 	return output.String(), nil
 }
+
+// SystemProducts returns sum of installed and activated products
+// Products from zypper have priority over products from
+// activations as they have summary field which is missing
+// in the latter.
+func SystemProducts() ([]Product, error) {
+	products, err := installedProducts()
+	if err != nil {
+		return products, err
+	}
+	installedIDs := make(map[string]struct{}, 0)
+	for _, prod := range products {
+		installedIDs[prod.ToTriplet()] = struct{}{}
+	}
+	if !IsRegistered() {
+		return products, nil
+	}
+	activations, err := systemActivations()
+	if err != nil {
+		return products, err
+	}
+	for _, a := range activations {
+		if _, found := installedIDs[a.Service.Product.ToTriplet()]; !found {
+			products = append(products, a.Service.Product)
+		}
+	}
+
+	return products, nil
+}
