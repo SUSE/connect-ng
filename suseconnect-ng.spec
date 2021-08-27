@@ -29,9 +29,11 @@ Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
-Conflicts:      SUSEConnect
+BuildRequires:  zypper
 Obsoletes:      SUSEConnect
 Provides:       SUSEConnect
+Obsoletes:      zypper-migration-plugin
+Provides:       zypper-migration-plugin
 %if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
 Requires:       ca-certificates
 %else
@@ -81,13 +83,15 @@ find %_builddir/..
 %install
 %goinstall
 ln -s suseconnect %buildroot/%_bindir/SUSEConnect
-mkdir %buildroot/%_sbindir
+mkdir -p %buildroot/%_sbindir %buildroot/usr/lib/zypper/commands
 ln -s ../bin/suseconnect %buildroot/%_sbindir/SUSEConnect
+ln -s %_bindir/suseconnect %buildroot/usr/lib/zypper/commands/zypper-migration
 #TODO package ruby module
 #cp /home/abuild/rpmbuild/BUILD/go/src/github.com/SUSE/connect-ng/ext/libsuseconnect.so %_libdir/libsuseconnect.so
 #TODO man pages not yet available in source, these are the names frome the ruby version
 #/usr/share/man/man5/SUSEConnect.5.gz
 #/usr/share/man/man8/SUSEConnect.8.gz
+#/usr/share/man/man8/zypper-migration.8.gz
 
 find %_builddir/..
 # we currently do not ship the source for any go module
@@ -103,4 +107,4 @@ make -C %_builddir/go/src/github.com/SUSE/connect-ng gofmt
 %_bindir/suseconnect
 %_bindir/SUSEConnect
 %_sbindir/SUSEConnect
-
+/usr/lib/zypper/commands
