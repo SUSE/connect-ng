@@ -31,6 +31,7 @@ func migrationMain() {
 		autoAgreeLicenses bool
 		noSnapshots       bool
 		noSelfUpdate      bool
+		migrationNum      int
 	)
 
 	flag.Usage = func() {
@@ -52,6 +53,7 @@ func migrationMain() {
 	// dummy flag to keep default but accept cli arg
 	flag.BoolVar(&dummy, "selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
+	flag.IntVar(&migrationNum, "migration", 0, "")
 
 	flag.Parse()
 	// this is only to keep the flag parsing logic simple and avoid double
@@ -213,37 +215,36 @@ func migrationMain() {
 		os.Exit(0)
 	}
 
-	// migration_num = options[:migration]
-	// if options[:non_interactive] && migration_num == 0
-	//   # select the first option
-	//   migration_num = 1
-	// end
+	if nonInteractive && migrationNum == 0 {
+		// select the first option
+		migrationNum = 1
+	}
 
-	// while migration_num <= 0 || migration_num > migrations.length do
-	//   print "Available migrations:\n\n"
-	//   migrations.each_with_index do |migration, index|
-	//     printf "   %2d |", index + 1
-	//     migration.each do |p|
-	//       print " #{p.friendly_name}" + (p.already_installed ? " (already installed)" : "") + "\n       "
-	//     end
-	//     print "\n"
-	//   end
-	//   print "\n"
-	//   if options[:query]
-	//     exit 0
-	//   end
-	//   while migration_num <= 0 || migration_num > migrations.length do
-	//     print "[num/q]: "
-	//     choice = gets
-	//     if !choice
-	//       print "\nStandard input seems to be closed, please use '--non-interactive' option\n" unless options[:quiet]
-	//       exit 1
-	//     end
-	//     choice.chomp!
-	//     exit 0 if choice.eql?("q") || choice.eql?("Q")
-	//     migration_num = choice.to_i
-	//   end
-	// end
+	for migrationNum <= 0 || migrationNum > len(migrations) {
+		//   print "Available migrations:\n\n"
+		//   migrations.each_with_index do |migration, index|
+		//     printf "   %2d |", index + 1
+		//     migration.each do |p|
+		//       print " #{p.friendly_name}" + (p.already_installed ? " (already installed)" : "") + "\n       "
+		//     end
+		//     print "\n"
+		//   end
+		//   print "\n"
+		//   if options[:query]
+		//     exit 0
+		//   end
+		//   while migration_num <= 0 || migration_num > migrations.length do
+		//     print "[num/q]: "
+		//     choice = gets
+		//     if !choice
+		//       print "\nStandard input seems to be closed, please use '--non-interactive' option\n" unless options[:quiet]
+		//       exit 1
+		//     end
+		//     choice.chomp!
+		//     exit 0 if choice.eql?("q") || choice.eql?("Q")
+		//     migration_num = choice.to_i
+		//   end
+	}
 
 	// migration = migrations[migration_num - 1]
 
