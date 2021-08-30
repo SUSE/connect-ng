@@ -6,3 +6,4 @@ Usage: zypper migration [options]
     -l, --auto-agree-with-licenses   Automatically say 'yes' to third party license confirmation prompt
         --no-snapshots               Do not create snapshots.
         --[no-]selfupdate            Do not update the update stack first
+        --root DIR                   Operate on a different root directory

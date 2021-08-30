@@ -32,6 +32,7 @@ func migrationMain() {
 		noSnapshots       bool
 		noSelfUpdate      bool
 		migrationNum      int
+		fsRoot            string
 	)
 
 	flag.Usage = func() {
@@ -54,6 +55,7 @@ func migrationMain() {
 	flag.BoolVar(&dummy, "selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
+	flag.StringVar(&fsRoot, "root", "", "")
 
 	flag.Parse()
 	// this is only to keep the flag parsing logic simple and avoid double
@@ -69,6 +71,13 @@ func migrationMain() {
 	}
 
 	connect.CFG.Load()
+
+	// pass root to connect config
+	if fsRoot != "" {
+		connect.CFG.FsRoot = fsRoot
+		// if we update a chroot system, we cannot create snapshots of it
+		noSnapshots = true
+	}
 
 	if !isSnapperConfigured() {
 		noSnapshots = true
