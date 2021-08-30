@@ -30,10 +30,10 @@ Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
-Obsoletes:      SUSEConnect
-Provides:       SUSEConnect
-Obsoletes:      zypper-migration-plugin
-Provides:       zypper-migration-plugin
+Obsoletes:      SUSEConnect <= 2:0
+Provides:       SUSEConnect = 2:0
+Obsoletes:      zypper-migration-plugin <= 2:0
+Provides:       zypper-migration-plugin = 2:0
 %if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
 Requires:       ca-certificates
 %else
