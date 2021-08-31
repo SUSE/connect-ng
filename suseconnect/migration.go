@@ -126,18 +126,11 @@ func migrationMain() {
 	}
 	QuietOut.Print("\n")
 
-	// # This is only necessary, if we run with --root option
-	// cmd = "zypper " +
-	//       (options[:root] ? "--root #{options[:root]} " : "") +
-	//       (options[:non_interactive] ? "--non-interactive " : "") +
-	//       (options[:verbose] ? "--verbose " : "") +
-	//       (options[:quiet] ? "--quiet " : "") +
-	//       " refresh"
-	// print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-	// if !system cmd
-	//   print print "repository refresh failed, exiting\n"
-	//   exit 1
-	// end
+	// This is only necessary, if we run with --root option
+	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive); err != nil {
+		fmt.Println("repository refresh failed, exiting")
+		os.Exit(1)
+	}
 
 	systemProducts, err := checkSystemProducts()
 	if err != nil {

@@ -2,6 +2,7 @@ package connect
 
 import (
 	"encoding/xml"
+	"fmt"
 	"strings"
 )
 
@@ -200,5 +201,33 @@ func removeReleasePackage(identifier string) error {
 func setReleaseVersion(version string) error {
 	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
 	_, err := zypperRun(args, []int{zypperOK})
+	return err
+}
+
+// RefreshRepos runs zypper to refresh all repositories
+func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInteractive bool) error {
+	args := []string{"ref"}
+	flags := []string{}
+	if force {
+		args = append(args, "-f")
+	}
+	if nonInteractive {
+		flags = append(flags, "--non-interactive")
+	}
+	if verbose {
+		flags = append(flags, "--verbose")
+	}
+	if quiet {
+		flags = append(flags, "--quiet")
+	}
+	if version != "" {
+		flags = append(flags, "--releasever", version)
+	}
+	args = append(flags, args...)
+	output, err := zypperRun(args, []int{zypperOK})
+	// TODO: print output as it goes not post-factum and do it for all zypper calls!
+	if len(output) > 0 {
+		fmt.Print(string(output))
+	}
 	return err
 }
