@@ -268,3 +268,9 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 func ProductMigrations(installed []Product) ([]MigrationPath, error) {
 	return productMigrations(installed)
 }
+
+// UpgradeProduct upgades the records for given product in SCC/SMT
+// The service record for new product is returned
+func UpgradeProduct(product Product) (Service, error) {
+	return upgradeProduct(product)
+}
