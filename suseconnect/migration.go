@@ -1,5 +1,28 @@
 package main
 
+// TODO LIST
+// * zypp_backup/zypp_restore functions
+// * zypper dup wrapper with options (these are mostly pass-through from plugin args)
+// *   passthrough zypper dup options:
+// *     --allow-vendor-change
+// *     --from
+// *     --repo
+// *     --debug-solver
+// *     --recommends
+// *     --no-recommends
+// *     --replacefiles
+// *     --details
+// *     --download (including --download-only)
+// * --selfupdate option
+// * --query plugin option
+// * --break-my-system option
+// * --product option (offline migration)
+// * obsolete repo disabling (including --disable-repos option)
+// * interactive migration mode
+// * snapshots (snapper wrapper)
+// * Leap -> SLES migration case
+// * system.execute() function with pipe output from executed program to stdout
+
 import (
 	_ "embed"
 	"errors"
@@ -140,7 +163,7 @@ func migrationMain() {
 		os.Exit(1)
 	}
 
-	systemProducts, err := checkSystemProducts()
+	systemProducts, err := checkSystemProducts(true, true)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -219,6 +242,7 @@ func migrationMain() {
 		migrationNum = 1
 	}
 
+	// TODO: this part is only used in interactive mode
 	for migrationNum <= 0 || migrationNum > len(migrations) {
 		//   print "Available migrations:\n\n"
 		//   migrations.each_with_index do |migration, index|
@@ -245,23 +269,17 @@ func migrationMain() {
 		//   end
 	}
 
-	// migration = migrations[migration_num - 1]
+	migration := migrations[migrationNum-1]
 
-	// if !options[:no_snapshots]
-	//   cmd = "snapper create --type pre --cleanup-algorithm=number --print-number --userdata important=yes --description 'before online migration'"
-	//   print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-	//   pre_snapshot_num = `#{cmd}`.to_i
-	// end
+	if !noSnapshots {
+		//   cmd = "snapper create --type pre --cleanup-algorithm=number --print-number --userdata important=yes --description 'before online migration'"
+		//   print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
+		//   pre_snapshot_num = `#{cmd}`.to_i
+	}
 
+	// TODO: make sure to set this in snapper wrapper function when it's implemented
 	// ENV['DISABLE_SNAPPER_ZYPP_PLUGIN'] = '1'
 
-	// base_product_version = nil # unknown yet
-
-	// result = false
-	// fs_inconsistent = false
-	// msg = "Preparing migration"
-
-	// begin
 	// allow interrupt only at specified points
 	// we have to check zypper exitstatus == 8 even after interrupt
 	sigs := make(chan os.Signal, 1)
@@ -272,119 +290,22 @@ func migrationMain() {
 		interrupted = true
 	}()
 
-	//   zypp_backup(options[:root] ? options[:root]: "/")
+	fsInconsistent, err := applyMigration(migration)
 
-	//   raise "Interrupted." if interrupted
+	if err != nil {
+		fmt.Println(err)
+		QuietOut.Print("\nMigration failed.\n\n")
+	}
 
-	//   if system_products.detect { |p| p.identifier == "Leap" } &&
-	//      migration.detect { |p| p.identifier == "SLES" }
-	//      # bsc#1184237
-	//      print "Migration from Leap to SLES - disabling old repositories\n" unless options[:quiet]
-	//      SUSE::Connect::Migration::repositories.each do |repo|
-	//          SUSE::Connect::Migration::disable_repository repo[:name] if repo[:enabled] != 0
-	//      end
-	//   end
-
-	//   migration.each do |p|
-	//     msg = "Upgrading product #{p.friendly_name}"
-	//     print "#{msg}.\n" unless options[:quiet]
-	//     service = SUSE::Connect::YaST.upgrade_product p
-
-	//     unless service[:obsoleted_service_name].empty?
-	//       msg = "Removing service #{service[:obsoleted_service_name]}"
-	//       print "#{msg}.\n" if options[:verbose]
-	//       SUSE::Connect::Migration::remove_service service[:obsoleted_service_name]
-	//     end
-
-	//     SUSE::Connect::Migration::find_products(p.identifier).each do |available_product|
-	//       # filter out "(System Packages)" and already disabled repos
-	//       next unless SUSE::Connect::Migration::repositories.detect { |r| r[:name].eql?(available_product[:repository]) && r[:enabled] != 0 }
-	//       if ProductVersion.new(available_product[:edition]) < ProductVersion.new(p.version)
-	//         print "Found obsolete repository #{available_product[:repository]}" unless options[:quiet]
-	//         if options[:non_interactive] || options[:disable_repos]
-	//           print "... disabling.\n" unless options[:quiet]
-	//           SUSE::Connect::Migration::disable_repository available_product[:repository]
-	//         else
-	//           while true
-	//             print "\nDisable obsolete repository #{available_product[:repository]} [y/n] (y): "
-	//             choice = gets.chomp
-	//             raise "Interrupted." if interrupted
-	//             if choice.eql?('n') || choice.eql?('N')
-	//               print "\n"
-	//               break
-	//             end
-	//             if  choice.eql?('y') || choice.eql?('Y')|| choice.eql?('')
-	//               print "... disabling.\n"
-	//               SUSE::Connect::Migration::disable_repository available_product[:repository]
-	//               break
-	//             end
-	//           end
-	//         end
-	//       end
-	//     end
-
-	//     msg = "Adding service #{service[:name]}"
-	//     print "#{msg}.\n" if options[:verbose]
-	//     SUSE::Connect::Migration::add_service service[:url], service[:name]
-
-	//     # store the base product version
-	//     if p.base
-	//       base_product_version = p.version
-	//     end
-	//     raise "Interrupted." if interrupted
-	//   end
-
-	//   cmd = "zypper " +
-	//         (options[:root] ? "--root #{options[:root]} " : "") +
-	//         (base_product_version ? "--releasever #{base_product_version} " : "") +
-	//         "ref -f"
-	//   msg = "Executing '#{cmd}'"
-	//   print "\n#{msg}\n\n" unless options[:quiet]
-	//   result = system cmd
-
-	//   raise "Refresh of repositories failed." unless result
-	//   raise "Interrupted." if interrupted
-
-	//   cmd = "zypper " +
-	//         (options[:root] ? "--root #{options[:root]} " : "") +
-	//         (base_product_version ? "--releasever #{base_product_version} " : "") +
-	//         (options[:non_interactive] ? "--non-interactive " : "") +
-	//         (options[:verbose] ? "--verbose " : "") +
-	//         (options[:quiet] ? "--quiet " : "") +
-	//         " --no-refresh " +
-	//         " dist-upgrade " +
-	//         (options[:allow_vendor_change] ? "--allow-vendor-change " : "--no-allow-vendor-change ") +
-	//         (options[:auto_agree] ? "--auto-agree-with-licenses " : "") +
-	//         (options[:debug_solver] ? "--debug-solver " : "") +
-	//         (options[:recommends] ? "--recommends " : "") +
-	//         (options[:no_recommends] ? "--no-recommends " : "") +
-	//         (options[:replacefiles] ? "--replacefiles " : "") +
-	//         (options[:details] ? "--details " : "") +
-	//         (options[:download] ? "--download #{options[:download]} " : "") +
-	//         (options[:repo].map { |r| "--repo #{r}" }.join(" ")) +
-	//         (options[:from].map { |r| "--from #{r}" }.join(" "))
-	//   msg = "Executing '#{cmd}'"
-	//   print "\n#{msg}\n\n" unless options[:quiet]
-	//   result = system cmd
-	//   fs_inconsistent = true if $?.exitstatus == 8
-	//   raise "Interrupted." if interrupted
-
-	// rescue => e
-	//   print "#{msg}: #{e.class}: #{e.message}\n"
-	//   result = false
-	// end
-
-	// print "\nMigration failed.\n\n" unless result || options[:quiet]
-
-	// if fs_inconsistent
-	//   print "The migration to the new service pack has failed. The system is most\n"
-	//   print "likely in an inconsistent state.\n"
-	//   print "\n"
-	//   print "We strongly recommend to rollback to a snapshot created before the\n"
-	//   print "migration was started (via selecting the snapshot in the boot menu\n"
-	//   print "if you use snapper) or restore the system from a backup.\n"
-	//   exit 2
-	// end
+	if fsInconsistent {
+		fmt.Println("The migration to the new service pack has failed. The system is most")
+		fmt.Println("likely in an inconsistent state.")
+		fmt.Print("\n")
+		fmt.Println("We strongly recommend to rollback to a snapshot created before the")
+		fmt.Println("migration was started (via selecting the snapshot in the boot menu")
+		fmt.Println("if you use snapper) or restore the system from a backup.")
+		os.Exit(2)
+	}
 
 	// if !options[:no_snapshots] && pre_snapshot_num > 0
 	//   cmd = "snapper create --type post --pre-number #{pre_snapshot_num} --cleanup-algorithm=number --print-number --userdata important=yes --description 'after online migration'"
@@ -414,41 +335,30 @@ func migrationMain() {
 	// #  end
 	// end
 
-	// # make sure all release packages are installed (bsc#1171652)
-	// if result
-	//   begin
-	//     system_products = SUSE::Connect::Migration::system_products
+	// make sure all release packages are installed (bsc#1171652)
+	if err == nil {
+		_, err := checkSystemProducts(false, false)
+		if err != nil {
+			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
+			// the system has been sucessfully upgraded, zypper reported no error so
+			// the only way to get here is a scc problem - it is better to just exit
+			os.Exit(1)
+		}
+	}
 
-	//     system_products.each do |ident|
-	//       begin
-	//         # if a release package for registered product is missing -> try install it
-	//         SUSE::Connect::Migration.install_release_package(ident.identifier)
-	//       rescue => e
-	//         print "Can't install release package for registered product #{ident.identifier}\n" unless options[:quiet]
-	//         print "#{e.class}: #{e.message}\n" unless options[:quiet]
-	//       end
-	//     end
-	//   rescue => e
-	//     print "Can't determine the list of products installed after migration: #{e.class}: #{e.message}\n"
-	//     # the system has been sucessfully upgraded, zypper reported no error so
-	//     # the only way to get here is a scc problem - it is better to just exit
-	//     #
-	//     exit 1
-	//   end
-	// end
+	if err != nil {
+		QuietOut.Print("\nPerforming repository rollback...\n")
 
-	// if !result
-	//   print "\nPerforming repository rollback...\n" unless options[:quiet]
-	//   begin
-	//     # restore repo configuration from backup file
-	//     zypp_restore
-	//     ret = SUSE::Connect::Migration.rollback
-	//     print "Rollback successful.\n" unless options[:quiet]
-	//   rescue => e
-	//     print "Rollback failed: #{e.class}: #{e.message}\n"
-	//   end
-	//   exit 1
-	// end
+		// TODO
+		// restore repo configuration from backup file
+		//     zypp_restore
+		if err := connect.Rollback(); err == nil {
+			QuietOut.Println("Rollback successful.")
+		} else {
+			fmt.Printf("Rollback failed: %v\n", err)
+		}
+		os.Exit(1)
+	}
 }
 
 func isSnapperConfigured() bool {
@@ -457,7 +367,7 @@ func isSnapperConfigured() bool {
 	return false
 }
 
-func checkSystemProducts() ([]connect.Product, error) {
+func checkSystemProducts(rollbackOnFailure bool, printInstalledProducts bool) ([]connect.Product, error) {
 	systemProducts, err := connect.SystemProducts()
 	if err != nil {
 		return systemProducts, err
@@ -474,7 +384,7 @@ func checkSystemProducts() ([]connect.Product, error) {
 		}
 	}
 
-	if releasePackageMissing {
+	if releasePackageMissing && rollbackOnFailure {
 		// some release packages are missing and can't be installed
 		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
 		if err := connect.Rollback(); err != nil {
@@ -487,11 +397,13 @@ func checkSystemProducts() ([]connect.Product, error) {
 		}
 	}
 
-	Debug.Println("Installed products:")
-	for _, p := range systemProducts {
-		Debug.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
+	if printInstalledProducts {
+		Debug.Println("Installed products:")
+		for _, p := range systemProducts {
+			Debug.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
+		}
+		Debug.Print("\n")
 	}
-	Debug.Print("\n")
 	return systemProducts, nil
 }
 
@@ -529,4 +441,138 @@ func sortMigrationProducts(m connect.MigrationPath, installedIDs map[string]stru
 		secondBase := m[j].IsBase
 		return firstBase && !secondBase
 	})
+}
+
+// updates system records in SCC/SMT
+// adds/removes services to match target state
+// disables obsolete repos
+// returns base product version string
+func migrateSystem(migration connect.MigrationPath) (string, error) {
+	var baseProductVersion string
+
+	for _, p := range migration {
+		msg := "Upgrading product " + p.FriendlyName
+		connect.QuietOut.Println(msg)
+		service, err := connect.UpgradeProduct(p)
+		if err != nil {
+			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
+		}
+
+		if service.ObsoletedName != "" {
+			msg := "Removing service " + service.ObsoletedName
+			Debug.Println(msg)
+			err = connect.MigrationRemoveService(service.ObsoletedName)
+			if err != nil {
+				return baseProductVersion, err
+			}
+		}
+
+		//     SUSE::Connect::Migration::find_products(p.identifier).each do |available_product|
+		//       # filter out "(System Packages)" and already disabled repos
+		//       next unless SUSE::Connect::Migration::repositories.detect { |r| r[:name].eql?(available_product[:repository]) && r[:enabled] != 0 }
+		//       if ProductVersion.new(available_product[:edition]) < ProductVersion.new(p.version)
+		//         print "Found obsolete repository #{available_product[:repository]}" unless options[:quiet]
+		//         if options[:non_interactive] || options[:disable_repos]
+		//           print "... disabling.\n" unless options[:quiet]
+		//           SUSE::Connect::Migration::disable_repository available_product[:repository]
+		//         else
+		//           while true
+		//             print "\nDisable obsolete repository #{available_product[:repository]} [y/n] (y): "
+		//             choice = gets.chomp
+		//             if interrupted {
+		//	             return baseProductVersion, ErrInterrupted
+		//             }
+		//             if choice.eql?('n') || choice.eql?('N')
+		//               print "\n"
+		//               break
+		//             end
+		//             if  choice.eql?('y') || choice.eql?('Y')|| choice.eql?('')
+		//               print "... disabling.\n"
+		//               SUSE::Connect::Migration::disable_repository available_product[:repository]
+		//               break
+		//             end
+		//           end
+		//         end
+		//       end
+		//     end
+
+		msg = "Adding service " + service.Name
+		Debug.Println(msg)
+		err = connect.MigrationAddService(service.URL, service.Name)
+		if err != nil {
+			return baseProductVersion, err
+		}
+
+		// store the base product version
+		if p.IsBase {
+			baseProductVersion = p.Version
+		}
+		if interrupted {
+			return baseProductVersion, fmt.Errorf("%s: %v", msg, ErrInterrupted)
+		}
+	}
+	return baseProductVersion, nil
+}
+
+// returns fs_inconsistent flag
+func applyMigration(migration connect.MigrationPath) (bool, error) {
+	fsInconsistent := false
+	// TODO
+	//   zypp_backup(options[:root] ? options[:root]: "/")
+
+	if interrupted {
+		return fsInconsistent, fmt.Errorf("Preparing migration: %v", ErrInterrupted)
+	}
+
+	//   if system_products.detect { |p| p.identifier == "Leap" } &&
+	//      migration.detect { |p| p.identifier == "SLES" }
+	//      # bsc#1184237
+	//      print "Migration from Leap to SLES - disabling old repositories\n" unless options[:quiet]
+	//      SUSE::Connect::Migration::repositories.each do |repo|
+	//          SUSE::Connect::Migration::disable_repository repo[:name] if repo[:enabled] != 0
+	//      end
+	//   end
+
+	baseProductVersion, err := migrateSystem(migration)
+	if err != nil {
+		return fsInconsistent, err
+	}
+
+	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false); err != nil {
+		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
+	}
+	if interrupted {
+		return fsInconsistent, ErrInterrupted
+	}
+
+	// TODO
+	//   cmd = "zypper " +
+	//         (options[:root] ? "--root #{options[:root]} " : "") +
+	//         (base_product_version ? "--releasever #{base_product_version} " : "") +
+	//         (options[:non_interactive] ? "--non-interactive " : "") +
+	//         (options[:verbose] ? "--verbose " : "") +
+	//         (options[:quiet] ? "--quiet " : "") +
+	//         " --no-refresh " +
+	//         " dist-upgrade " +
+	//         (options[:allow_vendor_change] ? "--allow-vendor-change " : "--no-allow-vendor-change ") +
+	//         (options[:auto_agree] ? "--auto-agree-with-licenses " : "") +
+	//         (options[:debug_solver] ? "--debug-solver " : "") +
+	//         (options[:recommends] ? "--recommends " : "") +
+	//         (options[:no_recommends] ? "--no-recommends " : "") +
+	//         (options[:replacefiles] ? "--replacefiles " : "") +
+	//         (options[:details] ? "--details " : "") +
+	//         (options[:download] ? "--download #{options[:download]} " : "") +
+	//         (options[:repo].map { |r| "--repo #{r}" }.join(" ")) +
+	//         (options[:from].map { |r| "--from #{r}" }.join(" "))
+	//   msg = "Executing '#{cmd}'"
+	//   print "\n#{msg}\n\n" unless options[:quiet]
+	//   result = system cmd
+	// TODO:
+	//if $?.exitstatus == 8
+	fsInconsistent = true
+	if interrupted {
+		return fsInconsistent, ErrInterrupted
+	}
+
+	return fsInconsistent, nil
 }
