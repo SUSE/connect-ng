@@ -2,11 +2,14 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"sort"
+	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
@@ -14,6 +17,11 @@ import (
 var (
 	//go:embed migrationUsage.txt
 	migrationUsageText string
+	// flag indicating interuption by INT/TERM signal
+	interrupted bool
+
+	// ErrInterrupted is returned when execution was interrupted by INT/TERM signal
+	ErrInterrupted = errors.New("Interrupted")
 )
 
 // logger shortcuts
@@ -265,11 +273,15 @@ func migrationMain() {
 	// msg = "Preparing migration"
 
 	// begin
-	//   # allow interrupt only at specified points
-	//   # we have to check zypper exitstatus == 8 even after interrupt
-	//   interrupted = false
-	//   trap('INT') { interrupted = true }
-	//   trap('TERM') { interrupted = true }
+	// allow interrupt only at specified points
+	// we have to check zypper exitstatus == 8 even after interrupt
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigs
+		Debug.Printf("Signal received: %v", sig)
+		interrupted = true
+	}()
 
 	//   zypp_backup(options[:root] ? options[:root]: "/")
 
