@@ -189,19 +189,8 @@ func migrationMain() {
 		for _, p := range m {
 			mAvailable = mAvailable && p.Available
 		}
-		// sort migrations to put already installed products last and base products first
-		sort.SliceStable(m, func(i, j int) bool {
-			// first check installation status
-			_, firstInstalled := installedIDs[m[i].ToTriplet()]
-			_, secondInstalled := installedIDs[m[j].ToTriplet()]
-			if firstInstalled != secondInstalled {
-				return !firstInstalled
-			}
-			// if installation status is the same, check 'base' field
-			firstBase := m[i].IsBase
-			secondBase := m[j].IsBase
-			return firstBase && !secondBase
-		})
+
+		sortMigrationProducts(m, installedIDs)
 
 		if mAvailable {
 			migrations = append(migrations, m)
@@ -524,4 +513,20 @@ func printMigrations(migrations []connect.MigrationPath,
 		fmt.Print("\n")
 	}
 	fmt.Print("\n")
+}
+
+// sort migrations to put already installed products last and base products first
+func sortMigrationProducts(m connect.MigrationPath, installedIDs map[string]struct{}) {
+	sort.SliceStable(m, func(i, j int) bool {
+		// first check installation status
+		_, firstInstalled := installedIDs[m[i].ToTriplet()]
+		_, secondInstalled := installedIDs[m[j].ToTriplet()]
+		if firstInstalled != secondInstalled {
+			return !firstInstalled
+		}
+		// if installation status is the same, check 'base' field
+		firstBase := m[i].IsBase
+		secondBase := m[j].IsBase
+		return firstBase && !secondBase
+	})
 }
