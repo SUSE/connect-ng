@@ -26,3 +26,4 @@
   This is a bug and it's already fixed in the Go version.
 - With --debug the Go version sends all debug output to stderr. The Ruby
   version sends http debug to stderr, and other debug to stdout.
+- In zypper-migration plugin, `--download <mode>` flag doesn't validate `<mode>`.

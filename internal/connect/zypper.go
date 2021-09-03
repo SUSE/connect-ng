@@ -204,13 +204,9 @@ func setReleaseVersion(version string) error {
 	return err
 }
 
-// RefreshRepos runs zypper to refresh all repositories
-func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInteractive bool) error {
-	args := []string{"ref"}
+func zypperFlags(version string, quiet bool, verbose bool,
+	nonInteractive bool, noRefresh bool) []string {
 	flags := []string{}
-	if force {
-		args = append(args, "-f")
-	}
 	if nonInteractive {
 		flags = append(flags, "--non-interactive")
 	}
@@ -223,7 +219,33 @@ func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInter
 	if version != "" {
 		flags = append(flags, "--releasever", version)
 	}
+	if noRefresh {
+		flags = append(flags, "--no-refresh")
+	}
+	return flags
+}
+
+// RefreshRepos runs zypper to refresh all repositories
+func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInteractive bool) error {
+	args := []string{"ref"}
+	flags := zypperFlags(version, quiet, verbose, nonInteractive, false)
+	if force {
+		args = append(args, "-f")
+	}
 	args = append(flags, args...)
+	output, err := zypperRun(args, []int{zypperOK})
+	// TODO: print output as it goes not post-factum and do it for all zypper calls!
+	if len(output) > 0 {
+		fmt.Print(string(output))
+	}
+	return err
+}
+
+// DistUpgrade runs zypper dist-upgrade with given flags and extra args
+func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs []string) error {
+	flags := zypperFlags(version, quiet, verbose, nonInteractive, true)
+	args := append(flags, "dist-upgrade")
+	args = append(args, extraArgs...)
 	output, err := zypperRun(args, []int{zypperOK})
 	// TODO: print output as it goes not post-factum and do it for all zypper calls!
 	if len(output) > 0 {

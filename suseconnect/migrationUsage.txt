@@ -1,9 +1,19 @@
 Usage: zypper migration [options]
+        --[no-]allow-vendor-change   Allow vendor change
     -v, --[no-]verbose               Increase verbosity
     -q, --[no-]quiet                 Suppress normal output, print only error messages
     -n, --non-interactive            Do not ask anything, use default answers automatically
         --migration N                Select migration option N
+        --from REPO                  Restrict upgrade to specified repository
+    -r, --repo REPO                  Load only the specified repository
     -l, --auto-agree-with-licenses   Automatically say 'yes' to third party license confirmation prompt
+        --debug-solver               Create solver test case for debugging
+        --recommends                 Install also recommended packages
+        --no-recommends              Do not install recommended packages
+        --replacefiles               Install the packages even if they replace files from other packages
+        --details                    Show the detailed installation summary
+        --download MODE              Set the download-install mode
+        --download-only              Replace repositories and download the packages, do not install. WARNING: Upgrade with 'zypper dist-upgrade' as soon as possible.
         --no-snapshots               Do not create snapshots.
         --[no-]selfupdate            Do not update the update stack first
         --root DIR                   Operate on a different root directory

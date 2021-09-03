@@ -2,17 +2,6 @@ package main
 
 // TODO LIST
 // * zypp_backup/zypp_restore functions
-// * zypper dup wrapper with options (these are mostly pass-through from plugin args)
-// *   passthrough zypper dup options:
-// *     --allow-vendor-change
-// *     --from
-// *     --repo
-// *     --debug-solver
-// *     --recommends
-// *     --no-recommends
-// *     --replacefiles
-// *     --details
-// *     --download (including --download-only)
 // * --selfupdate option
 // * --query plugin option
 // * --break-my-system option
@@ -32,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -53,42 +43,69 @@ var (
 	QuietOut *log.Logger = connect.QuietOut
 )
 
+// implements flag.Value interface used to hold values of args which could be
+// passed multiple times e.g. $ command -x 1 -x 2 -x 3
+type multiArg []string
+
+func (a *multiArg) String() string {
+	return strings.Join(*a, "|")
+}
+func (a *multiArg) Set(v string) error {
+	*a = append(*a, v)
+	return nil
+}
+
 func migrationMain() {
 	var (
-		dummy             bool
-		verbose           bool
-		quiet             bool
-		nonInteractive    bool
-		autoAgreeLicenses bool
-		noSnapshots       bool
-		noSelfUpdate      bool
-		migrationNum      int
-		fsRoot            string
+		// dummy flag to keep default but accept cli arg
+		dummy          bool
+		verbose        bool
+		quiet          bool
+		nonInteractive bool
+		noSnapshots    bool
+		noSelfUpdate   bool
+		migrationNum   int
+		fsRoot         string
+		from           multiArg
+		repo           multiArg
+		download       multiArg // using multiArg here to make flags simpler to visit
 	)
 
 	flag.Usage = func() {
 		fmt.Print(migrationUsageText)
 	}
-	// dummy flag to keep default but accept cli arg
 	flag.BoolVar(&dummy, "no-verbose", false, "")
 	flag.BoolVar(&verbose, "verbose", false, "")
 	flag.BoolVar(&verbose, "v", false, "")
-	// dummy flag to keep default but accept cli arg
 	flag.BoolVar(&dummy, "no-quiet", false, "")
 	flag.BoolVar(&quiet, "quiet", false, "")
 	flag.BoolVar(&quiet, "q", false, "")
 	flag.BoolVar(&nonInteractive, "non-interactive", false, "")
 	flag.BoolVar(&nonInteractive, "n", false, "")
-	flag.BoolVar(&autoAgreeLicenses, "auto-agree-with-licenses", false, "")
-	flag.BoolVar(&autoAgreeLicenses, "l", false, "")
 	flag.BoolVar(&noSnapshots, "no-snapshots", false, "")
-	// dummy flag to keep default but accept cli arg
 	flag.BoolVar(&dummy, "selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
+	// zypper dup passthrough args
+	// bool flags don't need variables as these will be processed using flag.Visit()
+	flag.BoolVar(&dummy, "auto-agree-with-licenses", false, "")
+	flag.BoolVar(&dummy, "l", false, "")
+	flag.BoolVar(&dummy, "allow-vendor-change", false, "")
+	flag.BoolVar(&dummy, "no-allow-vendor-change", false, "")
+	flag.BoolVar(&dummy, "debug-solver", false, "")
+	flag.BoolVar(&dummy, "recommends", false, "")
+	flag.BoolVar(&dummy, "no-recommends", false, "")
+	flag.BoolVar(&dummy, "replacefiles", false, "")
+	flag.BoolVar(&dummy, "details", false, "")
+	flag.BoolVar(&dummy, "download-only", false, "")
+	flag.Var(&download, "download", "")
+	flag.Var(&from, "from", "")
+	flag.Var(&repo, "r", "")
+	flag.Var(&repo, "repo", "")
 
 	flag.Parse()
+
 	// this is only to keep the flag parsing logic simple and avoid double
 	// negations/negatives below
 	selfUpdate := !noSelfUpdate
@@ -290,7 +307,8 @@ func migrationMain() {
 		interrupted = true
 	}()
 
-	fsInconsistent, err := applyMigration(migration)
+	dupArgs := zypperDupArgs()
+	fsInconsistent, err := applyMigration(migration, quiet, verbose, nonInteractive, dupArgs)
 
 	if err != nil {
 		fmt.Println(err)
@@ -515,7 +533,7 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 }
 
 // returns fs_inconsistent flag
-func applyMigration(migration connect.MigrationPath) (bool, error) {
+func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteractive bool, dupArgs []string) (bool, error) {
 	fsInconsistent := false
 	// TODO
 	//   zypp_backup(options[:root] ? options[:root]: "/")
@@ -545,34 +563,54 @@ func applyMigration(migration connect.MigrationPath) (bool, error) {
 		return fsInconsistent, ErrInterrupted
 	}
 
-	// TODO
-	//   cmd = "zypper " +
-	//         (options[:root] ? "--root #{options[:root]} " : "") +
-	//         (base_product_version ? "--releasever #{base_product_version} " : "") +
-	//         (options[:non_interactive] ? "--non-interactive " : "") +
-	//         (options[:verbose] ? "--verbose " : "") +
-	//         (options[:quiet] ? "--quiet " : "") +
-	//         " --no-refresh " +
-	//         " dist-upgrade " +
-	//         (options[:allow_vendor_change] ? "--allow-vendor-change " : "--no-allow-vendor-change ") +
-	//         (options[:auto_agree] ? "--auto-agree-with-licenses " : "") +
-	//         (options[:debug_solver] ? "--debug-solver " : "") +
-	//         (options[:recommends] ? "--recommends " : "") +
-	//         (options[:no_recommends] ? "--no-recommends " : "") +
-	//         (options[:replacefiles] ? "--replacefiles " : "") +
-	//         (options[:details] ? "--details " : "") +
-	//         (options[:download] ? "--download #{options[:download]} " : "") +
-	//         (options[:repo].map { |r| "--repo #{r}" }.join(" ")) +
-	//         (options[:from].map { |r| "--from #{r}" }.join(" "))
-	//   msg = "Executing '#{cmd}'"
-	//   print "\n#{msg}\n\n" unless options[:quiet]
-	//   result = system cmd
-	// TODO:
-	//if $?.exitstatus == 8
-	fsInconsistent = true
+	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, nonInteractive, dupArgs)
+	// TODO: export connect.zypperErrCommit (8)?
+	if err != nil && err.(connect.ZypperError).ExitCode == 8 {
+		fsInconsistent = true
+	}
 	if interrupted {
 		return fsInconsistent, ErrInterrupted
 	}
 
-	return fsInconsistent, nil
+	return fsInconsistent, err
+}
+
+func zypperDupArgs() []string {
+	// NOTE: "r" is not listed here as it shares values list with "repo"
+	wanted := map[string]struct{}{"auto-agree-with-licenses": {}, "l": {},
+		"allow-vendor-change": {}, "no-allow-vendor-change": {},
+		"debug-solver": {}, "recommends": {}, "no-recommends": {},
+		"replacefiles:": {}, "details": {}, "download": {},
+		"download-only": {}, "from": {}, "repo": {}}
+
+	args := []string{}
+
+	// special case (from original)
+	// pass `no-allow-vendor-change` to `zypper dup` unless
+	// `allow-vendor-change` was used with `zypper migration`.
+	// this means that the default from /etc/zypp.conf is always
+	// ignored
+	avc := "no-allow-vendor-change"
+	flag.Visit(func(f *flag.Flag) {
+		// skip not wanted
+		if _, found := wanted[f.Name]; !found {
+			return
+		}
+		// special case (update var and skip flag)
+		if strings.Contains(f.Name, "allow-vendor-change") {
+			avc = f.Name
+			return
+		}
+		// multiArg? loop over values
+		if val, ok := f.Value.(*multiArg); ok {
+			for _, v := range *val {
+				args = append(args, "--"+f.Name, v)
+			}
+		} else { // flag arg
+			args = append(args, "--"+f.Name)
+		}
+	})
+	// special case (add avc flag)
+	args = append(args, "--"+avc)
+	return args
 }
