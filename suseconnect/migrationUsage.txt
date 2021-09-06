@@ -1,6 +1,7 @@
 Usage: zypper migration [options]
         --[no-]allow-vendor-change   Allow vendor change
     -v, --[no-]verbose               Increase verbosity
+        --debug                      Enable debug output
     -q, --[no-]quiet                 Suppress normal output, print only error messages
     -n, --non-interactive            Do not ask anything, use default answers automatically
         --migration N                Select migration option N

@@ -27,3 +27,5 @@
 - With --debug the Go version sends all debug output to stderr. The Ruby
   version sends http debug to stderr, and other debug to stdout.
 - In zypper-migration plugin, `--download <mode>` flag doesn't validate `<mode>`.
+- Additional `--debug` flag was added to zypper-migration plugin to enable
+  `SUSEConnect` debug info.

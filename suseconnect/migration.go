@@ -17,6 +17,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -39,8 +40,9 @@ var (
 
 // logger shortcuts
 var (
-	Debug    *log.Logger = connect.Debug
-	QuietOut *log.Logger = connect.QuietOut
+	Debug      *log.Logger = connect.Debug
+	QuietOut   *log.Logger = connect.QuietOut
+	VerboseOut             = log.New(io.Discard, "", 0)
 )
 
 // implements flag.Value interface used to hold values of args which could be
@@ -59,6 +61,7 @@ func migrationMain() {
 	var (
 		// dummy flag to keep default but accept cli arg
 		dummy          bool
+		debug          bool
 		verbose        bool
 		quiet          bool
 		nonInteractive bool
@@ -74,6 +77,7 @@ func migrationMain() {
 	flag.Usage = func() {
 		fmt.Print(migrationUsageText)
 	}
+	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&dummy, "no-verbose", false, "")
 	flag.BoolVar(&verbose, "verbose", false, "")
 	flag.BoolVar(&verbose, "v", false, "")
@@ -111,6 +115,10 @@ func migrationMain() {
 	selfUpdate := !noSelfUpdate
 
 	if verbose {
+		VerboseOut.SetOutput(os.Stdout)
+	}
+
+	if debug {
 		connect.EnableDebug()
 	}
 
@@ -129,7 +137,7 @@ func migrationMain() {
 
 	if !isSnapperConfigured() {
 		noSnapshots = true
-		Debug.Println("Snapper not configured")
+		VerboseOut.Println("Snapper not configured")
 	}
 
 	// if options[:to_product] && !options[:root] && !options[:break_my_system]
@@ -416,12 +424,13 @@ func checkSystemProducts(rollbackOnFailure bool, printInstalledProducts bool) ([
 	}
 
 	if printInstalledProducts {
-		Debug.Println("Installed products:")
+		VerboseOut.Println("Installed products:")
 		for _, p := range systemProducts {
-			Debug.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
+			VerboseOut.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
 		}
-		Debug.Print("\n")
+		VerboseOut.Print("\n")
 	}
+
 	return systemProducts, nil
 }
 
@@ -478,7 +487,7 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 
 		if service.ObsoletedName != "" {
 			msg := "Removing service " + service.ObsoletedName
-			Debug.Println(msg)
+			VerboseOut.Println(msg)
 			err = connect.MigrationRemoveService(service.ObsoletedName)
 			if err != nil {
 				return baseProductVersion, err
@@ -515,7 +524,7 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 		//     end
 
 		msg = "Adding service " + service.Name
-		Debug.Println(msg)
+		VerboseOut.Println(msg)
 		err = connect.MigrationAddService(service.URL, service.Name)
 		if err != nil {
 			return baseProductVersion, err
