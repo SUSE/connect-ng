@@ -188,11 +188,13 @@ func migrationMain() {
 		os.Exit(1)
 	}
 
-	systemProducts, err := checkSystemProducts(true, true)
+	systemProducts, err := checkSystemProducts(true)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
 	}
+
+	printProducts(systemProducts)
 
 	if len(systemProducts) == 0 {
 		fmt.Println("No products found, migration is not possible.")
@@ -363,7 +365,7 @@ func migrationMain() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false, false)
+		_, err := checkSystemProducts(false)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -393,7 +395,7 @@ func isSnapperConfigured() bool {
 	return false
 }
 
-func checkSystemProducts(rollbackOnFailure bool, printInstalledProducts bool) ([]connect.Product, error) {
+func checkSystemProducts(rollbackOnFailure bool) ([]connect.Product, error) {
 	systemProducts, err := connect.SystemProducts()
 	if err != nil {
 		return systemProducts, err
@@ -423,15 +425,15 @@ func checkSystemProducts(rollbackOnFailure bool, printInstalledProducts bool) ([
 		}
 	}
 
-	if printInstalledProducts {
-		VerboseOut.Println("Installed products:")
-		for _, p := range systemProducts {
-			VerboseOut.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
-		}
-		VerboseOut.Print("\n")
-	}
-
 	return systemProducts, nil
+}
+
+func printProducts(products []connect.Product) {
+	VerboseOut.Println("Installed products:")
+	for _, p := range products {
+		VerboseOut.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
+	}
+	VerboseOut.Print("\n")
 }
 
 func printMigrations(migrations []connect.MigrationPath,
