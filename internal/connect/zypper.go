@@ -2,7 +2,6 @@ package connect
 
 import (
 	"encoding/xml"
-	"fmt"
 	"strings"
 )
 
@@ -233,11 +232,7 @@ func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInter
 		args = append(args, "-f")
 	}
 	args = append(flags, args...)
-	output, err := zypperRun(args, []int{zypperOK})
-	// TODO: print output as it goes not post-factum and do it for all zypper calls!
-	if len(output) > 0 {
-		fmt.Print(string(output))
-	}
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
@@ -246,10 +241,6 @@ func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs 
 	flags := zypperFlags(version, quiet, verbose, nonInteractive, true)
 	args := append(flags, "dist-upgrade")
 	args = append(args, extraArgs...)
-	output, err := zypperRun(args, []int{zypperOK})
-	// TODO: print output as it goes not post-factum and do it for all zypper calls!
-	if len(output) > 0 {
-		fmt.Print(string(output))
-	}
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }

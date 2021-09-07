@@ -3,18 +3,34 @@ package connect
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 )
+
+var systemEcho bool
+
+// SetSystemEcho toggles piping of executed command's outputs to stdout/stderr
+// returns true if it was enabled before, false otherwise
+func SetSystemEcho(v bool) bool {
+	prev := systemEcho
+	systemEcho = v
+	return prev
+}
 
 // Assign function for running external commands to a variable so it can be mocked by tests.
 var execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
 	Debug.Printf("Executing: %s\n", cmd)
 	var stderr, stdout bytes.Buffer
 	comm := exec.Command(cmd[0], cmd[1:]...)
-	comm.Stdout = &stdout
-	comm.Stderr = &stderr
+	if systemEcho {
+		comm.Stdout = io.MultiWriter(os.Stdout, &stdout)
+		comm.Stderr = io.MultiWriter(os.Stderr, &stderr)
+	} else {
+		comm.Stdout = &stdout
+		comm.Stderr = &stderr
+	}
 	comm.Env = append(os.Environ(), "LC_ALL=C")
 	err := comm.Run()
 	exitCode := comm.ProcessState.ExitCode()
