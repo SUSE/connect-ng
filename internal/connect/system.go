@@ -9,8 +9,8 @@ import (
 )
 
 // Assign function for running external commands to a variable so it can be mocked by tests.
-var execute = func(cmd []string, quiet bool, validExitCodes []int) ([]byte, error) {
-	Debug.Printf("Executing: %s Quiet: %v\n", cmd, quiet)
+var execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
+	Debug.Printf("Executing: %s\n", cmd)
 	var stderr, stdout bytes.Buffer
 	comm := exec.Command(cmd[0], cmd[1:]...)
 	comm.Stdout = &stdout
@@ -35,9 +35,6 @@ var execute = func(cmd []string, quiet bool, validExitCodes []int) ([]byte, erro
 		output = bytes.TrimSuffix(output, []byte("\n"))
 		ee := ExecuteError{Commmand: cmd, ExitCode: exitCode, Output: output, Err: err}
 		return nil, ee
-	}
-	if quiet {
-		return nil, nil
 	}
 	out := stdout.Bytes()
 	out = bytes.TrimSuffix(out, []byte("\n"))
@@ -69,7 +66,7 @@ func removeFile(path string) error {
 }
 
 func isRootFSWritable() bool {
-	_, err := execute([]string{"test", "-w", "/"}, true, []int{zypperOK})
+	_, err := execute([]string{"test", "-w", "/"}, []int{zypperOK})
 	return err == nil
 }
 

@@ -31,13 +31,13 @@ const (
 	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
 )
 
-func zypperRun(args []string, quiet bool, validExitCodes []int) ([]byte, error) {
+func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 	cmd := []string{zypperPath}
 	if CFG.FsRoot != "" {
 		cmd = append(cmd, "--root", CFG.FsRoot)
 	}
 	cmd = append(cmd, args...)
-	output, err := execute(cmd, quiet, validExitCodes)
+	output, err := execute(cmd, validExitCodes)
 	if err != nil {
 		if ee, ok := err.(ExecuteError); ok {
 			return nil, ZypperError{ExitCode: ee.ExitCode, Output: ee.Output}
@@ -49,7 +49,7 @@ func zypperRun(args []string, quiet bool, validExitCodes []int) ([]byte, error) 
 // installedProducts returns installed products
 func installedProducts() ([]Product, error) {
 	args := []string{"--disable-repositories", "--xmlout", "--non-interactive", "products", "-i"}
-	output, err := zypperRun(args, false, []int{zypperOK})
+	output, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
 		return []Product{}, err
 	}
@@ -70,7 +70,7 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 func installedServices() ([]Service, error) {
 	args := []string{"--xmlout", "--non-interactive", "services", "-d"}
 	// Don't fail when zypper exits with 6 (no repositories)
-	output, err := zypperRun(args, false, []int{zypperOK, zypperErrNoRepos})
+	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})
 	if err != nil {
 		return []Service{}, err
 	}
@@ -102,7 +102,7 @@ func baseProduct() (Product, error) {
 }
 
 func zypperDistroTarget() (string, error) {
-	output, err := zypperRun([]string{"targetos"}, false, []int{zypperOK})
+	output, err := zypperRun([]string{"targetos"}, []int{zypperOK})
 	if err != nil {
 		return "", err
 	}
@@ -115,7 +115,7 @@ func addService(serviceURL, serviceName string, refresh bool) error {
 		return err
 	}
 	args := []string{"--non-interactive", "addservice", "-t", "ris", serviceURL, serviceName}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func removeService(serviceName string) error {
 	Debug.Println("Removing service: ", serviceName)
 
 	args := []string{"--non-interactive", "removeservice", serviceName}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
 		return err
 	}
@@ -144,19 +144,19 @@ func removeService(serviceName string) error {
 
 func enableServiceAutorefresh(serviceName string) error {
 	args := []string{"--non-interactive", "modifyservice", "-r", serviceName}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
 func refreshService(serviceName string) error {
 	args := []string{"--non-interactive", "refs", serviceName}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
 func refreshAllServices() error {
 	args := []string{"--non-interactive", "refs"}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
@@ -166,7 +166,7 @@ func installReleasePackage(identifier string) error {
 	}
 	// return if the rpm is already installed
 	args := []string{"rpm", "-q", identifier + "-release"}
-	if _, err := execute(args, false, nil); err == nil {
+	if _, err := execute(args, nil); err == nil {
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func installReleasePackage(identifier string) error {
 	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
 		"--auto-agree-with-product-licenses", "-t", "product", identifier}
 
-	_, err := zypperRun(args, false, validExitCodes)
+	_, err := zypperRun(args, validExitCodes)
 	return err
 }
 
@@ -190,12 +190,12 @@ func removeReleasePackage(identifier string) error {
 		return nil
 	}
 	args := []string{"--no-refresh", "--non-interactive", "remove", "-t", "product", identifier}
-	_, err := zypperRun(args, true, []int{zypperOK, zypperInfoCapNotFound})
+	_, err := zypperRun(args, []int{zypperOK, zypperInfoCapNotFound})
 	return err
 }
 
 func setReleaseVersion(version string) error {
 	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
-	_, err := zypperRun(args, true, []int{zypperOK})
+	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
