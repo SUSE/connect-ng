@@ -103,14 +103,14 @@ func Deregister() error {
 		return err
 	}
 	installed, _ := installedProducts()
-	installedIDs := make(map[string]struct{}, 0)
+	installedIDs := NewStringSet()
 	for _, prod := range installed {
-		installedIDs[prod.Name] = struct{}{}
+		installedIDs.Add(prod.Name)
 	}
 
 	dependencies := make([]Product, 0)
 	for _, e := range tree.toExtensionsList() {
-		if _, found := installedIDs[e.Name]; found {
+		if installedIDs.Contains(e.Name) {
 			dependencies = append(dependencies, e)
 		}
 	}

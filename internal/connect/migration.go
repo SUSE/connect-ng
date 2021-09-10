@@ -28,9 +28,9 @@ func Rollback() error {
 	if err != nil {
 		return err
 	}
-	installedIDs := make(map[string]struct{}, 0)
+	installedIDs := NewStringSet()
 	for _, prod := range installed {
-		installedIDs[prod.Name] = struct{}{}
+		installedIDs.Add(prod.Name)
 	}
 
 	tree, err := showProduct(base)
@@ -41,7 +41,7 @@ func Rollback() error {
 	// Get all installed products in right order
 	extensions := make([]Product, 0)
 	for _, e := range tree.toExtensionsList() {
-		if _, found := installedIDs[e.Name]; found {
+		if installedIDs.Contains(e.Name) {
 			extensions = append(extensions, e)
 		}
 	}
