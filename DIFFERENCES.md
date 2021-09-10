@@ -29,3 +29,6 @@
 - In zypper-migration plugin, `--download <mode>` flag doesn't validate `<mode>`.
 - Additional `--debug` flag was added to zypper-migration plugin to enable
   `SUSEConnect` debug info.
+- Contradicting flags are not allowed in zypper-migration plugin to match new
+  zypper behavior (see e.g.: https://github.com/openSUSE/zypper/pull/215 for
+  more details).
