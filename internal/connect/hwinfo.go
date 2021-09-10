@@ -103,7 +103,7 @@ func cpuinfoS390(hw *hwinfo) error {
 }
 
 func arch() (string, error) {
-	output, err := execute([]string{"uname", "-i"}, false, nil)
+	output, err := execute([]string{"uname", "-i"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +111,7 @@ func arch() (string, error) {
 }
 
 func lscpu() (map[string]string, error) {
-	output, err := execute([]string{"lscpu"}, false, nil)
+	output, err := execute([]string{"lscpu"}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func lscpu2map(b []byte) map[string]string {
 }
 
 func cloudProvider() string {
-	output, err := execute([]string{"dmidecode", "-t", "system"}, false, nil)
+	output, err := execute([]string{"dmidecode", "-t", "system"}, nil)
 	if err != nil {
 		return ""
 	}
@@ -153,7 +153,7 @@ func findCloudProvider(b []byte) string {
 }
 
 func hypervisor() (string, error) {
-	output, err := execute([]string{"systemd-detect-virt", "-v"}, false, []int{0, 1})
+	output, err := execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +172,7 @@ func uuid() (string, error) {
 		}
 		return string(content), nil
 	}
-	output, err := execute([]string{"dmidecode", "-s", "system-uuid"}, false, nil)
+	output, err := execute([]string{"dmidecode", "-s", "system-uuid"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -247,7 +247,7 @@ func hostname() string {
 
 // readValues calls read_values from SUSE/s390-tools
 func readValues(arg string) ([]byte, error) {
-	output, err := execute([]string{"read_values", arg}, false, nil)
+	output, err := execute([]string{"read_values", arg}, nil)
 	if err != nil {
 		return nil, err
 	}

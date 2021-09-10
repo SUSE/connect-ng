@@ -31,7 +31,7 @@ func TestParseServicesXML(t *testing.T) {
 }
 
 func TestInstalledProducts(t *testing.T) {
-	execute = func(_ []string, _ bool, _ []int) ([]byte, error) {
+	execute = func(_ []string, _ []int) ([]byte, error) {
 		return readTestFile("products.xml", t), nil
 	}
 
@@ -48,7 +48,7 @@ func TestInstalledProducts(t *testing.T) {
 }
 
 func TestBaseProduct(t *testing.T) {
-	execute = func(_ []string, _ bool, _ []int) ([]byte, error) {
+	execute = func(_ []string, _ []int) ([]byte, error) {
 		return readTestFile("products.xml", t), nil
 	}
 
@@ -62,7 +62,7 @@ func TestBaseProduct(t *testing.T) {
 }
 
 func TestBaseProductError(t *testing.T) {
-	execute = func(_ []string, _ bool, _ []int) ([]byte, error) {
+	execute = func(_ []string, _ []int) ([]byte, error) {
 		return readTestFile("products-no-base.xml", t), nil
 	}
 	_, err := baseProduct()
