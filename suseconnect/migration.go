@@ -108,6 +108,10 @@ func migrationMain() {
 	flag.Var(&repo, "repo", "")
 
 	flag.Parse()
+	if err := checkFlagContradictions(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	// this is only to keep the flag parsing logic simple and avoid double
 	// negations/negatives below
@@ -589,6 +593,28 @@ func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteract
 	}
 
 	return fsInconsistent, err
+}
+
+// checkFlagContradictions returns an error if a flag and its negative are both provided.
+// e.g. "cmd --quiet --no-quiet ..."
+func checkFlagContradictions() error {
+	var err error
+	seen := make(map[string]struct{})
+
+	flag.Visit(func(f *flag.Flag) {
+		if strings.HasPrefix(f.Name, "no-") {
+			if _, ok := seen[f.Name[3:]]; ok {
+				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name[3:], f.Name)
+			}
+		} else {
+			if _, ok := seen["no-"+f.Name]; ok {
+				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name, "no-"+f.Name)
+			}
+		}
+		seen[f.Name] = struct{}{}
+	})
+
+	return err
 }
 
 func zypperDupArgs() []string {
