@@ -4,6 +4,7 @@ Usage: zypper migration [options]
         --debug                      Enable debug output
     -q, --[no-]quiet                 Suppress normal output, print only error messages
     -n, --non-interactive            Do not ask anything, use default answers automatically
+        --query                      Query available migration options and exit
         --migration N                Select migration option N
         --from REPO                  Restrict upgrade to specified repository
     -r, --repo REPO                  Load only the specified repository

@@ -3,7 +3,6 @@ package main
 // TODO LIST
 // * zypp_backup/zypp_restore functions
 // * --selfupdate option
-// * --query plugin option
 // * offline migrations
 // * obsolete repo disabling (including --disable-repos option)
 // * interactive migration mode
@@ -66,6 +65,7 @@ func migrationMain() {
 		noSnapshots    bool
 		noSelfUpdate   bool
 		breakMySystem  bool
+		query          bool
 		migrationNum   int
 		fsRoot         string
 		toProduct      string
@@ -90,6 +90,7 @@ func migrationMain() {
 	flag.BoolVar(&dummy, "selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
+	flag.BoolVar(&query, "query", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&toProduct, "product", "", "")
@@ -260,7 +261,8 @@ func migrationMain() {
 	if len(unavailableMigrations) > 0 && !quiet {
 		printMigrations(unavailableMigrations,
 			installedIDs,
-			"Unavailable migrations (product is not mirrored):")
+			"Unavailable migrations (product is not mirrored):",
+			false)
 	}
 
 	if len(migrations) == 0 {
@@ -279,18 +281,10 @@ func migrationMain() {
 
 	// TODO: this part is only used in interactive mode
 	for migrationNum <= 0 || migrationNum > len(migrations) {
-		//   print "Available migrations:\n\n"
-		//   migrations.each_with_index do |migration, index|
-		//     printf "   %2d |", index + 1
-		//     migration.each do |p|
-		//       print " #{p.friendly_name}" + (p.already_installed ? " (already installed)" : "") + "\n       "
-		//     end
-		//     print "\n"
-		//   end
-		//   print "\n"
-		//   if options[:query]
-		//     exit 0
-		//   end
+		printMigrations(migrations, installedIDs, "Available migrations:", true)
+		if query {
+			os.Exit(0)
+		}
 		//   while migration_num <= 0 || migration_num > migrations.length do
 		//     print "[num/q]: "
 		//     choice = gets
@@ -446,18 +440,24 @@ func printProducts(products []connect.Product) {
 
 func printMigrations(migrations []connect.MigrationPath,
 	installedIDs map[string]struct{},
-	header string) {
+	header string,
+	withIndex bool) {
 	fmt.Printf("%s\n\n", header)
-	for _, m := range migrations {
-		for _, p := range m {
+	for idx, m := range migrations {
+		for pidx, p := range m {
+			prefix := "       "
 			suffix := ""
+			// print index only in first product row
+			if withIndex && pidx == 0 {
+				prefix = fmt.Sprintf("   %2d |", idx+1)
+			}
 			if !p.Available {
 				suffix = suffix + " (not available)"
 			}
 			if _, installed := installedIDs[p.ToTriplet()]; installed {
 				suffix = suffix + " (already installed)"
 			}
-			fmt.Printf("        %s%s\n", p.FriendlyName, suffix)
+			fmt.Printf("%s%s%s\n", prefix, p.FriendlyName, suffix)
 		}
 		fmt.Print("\n")
 	}
