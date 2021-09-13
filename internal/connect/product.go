@@ -2,6 +2,8 @@ package connect
 
 import (
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -45,6 +47,15 @@ func (p Product) isEmpty() bool {
 // ToTriplet returns <name>/<version>/<arch> string for product
 func (p Product) ToTriplet() string {
 	return p.Name + "/" + p.Version + "/" + p.Arch
+}
+
+// SplitTriplet returns a product from given or error for invalid input
+func SplitTriplet(p string) (Product, error) {
+	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, p); !match {
+		return Product{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
+	}
+	parts := strings.Split(p, "/")
+	return Product{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }
 
 func (p Product) toQuery() map[string]string {

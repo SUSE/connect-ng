@@ -72,3 +72,18 @@ func TestUnmarshalJSONscc(t *testing.T) {
 		t.Error("Expected p.Extensions[0].Available == true, got false")
 	}
 }
+
+func TestSplitTriplet(t *testing.T) {
+	expected := Product{Name: "a", Version: "b", Arch: "c"}
+	p, err := SplitTriplet("a/b/c")
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+	if p.ToTriplet() != expected.ToTriplet() {
+		t.Errorf("Expected: %v, got: %v", expected, p)
+	}
+	p, err = SplitTriplet("SLES")
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+}

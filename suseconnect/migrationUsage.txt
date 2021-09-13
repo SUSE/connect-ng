@@ -16,5 +16,8 @@ Usage: zypper migration [options]
         --download MODE              Set the download-install mode
         --download-only              Replace repositories and download the packages, do not install. WARNING: Upgrade with 'zypper dist-upgrade' as soon as possible.
         --no-snapshots               Do not create snapshots.
+        --break-my-system            For testing and debugging purpose only.
+        --product PRODUCT            Specify a product to which the system should be upgraded in offline mode.
+                                     Format: <name>/<version>/<architecture>
         --[no-]selfupdate            Do not update the update stack first
         --root DIR                   Operate on a different root directory

@@ -4,8 +4,7 @@ package main
 // * zypp_backup/zypp_restore functions
 // * --selfupdate option
 // * --query plugin option
-// * --break-my-system option
-// * --product option (offline migration)
+// * offline migrations
 // * obsolete repo disabling (including --disable-repos option)
 // * interactive migration mode
 // * snapshots (snapper wrapper)
@@ -66,8 +65,10 @@ func migrationMain() {
 		nonInteractive bool
 		noSnapshots    bool
 		noSelfUpdate   bool
+		breakMySystem  bool
 		migrationNum   int
 		fsRoot         string
+		toProduct      string
 		from           multiArg
 		repo           multiArg
 		download       multiArg // using multiArg here to make flags simpler to visit
@@ -88,8 +89,10 @@ func migrationMain() {
 	flag.BoolVar(&noSnapshots, "no-snapshots", false, "")
 	flag.BoolVar(&dummy, "selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
+	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
+	flag.StringVar(&toProduct, "product", "", "")
 	// zypper dup passthrough args
 	// bool flags don't need variables as these will be processed using flag.Visit()
 	flag.BoolVar(&dummy, "auto-agree-with-licenses", false, "")
@@ -143,10 +146,10 @@ func migrationMain() {
 		VerboseOut.Println("Snapper not configured")
 	}
 
-	// if options[:to_product] && !options[:root] && !options[:break_my_system]
-	//   print "The --product option can only be used together with the --root option\n"
-	//   exit 1
-	// end
+	if toProduct != "" && fsRoot == "" && !breakMySystem {
+		fmt.Println("The --product option can only be used together with the --root option")
+		os.Exit(1)
+	}
 
 	if selfUpdate {
 		echo := connect.SetSystemEcho(true)
@@ -216,21 +219,19 @@ func migrationMain() {
 	}
 
 	allMigrations := make([]connect.MigrationPath, 0)
-	// if options[:to_product]
-	//   begin
-	//     identifier, version, arch = options[:to_product].split('/')
-	//     new_product = OpenStruct.new(
-	//                                  identifier: identifier,
-	//                                  version:   version,
-	//                                  arch:       arch
-	//                                  )
-	//     migrations_all = SUSE::Connect::YaST.system_offline_migrations(system_products, new_product)
-	//   rescue => e
-	//     print "Can't get available migrations from server: #{e.class}: #{e.message}\n"
-	//     exit 1
-	//   end
-	// else
-	{
+	if toProduct != "" {
+		newProduct, err := connect.SplitTriplet(toProduct)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		// TODO: remove print, use product variable in call below
+		fmt.Println(newProduct)
+		//     migrations_all = SUSE::Connect::YaST.system_offline_migrations(system_products, new_product)
+		//   rescue => e
+		//     print "Can't get available migrations from server: #{e.class}: #{e.message}\n"
+		//     exit 1
+	} else {
 		allMigrations, err = connect.ProductMigrations(systemProducts)
 		if err != nil {
 			fmt.Printf("Can't get available migrations from server: %v\n", err)

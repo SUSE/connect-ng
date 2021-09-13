@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -110,14 +109,14 @@ func connectMain() {
 		connect.CFG.Token = token
 	}
 	if product != "" {
-		if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, product); !match {
+		if p, err := connect.SplitTriplet(product); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
 			os.Exit(1)
+		} else {
+			connect.CFG.Product = p
 		}
-		parts := strings.Split(product, "/")
-		connect.CFG.Product = connect.Product{Name: parts[0], Version: parts[1], Arch: parts[2]}
 	}
 	if instanceDataFile != "" {
 		connect.CFG.InstanceDataFile = instanceDataFile
