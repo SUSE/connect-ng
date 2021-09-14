@@ -117,9 +117,9 @@ func SystemProducts() ([]Product, error) {
 	if err != nil {
 		return products, err
 	}
-	installedIDs := make(map[string]struct{}, 0)
+	installedIDs := NewStringSet()
 	for _, prod := range products {
-		installedIDs[prod.ToTriplet()] = struct{}{}
+		installedIDs.Add(prod.ToTriplet())
 	}
 	if !IsRegistered() {
 		return products, nil
@@ -129,7 +129,7 @@ func SystemProducts() ([]Product, error) {
 		return products, err
 	}
 	for _, a := range activations {
-		if _, found := installedIDs[a.Service.Product.ToTriplet()]; !found {
+		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
 			products = append(products, a.Service.Product)
 		}
 	}

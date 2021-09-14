@@ -15,10 +15,7 @@ func TestSortMigrationProducts(t *testing.T) {
 		{Name: "python", IsBase: false, Version: "3.6", Arch: "x86_64"},
 		{Name: "SLES", IsBase: true, Version: "15.2", Arch: "x86_64"},
 	}
-	installedIDs := map[string]struct{}{
-		"ruby/2.5/x86_64":   {},
-		"python/3.6/x86_64": {},
-	}
+	installedIDs := connect.NewStringSet("ruby/2.5/x86_64", "python/3.6/x86_64")
 
 	sortMigrationProducts(migration, installedIDs)
 

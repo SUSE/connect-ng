@@ -214,9 +214,9 @@ func migrationMain() {
 
 	// This is not fully correct name as installedIDs could also contain some products
 	// which are activated but not installed. This matches the original implementation.
-	installedIDs := make(map[string]struct{}, 0)
+	installedIDs := connect.NewStringSet()
 	for _, prod := range systemProducts {
-		installedIDs[prod.ToTriplet()] = struct{}{}
+		installedIDs.Add(prod.ToTriplet())
 	}
 
 	allMigrations := make([]connect.MigrationPath, 0)
@@ -439,7 +439,7 @@ func printProducts(products []connect.Product) {
 }
 
 func printMigrations(migrations []connect.MigrationPath,
-	installedIDs map[string]struct{},
+	installedIDs connect.StringSet,
 	header string,
 	withIndex bool) {
 	fmt.Printf("%s\n\n", header)
@@ -454,7 +454,7 @@ func printMigrations(migrations []connect.MigrationPath,
 			if !p.Available {
 				suffix = suffix + " (not available)"
 			}
-			if _, installed := installedIDs[p.ToTriplet()]; installed {
+			if installedIDs.Contains(p.ToTriplet()) {
 				suffix = suffix + " (already installed)"
 			}
 			fmt.Printf("%s%s%s\n", prefix, p.FriendlyName, suffix)
@@ -465,11 +465,11 @@ func printMigrations(migrations []connect.MigrationPath,
 }
 
 // sort migrations to put already installed products last and base products first
-func sortMigrationProducts(m connect.MigrationPath, installedIDs map[string]struct{}) {
+func sortMigrationProducts(m connect.MigrationPath, installedIDs connect.StringSet) {
 	sort.SliceStable(m, func(i, j int) bool {
 		// first check installation status
-		_, firstInstalled := installedIDs[m[i].ToTriplet()]
-		_, secondInstalled := installedIDs[m[j].ToTriplet()]
+		firstInstalled := installedIDs.Contains(m[i].ToTriplet())
+		secondInstalled := installedIDs.Contains(m[j].ToTriplet())
 		if firstInstalled != secondInstalled {
 			return !firstInstalled
 		}
@@ -600,19 +600,19 @@ func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteract
 // e.g. "cmd --quiet --no-quiet ..."
 func checkFlagContradictions() error {
 	var err error
-	seen := make(map[string]struct{})
+	seen := connect.NewStringSet()
 
 	flag.Visit(func(f *flag.Flag) {
 		if strings.HasPrefix(f.Name, "no-") {
-			if _, ok := seen[f.Name[3:]]; ok {
+			if seen.Contains(f.Name[3:]) {
 				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name[3:], f.Name)
 			}
 		} else {
-			if _, ok := seen["no-"+f.Name]; ok {
+			if seen.Contains("no-" + f.Name) {
 				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name, "no-"+f.Name)
 			}
 		}
-		seen[f.Name] = struct{}{}
+		seen.Add(f.Name)
 	})
 
 	return err
@@ -620,11 +620,11 @@ func checkFlagContradictions() error {
 
 func zypperDupArgs() []string {
 	// NOTE: "r" is not listed here as it shares values list with "repo"
-	wanted := map[string]struct{}{"auto-agree-with-licenses": {}, "l": {},
-		"allow-vendor-change": {}, "no-allow-vendor-change": {},
-		"debug-solver": {}, "recommends": {}, "no-recommends": {},
-		"replacefiles:": {}, "details": {}, "download": {},
-		"download-only": {}, "from": {}, "repo": {}}
+	wanted := connect.NewStringSet("auto-agree-with-licenses", "l",
+		"allow-vendor-change", "no-allow-vendor-change",
+		"debug-solver", "recommends", "no-recommends",
+		"replacefiles:", "details", "download",
+		"download-only", "from", "repo")
 
 	args := []string{}
 
@@ -636,7 +636,7 @@ func zypperDupArgs() []string {
 	avc := "no-allow-vendor-change"
 	flag.Visit(func(f *flag.Flag) {
 		// skip not wanted
-		if _, found := wanted[f.Name]; !found {
+		if !wanted.Contains(f.Name) {
 			return
 		}
 		// special case (update var and skip flag)
