@@ -1,7 +1,6 @@
 package main
 
 // TODO LIST
-// * zypp_backup/zypp_restore functions
 // * --selfupdate option
 // * offline migrations
 // * obsolete repo disabling (including --disable-repos option)
@@ -379,9 +378,12 @@ func migrationMain() {
 	if err != nil {
 		QuietOut.Print("\nPerforming repository rollback...\n")
 
-		// TODO
 		// restore repo configuration from backup file
-		//     zypp_restore
+		if err := connect.ZypperRestore(); err != nil {
+			// NOTE: original ignores failures of this command
+			fmt.Printf("Zypper restore failed: %v\n", err)
+		}
+
 		if err := connect.Rollback(); err == nil {
 			QuietOut.Println("Rollback successful.")
 		} else {
@@ -554,8 +556,11 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 // returns fs_inconsistent flag
 func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteractive bool, dupArgs []string) (bool, error) {
 	fsInconsistent := false
-	// TODO
-	//   zypp_backup(options[:root] ? options[:root]: "/")
+
+	if err := connect.ZypperBackup(); err != nil {
+		// NOTE: original ignores failures of this command
+		fmt.Printf("Zypper backup failed: %v\n", err)
+	}
 
 	if interrupted {
 		return fsInconsistent, fmt.Errorf("Preparing migration: %v", ErrInterrupted)
