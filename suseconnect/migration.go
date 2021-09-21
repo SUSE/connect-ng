@@ -5,7 +5,6 @@ package main
 // * offline migrations
 // * obsolete repo disabling (including --disable-repos option)
 // * interactive migration mode
-// * snapshots (snapper wrapper)
 // * Leap -> SLES migration case
 
 import (
@@ -141,7 +140,7 @@ func migrationMain() {
 		noSnapshots = true
 	}
 
-	if !isSnapperConfigured() {
+	if !connect.IsSnapperConfigured() {
 		noSnapshots = true
 		VerboseOut.Println("Snapper not configured")
 	}
@@ -299,14 +298,19 @@ func migrationMain() {
 
 	migration := migrations[migrationNum-1]
 
+	var preSnapshotNum int
 	if !noSnapshots {
-		//   cmd = "snapper create --type pre --cleanup-algorithm=number --print-number --userdata important=yes --description 'before online migration'"
-		//   print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-		//   pre_snapshot_num = `#{cmd}`.to_i
+		snapshotNum, err := connect.CreatePreSnapshot()
+		if err != nil {
+			// NOTE: original version ignored all errors here.
+			// Snapshot number was usually left at 0 in those cases.
+			fmt.Printf("Snapshot creation failed: %v", err)
+		}
+		preSnapshotNum = snapshotNum
 	}
 
-	// TODO: make sure to set this in snapper wrapper function when it's implemented
-	// ENV['DISABLE_SNAPPER_ZYPP_PLUGIN'] = '1'
+	// do not create extra snapshots (bsc#947270)
+	os.Setenv("DISABLE_SNAPPER_ZYPP_PLUGIN", "1")
 
 	// allow interrupt only at specified points
 	// we have to check zypper exitstatus == 8 even after interrupt
@@ -336,33 +340,17 @@ func migrationMain() {
 		os.Exit(2)
 	}
 
-	// if !options[:no_snapshots] && pre_snapshot_num > 0
-	//   cmd = "snapper create --type post --pre-number #{pre_snapshot_num} --cleanup-algorithm=number --print-number --userdata important=yes --description 'after online migration'"
-	//   print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-	//   post_snapshot_num = `#{cmd}`.to_i
-	// #  Filesystem rollback - considered too dangerous
-	// #  if !result && post_snapshot_num > 0 && fs_inconsistent
-	// #    cmd = "snapper undochange #{pre_snapshot_num}..#{post_snapshot_num}"
-	// #    unless options[:non_interactive]
-	// #      while true
-	// #        print "Perform filesystem rollback with '#{cmd}' [y/n] (y): "
-	// #        choice = gets.chomp
-	// #        print "\n"
-	// #        if choice.eql?('n') || choice.eql?('N')
-	// #          fs_inconsistent = false
-	// #          break
-	// #        end
-	// #        if choice.eql?('y') || choice.eql?('Y')|| choice.eql?('')
-	// #          break
-	// #        end
-	// #      end
-	// #    end
-	// #    if fs_inconsistent
-	// #      print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-	// #      system cmd
-	// #    end
-	// #  end
-	// end
+	if !noSnapshots && preSnapshotNum > 0 {
+		_, err := connect.CreatePostSnapshot(preSnapshotNum)
+		if err != nil {
+			// NOTE: original version ignored all errors here.
+			fmt.Printf("Snapshot creation failed: %v", err)
+		}
+		// NOTE: original code contains disabled part of code titled:
+		// "Filesystem rollback - considered too dangerous" here
+		// it used `snapper undochange` to restore system to previous state
+		// on filesystem level.
+	}
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
@@ -391,12 +379,6 @@ func migrationMain() {
 		}
 		os.Exit(1)
 	}
-}
-
-func isSnapperConfigured() bool {
-	// TODO
-	// system "/usr/bin/snapper --no-dbus list-configs 2>/dev/null | grep -q \"^root \""
-	return false
 }
 
 func checkSystemProducts(rollbackOnFailure bool) ([]connect.Product, error) {
