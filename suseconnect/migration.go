@@ -54,8 +54,6 @@ func (a *multiArg) Set(v string) error {
 
 func migrationMain() {
 	var (
-		// dummy flag to keep default but accept cli arg
-		dummy          bool
 		debug          bool
 		verbose        bool
 		quiet          bool
@@ -75,17 +73,18 @@ func migrationMain() {
 	flag.Usage = func() {
 		fmt.Print(migrationUsageText)
 	}
+	// flags without variables match defaults
 	flag.BoolVar(&debug, "debug", false, "")
-	flag.BoolVar(&dummy, "no-verbose", false, "")
+	flag.Bool("no-verbose", false, "")
 	flag.BoolVar(&verbose, "verbose", false, "")
 	flag.BoolVar(&verbose, "v", false, "")
-	flag.BoolVar(&dummy, "no-quiet", false, "")
+	flag.Bool("no-quiet", false, "")
 	flag.BoolVar(&quiet, "quiet", false, "")
 	flag.BoolVar(&quiet, "q", false, "")
 	flag.BoolVar(&nonInteractive, "non-interactive", false, "")
 	flag.BoolVar(&nonInteractive, "n", false, "")
 	flag.BoolVar(&noSnapshots, "no-snapshots", false, "")
-	flag.BoolVar(&dummy, "selfupdate", false, "")
+	flag.Bool("selfupdate", false, "")
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.BoolVar(&query, "query", false, "")
@@ -94,16 +93,16 @@ func migrationMain() {
 	flag.StringVar(&toProduct, "product", "", "")
 	// zypper dup passthrough args
 	// bool flags don't need variables as these will be processed using flag.Visit()
-	flag.BoolVar(&dummy, "auto-agree-with-licenses", false, "")
-	flag.BoolVar(&dummy, "l", false, "")
-	flag.BoolVar(&dummy, "allow-vendor-change", false, "")
-	flag.BoolVar(&dummy, "no-allow-vendor-change", false, "")
-	flag.BoolVar(&dummy, "debug-solver", false, "")
-	flag.BoolVar(&dummy, "recommends", false, "")
-	flag.BoolVar(&dummy, "no-recommends", false, "")
-	flag.BoolVar(&dummy, "replacefiles", false, "")
-	flag.BoolVar(&dummy, "details", false, "")
-	flag.BoolVar(&dummy, "download-only", false, "")
+	flag.Bool("auto-agree-with-licenses", false, "")
+	flag.Bool("l", false, "")
+	flag.Bool("allow-vendor-change", false, "")
+	flag.Bool("no-allow-vendor-change", false, "")
+	flag.Bool("debug-solver", false, "")
+	flag.Bool("recommends", false, "")
+	flag.Bool("no-recommends", false, "")
+	flag.Bool("replacefiles", false, "")
+	flag.Bool("details", false, "")
+	flag.Bool("download-only", false, "")
 	flag.Var(&download, "download", "")
 	flag.Var(&from, "from", "")
 	flag.Var(&repo, "r", "")
