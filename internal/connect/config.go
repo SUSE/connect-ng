@@ -31,6 +31,15 @@ type Config struct {
 	NoZypperRefresh  bool
 }
 
+// NewConfig returns a Config with defaults
+func NewConfig() Config {
+	return Config{
+		Path:     defaultConfigPath,
+		BaseURL:  defaultBaseURL,
+		Insecure: defaultInsecure,
+	}
+}
+
 func (c Config) toYAML() []byte {
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, "---\n")
@@ -51,13 +60,10 @@ func (c Config) Save() error {
 	return os.WriteFile(c.Path, data, 0644)
 }
 
-// Load sets the defaults and tries to read
-// and merge settings from /etc/SUSEConnect
+// Load tries to read and merge the settings from Path.
+// Ignore errors as it's quite normal that Path does not exist.
 func (c *Config) Load() {
-	c.Path = defaultConfigPath
-	c.BaseURL = defaultBaseURL
-	c.Insecure = defaultInsecure
-	f, err := os.Open(defaultConfigPath)
+	f, err := os.Open(c.Path)
 	if err != nil {
 		Debug.Println(err)
 		return
