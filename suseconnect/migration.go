@@ -4,10 +4,10 @@ package main
 // * --selfupdate option
 // * offline migrations
 // * obsolete repo disabling (including --disable-repos option)
-// * interactive migration mode
 // * Leap -> SLES migration case
 
 import (
+	"bufio"
 	_ "embed"
 	"errors"
 	"flag"
@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -276,23 +277,25 @@ func migrationMain() {
 		migrationNum = 1
 	}
 
-	// TODO: this part is only used in interactive mode
+	// this part is only used in interactive mode
 	for migrationNum <= 0 || migrationNum > len(migrations) {
 		printMigrations(migrations, installedIDs, "Available migrations:", true)
 		if query {
 			os.Exit(0)
 		}
-		//   while migration_num <= 0 || migration_num > migrations.length do
-		//     print "[num/q]: "
-		//     choice = gets
-		//     if !choice
-		//       print "\nStandard input seems to be closed, please use '--non-interactive' option\n" unless options[:quiet]
-		//       exit 1
-		//     end
-		//     choice.chomp!
-		//     exit 0 if choice.eql?("q") || choice.eql?("Q")
-		//     migration_num = choice.to_i
-		//   end
+		fmt.Print("[num/q]: ")
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			QuietOut.Print("\nStandard input seems to be closed, please use '--non-interactive' option\n")
+			os.Exit(1)
+		}
+		choice := strings.ToLower(strings.TrimSpace(scanner.Text()))
+		if choice == "q" {
+			os.Exit(0)
+		}
+		if n, err := strconv.Atoi(choice); err == nil {
+			migrationNum = n
+		}
 	}
 
 	migration := migrations[migrationNum-1]
