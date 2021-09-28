@@ -244,3 +244,34 @@ func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs 
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
+
+// Repo holds repository data as returned by `zypper repos`
+type Repo struct {
+	Name     string `xml:"name,attr"`
+	Alias    string `xml:"alias,attr"`
+	Type     string `xml:"type,attr"`
+	Priority int    `xml:"priority,attr"`
+	Enabled  bool   `xml:"enabled,attr"`
+	URL      string `xml:"url"`
+}
+
+func parseReposXML(xmlDoc []byte) ([]Repo, error) {
+	var repos struct {
+		Repos []Repo `xml:"repo-list>repo"`
+	}
+	if err := xml.Unmarshal(xmlDoc, &repos); err != nil {
+		return []Repo{}, err
+	}
+	return repos.Repos, nil
+}
+
+// Repos returns repositories configured on the system
+func Repos() ([]Repo, error) {
+	args := []string{"--xmlout", "--non-interactive", "repos", "-d"}
+	// Don't fail when zypper exits with 6 (no repositories)
+	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})
+	if err != nil {
+		return []Repo{}, err
+	}
+	return parseReposXML(output)
+}

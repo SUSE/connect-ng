@@ -30,6 +30,31 @@ func TestParseServicesXML(t *testing.T) {
 	}
 }
 
+func TestParseReposXML(t *testing.T) {
+	repos, err := parseReposXML(readTestFile("repos.xml", t))
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if len(repos) != 3 {
+		t.Errorf("Expected len()==3. Got %v", len(repos))
+	}
+	if repos[0].Name != "SLE-Module-Basesystem15-SP2-Pool" {
+		t.Errorf("Expected SLE-Module-Basesystem15-SP2-Pool. Got %v", repos[0].Name)
+	}
+	if repos[0].Priority != 99 {
+		t.Errorf("Expected priority 99. Got %v", repos[0].Priority)
+	}
+	if !repos[0].Enabled {
+		t.Errorf("Expected Enabled. Got %v", repos[0].Enabled)
+	}
+	if repos[1].Priority != 50 {
+		t.Errorf("Expected priority 99. Got %v", repos[1].Priority)
+	}
+	if repos[1].Enabled {
+		t.Errorf("Expected not Enabled Got %v", repos[1].Enabled)
+	}
+}
+
 func TestInstalledProducts(t *testing.T) {
 	execute = func(_ []string, _ []int) ([]byte, error) {
 		return readTestFile("products.xml", t), nil
