@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -41,5 +42,20 @@ func TestParseConfig2(t *testing.T) {
 	parseConfig(r, &c)
 	if !reflect.DeepEqual(c, expect) {
 		t.Errorf("got %+v, expected %+v", c, expect)
+	}
+}
+
+func TestSaveLoad(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "SUSEConnect.test")
+	c1 := NewConfig()
+	c1.Path = path
+	if err := c1.Save(); err != nil {
+		t.Fatalf("Unable to write config: %s", err)
+	}
+	c2 := NewConfig()
+	c2.Path = path
+	c2.Load()
+	if !reflect.DeepEqual(c1, c2) {
+		t.Errorf("got %+v, expected %+v", c2, c1)
 	}
 }

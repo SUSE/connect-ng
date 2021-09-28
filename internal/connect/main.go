@@ -14,7 +14,7 @@ const (
 
 var (
 	// CFG is the global struct for config
-	CFG Config
+	CFG = NewConfig()
 	// Debug logger for debugging output
 	Debug *log.Logger
 )
