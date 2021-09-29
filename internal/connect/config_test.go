@@ -59,3 +59,26 @@ func TestSaveLoad(t *testing.T) {
 		t.Errorf("got %+v, expected %+v", c2, c1)
 	}
 }
+
+func TestMergeJSON(t *testing.T) {
+	c := NewConfig()
+	c.Token = "should-be-overridden"
+
+	// note the case of the json attributes doesn't matter
+	jsn := `{"ToKeN": "regcode-42", "email": "jbloggs@acme.com"}`
+	if err := c.MergeJSON(jsn); err != nil {
+		t.Fatalf("Merge error: %s", err)
+	}
+	expected := "regcode-42"
+	if c.Token != expected {
+		t.Errorf("got Token: %s, expected: %s", c.Token, expected)
+	}
+	expected = "jbloggs@acme.com"
+	if c.Email != expected {
+		t.Errorf("got Email: %s, expected: %s", c.Email, expected)
+	}
+	// check other fields were not touched
+	if c.BaseURL != defaultBaseURL {
+		t.Errorf("got BaseURL: %s, expected: %s", c.BaseURL, defaultBaseURL)
+	}
+}
