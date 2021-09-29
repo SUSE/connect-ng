@@ -3,7 +3,6 @@ package main
 // TODO LIST
 // * --selfupdate option
 // * offline migrations
-// * obsolete repo disabling (including --disable-repos option)
 // * Leap -> SLES migration case
 
 import (
@@ -63,6 +62,7 @@ func migrationMain() {
 		noSelfUpdate   bool
 		breakMySystem  bool
 		query          bool
+		disableRepos   bool
 		migrationNum   int
 		fsRoot         string
 		toProduct      string
@@ -89,6 +89,7 @@ func migrationMain() {
 	flag.BoolVar(&noSelfUpdate, "no-selfupdate", false, "")
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.BoolVar(&query, "query", false, "")
+	flag.BoolVar(&disableRepos, "disable-repos", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&toProduct, "product", "", "")
@@ -325,7 +326,8 @@ func migrationMain() {
 	}()
 
 	dupArgs := zypperDupArgs()
-	fsInconsistent, err := applyMigration(migration, quiet, verbose, nonInteractive, dupArgs)
+	fsInconsistent, err := applyMigration(migration, quiet, verbose,
+		nonInteractive, disableRepos, dupArgs)
 
 	if err != nil {
 		fmt.Println(err)
@@ -466,11 +468,103 @@ func sortMigrationProducts(m connect.MigrationPath, installedIDs connect.StringS
 	})
 }
 
+// three-way comparison of editions (EDITION=VERSION[-RELEASE])
+// release part is ignored
+func compareEditions(left, right string) int {
+	// cut off (optional) release part
+	leftParts := strings.Split(left, "-")
+	rightParts := strings.Split(right, "-")
+	// split version into parts
+	leftParts = strings.Split(leftParts[0], ".")
+	rightParts = strings.Split(rightParts[0], ".")
+
+	// right-pad parts with zeros to match length
+	for len(leftParts) < len(rightParts) {
+		leftParts = append(leftParts, "0")
+	}
+	for len(rightParts) < len(leftParts) {
+		rightParts = append(rightParts, "0")
+	}
+
+	// lenghts are equal so we can use one index
+	for i := range leftParts {
+		var l, r int
+		// take and convert i-th part of left and right
+		// NOTE: fmt.Sscan() is used over strconv.Atoi() to better match ruby behavior
+		// for strings with non-digit characters like "123abc" or "123.456".
+		fmt.Sscan(leftParts[i], &l)
+		fmt.Sscan(rightParts[i], &r)
+
+		if l < r {
+			return -1
+		}
+		if l > r {
+			return 1
+		}
+	}
+	return 0
+}
+
+func cleanupProductRepos(p connect.Product, force bool) error {
+	productPackages, err := connect.FindProductPackages(p.Name)
+	if err != nil {
+		return err
+	}
+	repos, err := connect.Repos()
+	if err != nil {
+		return err
+	}
+	for _, availableProduct := range productPackages {
+		// skip non-obsolete products
+		if compareEditions(availableProduct.Edition, p.Edition()) >= 0 {
+			continue
+		}
+		// filter out "(System Packages)" and already disabled repos
+		found := false
+		for _, r := range repos {
+			if r.Name == availableProduct.Repo && r.Enabled {
+				found = true
+				break
+			}
+		}
+		if !found {
+			continue
+		}
+		QuietOut.Printf("Found obsolete repository %s", availableProduct.Repo)
+		if force {
+			QuietOut.Println("... disabling.")
+			connect.DisableRepo(availableProduct.Repo)
+		} else {
+			for {
+				fmt.Printf("\nDisable obsolete repository %s [y/n] (y): ", availableProduct.Repo)
+				scanner := bufio.NewScanner(os.Stdin)
+				if !scanner.Scan() {
+					QuietOut.Print("\nStandard input seems to be closed, please use '--non-interactive' option\n")
+					os.Exit(1)
+				}
+				choice := strings.ToLower(strings.TrimSpace(scanner.Text()))
+				if interrupted {
+					return ErrInterrupted
+				}
+				if choice == "n" {
+					fmt.Print("\n")
+					break
+				} else if choice == "y" || choice == "" {
+					fmt.Println("... disabling.")
+					connect.DisableRepo(availableProduct.Repo)
+					break
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // updates system records in SCC/SMT
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
-func migrateSystem(migration connect.MigrationPath) (string, error) {
+func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (string, error) {
 	var baseProductVersion string
 
 	for _, p := range migration {
@@ -490,34 +584,9 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 			}
 		}
 
-		//     SUSE::Connect::Migration::find_products(p.identifier).each do |available_product|
-		//       # filter out "(System Packages)" and already disabled repos
-		//       next unless SUSE::Connect::Migration::repositories.detect { |r| r[:name].eql?(available_product[:repository]) && r[:enabled] != 0 }
-		//       if ProductVersion.new(available_product[:edition]) < ProductVersion.new(p.version)
-		//         print "Found obsolete repository #{available_product[:repository]}" unless options[:quiet]
-		//         if options[:non_interactive] || options[:disable_repos]
-		//           print "... disabling.\n" unless options[:quiet]
-		//           SUSE::Connect::Migration::disable_repository available_product[:repository]
-		//         else
-		//           while true
-		//             print "\nDisable obsolete repository #{available_product[:repository]} [y/n] (y): "
-		//             choice = gets.chomp
-		//             if interrupted {
-		//	             return baseProductVersion, ErrInterrupted
-		//             }
-		//             if choice.eql?('n') || choice.eql?('N')
-		//               print "\n"
-		//               break
-		//             end
-		//             if  choice.eql?('y') || choice.eql?('Y')|| choice.eql?('')
-		//               print "... disabling.\n"
-		//               SUSE::Connect::Migration::disable_repository available_product[:repository]
-		//               break
-		//             end
-		//           end
-		//         end
-		//       end
-		//     end
+		if err := cleanupProductRepos(p, forceDisableRepos); err != nil {
+			return baseProductVersion, err
+		}
 
 		msg = "Adding service " + service.Name
 		VerboseOut.Println(msg)
@@ -538,7 +607,8 @@ func migrateSystem(migration connect.MigrationPath) (string, error) {
 }
 
 // returns fs_inconsistent flag
-func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteractive bool, dupArgs []string) (bool, error) {
+func applyMigration(migration connect.MigrationPath, quiet, verbose,
+	nonInteractive, forceDisableRepos bool, dupArgs []string) (bool, error) {
 	fsInconsistent := false
 
 	if err := connect.ZypperBackup(); err != nil {
@@ -559,7 +629,7 @@ func applyMigration(migration connect.MigrationPath, quiet, verbose, nonInteract
 	//      end
 	//   end
 
-	baseProductVersion, err := migrateSystem(migration)
+	baseProductVersion, err := migrateSystem(migration, nonInteractive || forceDisableRepos)
 	if err != nil {
 		return fsInconsistent, err
 	}

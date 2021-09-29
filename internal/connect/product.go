@@ -12,6 +12,7 @@ type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
+	Release string `xml:"release,attr" json:"-"`
 	Summary string `xml:"summary,attr" json:"-"`
 	IsBase  bool   `xml:"isbase,attr" json:"base"`
 
@@ -38,6 +39,14 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 	}
 	*p = Product(prod)
 	return nil
+}
+
+// Edition returns VERSION[-RELEASE] for product
+func (p Product) Edition() string {
+	if p.Release == "" {
+		return p.Version
+	}
+	return p.Version + "-" + p.Release
 }
 
 func (p Product) isEmpty() bool {

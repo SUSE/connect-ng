@@ -275,3 +275,40 @@ func Repos() ([]Repo, error) {
 	}
 	return parseReposXML(output)
 }
+
+// Package holds package info as returned by `zypper search`
+type Package struct {
+	Name    string `xml:"name,attr"`
+	Edition string `xml:"edition,attr"` // VERSION[-RELEASE]
+	Arch    string `xml:"arch,attr"`
+	Repo    string `xml:"repository,attr"`
+}
+
+func parseSearchResultXML(xmlDoc []byte) ([]Package, error) {
+	var packages struct {
+		Packages []Package `xml:"search-result>solvable-list>solvable"`
+	}
+	if err := xml.Unmarshal(xmlDoc, &packages); err != nil {
+		return []Package{}, err
+	}
+	return packages.Packages, nil
+}
+
+// FindProductPackages returns list of product packages for given product
+func FindProductPackages(identifier string) ([]Package, error) {
+	args := []string{"--xmlout", "--no-refresh", "--non-interactive", "search", "-s",
+		"--match-exact", "-t", "product", identifier}
+	// Don't fail when zypper exits with 104 (no product found) or 6 (no repositories)
+	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos, zypperInfoCapNotFound})
+	if err != nil {
+		return []Package{}, err
+	}
+	return parseSearchResultXML(output)
+}
+
+// DisableRepo disables zypper repo by name
+func DisableRepo(name string) error {
+	args := []string{"--non-interactive", "modifyrepo", "-d", name}
+	_, err := zypperRun(args, []int{zypperOK})
+	return err
+}

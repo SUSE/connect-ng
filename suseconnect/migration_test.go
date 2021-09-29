@@ -37,3 +37,27 @@ func TestSortMigrationProducts(t *testing.T) {
 		}
 	}
 }
+
+func TestCompareEditions(t *testing.T) {
+	samples := []struct {
+		Left  string
+		Right string
+		Out   int
+	}{
+		{"1.2.3", "2.2.3", -1},
+		{"12.3-4", "12.5", -1},
+		{"1.0", "1.0", 0},
+		{"9-1", "8-0", 1},
+		{"0-3", "0-1", 0},
+		{"1.0.1", "1.0", 1},
+		{"2.0", "2", 0},
+		{"10.9", "9.10.1", 1},
+		{"1", "2", -1},
+	}
+
+	for _, s := range samples {
+		if out := compareEditions(s.Left, s.Right); out != s.Out {
+			t.Fatalf("Compared %v and %v. Got: %v expected: %v", s.Left, s.Right, out, s.Out)
+		}
+	}
+}

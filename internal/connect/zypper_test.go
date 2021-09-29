@@ -95,3 +95,28 @@ func TestBaseProductError(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }
+
+func TestParseSearchResultXML(t *testing.T) {
+	packages, err := parseSearchResultXML(readTestFile("product-search.xml", t))
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if len(packages) != 2 {
+		t.Errorf("Expected len()==2. Got %v", len(packages))
+	}
+	if packages[0].Name != "SLES" {
+		t.Errorf("Expected SLES. Got %v", packages[0].Name)
+	}
+	if packages[0].Edition != "15.2-0" {
+		t.Errorf("Expected edition 15.2-0. Got %v", packages[0].Edition)
+	}
+	if packages[0].Repo != "SLE-Product-SLES15-SP2-Updates" {
+		t.Errorf("Expected SLE-Product-SLES15-SP2-Updates. Got %v", packages[0].Repo)
+	}
+	if packages[1].Edition != "15.2-0" {
+		t.Errorf("Expected edition 15.2-0. Got %v", packages[1].Edition)
+	}
+	if packages[1].Repo != "SLE-Product-SLES15-SP2-Pool" {
+		t.Errorf("Expected SLE-Product-SLES15-SP2-Pool. Got %v", packages[1].Repo)
+	}
+}
