@@ -3,6 +3,7 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -100,4 +101,9 @@ func parseConfig(r io.Reader, c *Config) {
 			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
 	}
+}
+
+// MergeJSON merges attributes of jsn that match Config fields
+func (c *Config) MergeJSON(jsn string) error {
+	return json.Unmarshal([]byte(jsn), c)
 }
