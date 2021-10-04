@@ -2,7 +2,6 @@ package main
 
 // TODO LIST
 // * --selfupdate option
-// * offline migrations
 // * Leap -> SLES migration case
 
 import (
@@ -218,25 +217,10 @@ func migrationMain() {
 		installedIDs.Add(prod.ToTriplet())
 	}
 
-	allMigrations := make([]connect.MigrationPath, 0)
-	if toProduct != "" {
-		newProduct, err := connect.SplitTriplet(toProduct)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		// TODO: remove print, use product variable in call below
-		fmt.Println(newProduct)
-		//     migrations_all = SUSE::Connect::YaST.system_offline_migrations(system_products, new_product)
-		//   rescue => e
-		//     print "Can't get available migrations from server: #{e.class}: #{e.message}\n"
-		//     exit 1
-	} else {
-		allMigrations, err = connect.ProductMigrations(systemProducts)
-		if err != nil {
-			fmt.Printf("Can't get available migrations from server: %v\n", err)
-			os.Exit(1)
-		}
+	allMigrations, err := fetchAllMigrations(systemProducts, toProduct)
+	if err != nil {
+		fmt.Printf("Can't get available migrations from server: %v\n", err)
+		os.Exit(1)
 	}
 
 	// preprocess the migrations lists
@@ -715,4 +699,17 @@ func zypperDupArgs() []string {
 	// special case (add avc flag)
 	args = append(args, "--"+avc)
 	return args
+}
+
+func fetchAllMigrations(installed []connect.Product, target string) ([]connect.MigrationPath, error) {
+	// offline migrations to given product
+	if target != "" {
+		newProduct, err := connect.SplitTriplet(target)
+		if err != nil {
+			return []connect.MigrationPath{}, err
+		}
+		return connect.OfflineProductMigrations(installed, newProduct)
+	}
+	// online migrations
+	return connect.ProductMigrations(installed)
 }

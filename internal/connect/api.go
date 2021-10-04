@@ -227,3 +227,23 @@ func productMigrations(installed []Product) ([]MigrationPath, error) {
 	err = json.Unmarshal(resp, &migrations)
 	return migrations, err
 }
+
+func offlineProductMigrations(installed []Product, target Product) ([]MigrationPath, error) {
+	migrations := make([]MigrationPath, 0)
+	var payload struct {
+		InstalledProducts []Product `json:"installed_products"`
+		TargetBaseProduct Product   `json:"target_base_product"`
+	}
+	payload.InstalledProducts = installed
+	payload.TargetBaseProduct = target
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return migrations, err
+	}
+	resp, err := callHTTP("POST", "/connect/systems/products/offline_migrations", body, nil, authSystem)
+	if err != nil {
+		return migrations, err
+	}
+	err = json.Unmarshal(resp, &migrations)
+	return migrations, err
+}

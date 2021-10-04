@@ -269,6 +269,11 @@ func ProductMigrations(installed []Product) ([]MigrationPath, error) {
 	return productMigrations(installed)
 }
 
+// OfflineProductMigrations returns the offline migration paths for the installed products and target
+func OfflineProductMigrations(installed []Product, targetBaseProduct Product) ([]MigrationPath, error) {
+	return offlineProductMigrations(installed, targetBaseProduct)
+}
+
 // UpgradeProduct upgades the records for given product in SCC/SMT
 // The service record for new product is returned
 func UpgradeProduct(product Product) (Service, error) {
