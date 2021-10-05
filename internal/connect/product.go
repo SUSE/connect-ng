@@ -5,11 +5,19 @@ import (
 	"strings"
 )
 
-// Product represents an installed product or product information from API
-type Product struct {
+// BasicProduct represents basic information on product, mostly for API requests
+// where we don't want to send all fields. For strings 'omitempty' tag is enough
+// but for bools, there's no "empty" state so they are always included in JSON.
+type BasicProduct struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
+}
+
+// Product represents an installed product or product information from API
+type Product struct {
+	BasicProduct
+	Release string `xml:"release,attr" json:"-"`
 	Summary string `xml:"summary,attr" json:"-"`
 	IsBase  bool   `xml:"isbase,attr" json:"-"`
 
@@ -20,6 +28,11 @@ type Product struct {
 	Recommended  bool   `json:"recommended"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
+}
+
+// NewProduct returns new Product with basic fields set
+func NewProduct(name, version, arch string) Product {
+	return Product{BasicProduct: BasicProduct{Name: name, Version: version, Arch: arch}}
 }
 
 // UnmarshalJSON custom unmarshaller for Product.

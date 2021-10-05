@@ -105,7 +105,7 @@ func main() {
 			os.Exit(1)
 		}
 		parts := strings.Split(product, "/")
-		connect.CFG.Product = connect.Product{Name: parts[0], Version: parts[1], Arch: parts[2]}
+		connect.CFG.Product = connect.NewProduct(parts[0], parts[1], parts[2])
 	}
 	if instanceDataFile != "" {
 		connect.CFG.InstanceDataFile = instanceDataFile
