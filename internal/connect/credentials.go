@@ -24,9 +24,9 @@ var (
 
 // Credentials stores the SCC or service credentials
 type Credentials struct {
-	Filename string
-	Username string
-	Password string
+	Filename string `json:"file"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func (c Credentials) String() string {
@@ -53,15 +53,15 @@ func curlrcCredentialsFile() string {
 
 // getCredentials reads the system credentials from the SCCcredentials file
 func getCredentials() (Credentials, error) {
-	path := systemCredentialsFile()
+	return ReadCredentials(systemCredentialsFile())
+}
+
+// ReadCredentials returns the credentials from path
+func ReadCredentials(path string) (Credentials, error) {
+	Debug.Print("Reading credentials: ", path)
 	if !fileExists(path) {
 		return Credentials{}, ErrMissingCredentialsFile
 	}
-	return readCredentials(path)
-}
-
-func readCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading credentials: ", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return Credentials{}, err

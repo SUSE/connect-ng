@@ -12,11 +12,13 @@ module GoConnect
   ffi_lib '../out/libsuseconnect.so'
 
   attach_function :announce_system, [:string, :string], :pointer
+  attach_function :credentials, [:string], :pointer
 end
 
 module SUSE
   module Connect
     class YaST
+        GLOBAL_CREDENTIALS_FILE = "/etc/zypp/credentials.d/SCCcredentials"
 
         class << self
 
@@ -41,6 +43,23 @@ module SUSE
               # check other errors
             end
             result["credentials"]
+          end
+
+          # Reads credentials file.
+          # Returns the credentials object with login, password and credentials file
+          #
+          # @param [String] Path to credentials file - defaults to /etc/zypp/credentials.d/SCCcredentials
+          #
+          # @return [OpenStruct] Credentials object as openstruct
+          def credentials(credentials_file = GLOBAL_CREDENTIALS_FILE)
+            jsn_out = _consume_str(GoConnect.credentials(credentials_file))
+            result = JSON.parse(jsn_out, object_class: OpenStruct)
+            if result.err_type == "MalformedSccCredentialsFile"
+              raise MalformedSccCredentialsFile, result.message
+            elsif result.err_type == "MissingCredentialsFile"
+              raise MissingSccCredentialsFile, result.message
+            end
+            result
           end
 
           private

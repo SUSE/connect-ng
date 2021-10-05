@@ -1,6 +1,9 @@
 module SUSE
   module Connect
 
+    class MalformedSccCredentialsFile < StandardError; end
+    class MissingSccCredentialsFile < StandardError; end
+
     # simplified version of the original for demonstration
     class ApiError < StandardError
 

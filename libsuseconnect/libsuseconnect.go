@@ -3,7 +3,6 @@ package main
 import (
 	"C"
 	"encoding/json"
-	"fmt"
 	"github.com/SUSE/connect-ng/internal/connect"
 	"os"
 )
@@ -25,6 +24,16 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export credentials
+func credentials(path *C.char) *C.char {
+	creds, err := connect.ReadCredentials(C.GoString(path))
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, _ := json.Marshal(&creds)
+	return C.CString(string(jsn))
+}
+
 func loadConfig(clientParams string) {
 	connect.CFG.Load()
 	connect.CFG.MergeJSON(clientParams)
@@ -39,15 +48,23 @@ func errorToJSON(err error) string {
 		Message string `json:"message"`
 		Code    int    `json:"code"`
 	}
+
 	if ae, ok := err.(connect.APIError); ok {
 		s.ErrType = "APIError"
 		s.Code = ae.Code
 		s.Message = ae.Message
-		jsn, _ := json.Marshal(&s)
-		return string(jsn)
+	} else {
+		switch err {
+		case connect.ErrMalformedSccCredFile:
+			s.ErrType = "MalformedSccCredentialsFile"
+		case connect.ErrMissingCredentialsFile:
+			s.ErrType = "MissingCredentialsFile"
+		}
+		s.Message = err.Error()
 	}
-	// TODO other error types
-	return fmt.Sprintf(`{"err_type": nil, message": "%s", "code": 0}`, err.Error())
+
+	jsn, _ := json.Marshal(&s)
+	return string(jsn)
 }
 
 //export getstatus
