@@ -29,3 +29,12 @@ end
 
 puts "login: #{login}"
 puts "password: #{password}"
+
+creds = SUSE::Connect::YaST.credentials()
+puts "#{creds}"
+
+begin
+  SUSE::Connect::YaST.credentials("dont-exist")
+rescue => e
+  puts e.inspect
+end

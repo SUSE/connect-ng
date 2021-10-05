@@ -75,7 +75,7 @@ func TestWriteReadDeleteService(t *testing.T) {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	path := serviceCredentialsFile("service1")
-	rc, err := readCredentials(path)
+	rc, err := ReadCredentials(path)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
