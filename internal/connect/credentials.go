@@ -103,10 +103,19 @@ func (c Credentials) write() error {
 	return os.WriteFile(c.Filename, buf.Bytes(), 0600)
 }
 
+// CreateCredentials writes credentials to path
+func CreateCredentials(login, password, path string) error {
+	c := Credentials{
+		Filename: path,
+		Username: login,
+		Password: password,
+	}
+	return c.write()
+}
+
 func writeSystemCredentials(login, password string) error {
 	path := systemCredentialsFile()
-	c := Credentials{Filename: path, Username: login, Password: password}
-	return c.write()
+	return CreateCredentials(login, password, path)
 }
 
 func writeServiceCredentials(serviceName string) error {
@@ -115,11 +124,7 @@ func writeServiceCredentials(serviceName string) error {
 		return err
 	}
 	path := serviceCredentialsFile(serviceName)
-	s := Credentials{
-		Filename: path,
-		Username: c.Username,
-		Password: c.Password}
-	return s.write()
+	return CreateCredentials(c.Username, c.Password, path)
 }
 
 func removeSystemCredentials() error {
