@@ -2,7 +2,6 @@ package main
 
 // TODO LIST
 // * --selfupdate option
-// * Leap -> SLES migration case
 
 import (
 	"bufio"
@@ -310,8 +309,8 @@ func migrationMain() {
 	}()
 
 	dupArgs := zypperDupArgs()
-	fsInconsistent, err := applyMigration(migration, quiet, verbose,
-		nonInteractive, disableRepos, dupArgs)
+	fsInconsistent, err := applyMigration(migration, systemProducts,
+		quiet, verbose, nonInteractive, disableRepos, dupArgs)
 
 	if err != nil {
 		fmt.Println(err)
@@ -590,9 +589,21 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 	return baseProductVersion, nil
 }
 
+// containsProduct returns true if given slice of products contains one with given name.
+func containsProduct(products []connect.Product, name string) bool {
+	for i := range products {
+		if products[i].Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // returns fs_inconsistent flag
-func applyMigration(migration connect.MigrationPath, quiet, verbose,
-	nonInteractive, forceDisableRepos bool, dupArgs []string) (bool, error) {
+func applyMigration(migration connect.MigrationPath, systemProducts []connect.Product,
+	quiet, verbose, nonInteractive, forceDisableRepos bool,
+	dupArgs []string) (bool, error) {
+
 	fsInconsistent := false
 
 	if err := connect.ZypperBackup(); err != nil {
@@ -604,14 +615,19 @@ func applyMigration(migration connect.MigrationPath, quiet, verbose,
 		return fsInconsistent, fmt.Errorf("Preparing migration: %v", ErrInterrupted)
 	}
 
-	//   if system_products.detect { |p| p.identifier == "Leap" } &&
-	//      migration.detect { |p| p.identifier == "SLES" }
-	//      # bsc#1184237
-	//      print "Migration from Leap to SLES - disabling old repositories\n" unless options[:quiet]
-	//      SUSE::Connect::Migration::repositories.each do |repo|
-	//          SUSE::Connect::Migration::disable_repository repo[:name] if repo[:enabled] != 0
-	//      end
-	//   end
+	// Disable all old repos in case of Leap -> SLES migration (bsc#1184237)
+	if containsProduct(systemProducts, "Leap") && containsProduct(migration, "SLES") {
+		QuietOut.Println("Migration from Leap to SLES - disabling old repositories")
+		repos, err := connect.Repos()
+		if err != nil {
+			return fsInconsistent, err
+		}
+		for _, r := range repos {
+			if r.Enabled {
+				connect.DisableRepo(r.Name)
+			}
+		}
+	}
 
 	baseProductVersion, err := migrateSystem(migration, nonInteractive || forceDisableRepos)
 	if err != nil {
