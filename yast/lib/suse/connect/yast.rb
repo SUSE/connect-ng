@@ -9,7 +9,7 @@ end
 
 module GoConnect
   extend FFI::Library
-  ffi_lib '../out/libsuseconnect.so'
+  ffi_lib '/root/out/libsuseconnect.so'
 
   attach_function :announce_system, [:string, :string], :pointer
   attach_function :credentials, [:string], :pointer
@@ -20,6 +20,7 @@ module SUSE
   module Connect
     class YaST
         GLOBAL_CREDENTIALS_FILE = "/etc/zypp/credentials.d/SCCcredentials"
+        SERVER_CERT_FILE = SUSE::Connect::SSLCertificate::SERVER_CERT_FILE
 
         class << self
 
