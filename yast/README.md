@@ -60,3 +60,19 @@ The libsuseconnect layer will provide a `announce_system` function that takes a 
 Then it will call [AnnounceSystem](https://github.com/SUSE/connect-ng/blob/c534203603e3c7d5c3064c1de340b2195996992a/internal/connect/client.go#L174) which returns a login, password and error. C does not allow multiple return values, so these will need to be JSON encoded so they can be passed back together as one string. The details from any error returned from `AnnounceSystem()` will need to be in the JSON passed back.
 
 The shim layer will decode the JSON returned from libsuseconnect. It will check for errors and raise appropriate exceptions so they can be handled by YaST [here](https://github.com/yast/yast-registration/blob/134f553e0a0ea75e94b095cfd1fa1fb0fa9bca75/src/lib/registration/connect_helpers.rb#L63). Otherwise it will return the login and password up to YaST.
+
+Testing
+========
+```
+$ make build-so
+$ scp -r yast out root@$TEST_HOST:/root
+
+// On $TEST_HOST backup and replace yast.rb
+# cp -p /usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb \
+    /usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb.orig
+# cp -p /root/yast/lib/suse/connect/yast.rb \
+	/usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb
+
+# SCCDEBUG=1 yast registration 2>sc.log
+// also check /var/log/YaST2/y2log
+```
