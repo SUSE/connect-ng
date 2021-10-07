@@ -5,8 +5,9 @@ import (
 	"fmt"
 )
 
+// export errors that package main needs
 var (
-	ErrMalformedSccCredFile       = errors.New("Unable to parse credentials")
+	ErrMalformedSccCredFile       = errors.New("Cannot parse credentials file")
 	ErrMissingCredentialsFile     = errors.New("Credentials file is missing")
 	ErrSystemNotRegistered        = errors.New("System not registered")
 	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
