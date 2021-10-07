@@ -1,8 +1,5 @@
 package main
 
-// TODO LIST
-// * --selfupdate option
-
 import (
 	"bufio"
 	_ "embed"
@@ -150,41 +147,44 @@ func migrationMain() {
 	}
 
 	if selfUpdate {
+		// reset root (if set) as the update stack can be outside of
+		// the to be updated system
+		connect.CFG.FsRoot = ""
 		echo := connect.SetSystemEcho(true)
-		//   # Update stack can be outside of the to be updated system
-		//   cmd = "zypper " +
-		//         (options[:non_interactive] ? "--non-interactive " : "") +
-		//         (options[:verbose] ? "--verbose " : "") +
-		//         (options[:quiet] ? "--quiet " : "") +
-		//         "patch-check --updatestack-only"
-		//   print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-		//   if !system cmd
-		//     if $?.exitstatus >= 100
-		//       # install pending updates and restart
-		//       cmd = "zypper " +
-		//             (options[:non_interactive] ? "--non-interactive " : "") +
-		//             (options[:verbose] ? "--verbose " : "") +
-		//             (options[:quiet] ? "--quiet " : "") +
-		//             "--no-refresh patch --updatestack-only"
-		//       print "\nExecuting '#{cmd}'\n\n" unless options[:quiet]
-		//       system cmd
-
-		//       # stop infinite restarting
-		//       # check that the patches were really installed
-		//       cmd = "zypper " +
-		//         (options[:root] ? "--root #{options[:root]} " : "") +
-		//         "--non-interactive --quiet --no-refresh patch-check --updatestack-only > /dev/null"
-		//       if ! system cmd
-		//         print "patch failed, exiting.\n"
-		//         exit 1
-		//       end
-
-		//       print "\nRestarting the migration script...\n" unless options[:quiet]
-		//       exec $0, *save_argv
-		//     end
-		//     exit 1
-		//   end
+		if pending, err := connect.PatchCheck(true, quiet, verbose, nonInteractive, false); err != nil {
+			fmt.Printf("patch pre-check failed: %v\n", err)
+			os.Exit(1)
+		} else if pending {
+			// install pending updates and restart
+			if err := connect.Patch(true, quiet, verbose, nonInteractive, true); err != nil {
+				fmt.Printf("patch failed: %v\n", err)
+				os.Exit(1)
+			}
+			// stop infinite restarting
+			// check that the patches were really installed
+			if pending, err := connect.PatchCheck(true, true, false, true, true); pending || err != nil {
+				if pending {
+					fmt.Println("there are still some patches pending")
+				}
+				if err != nil {
+					fmt.Printf("patch check returned error: %v\n", err)
+				}
+				fmt.Println("patch failed, exiting.")
+				os.Exit(1)
+			}
+			QuietOut.Print("\nRestarting the migration script...\n")
+			// this should replace current process with a new one but stop on error
+			// just in case
+			if err := syscall.Exec(os.Args[0], os.Args, []string{}); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
 		connect.SetSystemEcho(echo)
+		// restore root if needed
+		if fsRoot != "" {
+			connect.CFG.FsRoot = fsRoot
+		}
 	}
 	QuietOut.Print("\n")
 

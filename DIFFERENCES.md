@@ -35,3 +35,5 @@
 - Zypper backup doesn't use parallel gzip but tar's built in gzip functionality
   which doesn't require shell pipes.
 - Zypper backup stores both tarball and restore script under `--root` path.
+- Self-update in zypper-migration plugin returns more detailed error information
+  on failure.

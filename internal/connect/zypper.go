@@ -312,3 +312,32 @@ func DisableRepo(name string) error {
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
+
+// PatchCheck returns true if there are any patches pending to be installed.
+func PatchCheck(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) (bool, error) {
+	flags := zypperFlags("", quiet, verbose, nonInteractive, noRefresh)
+	args := append(flags, "patch-check")
+	if updateStackOnly {
+		args = append(args, "--updatestack-only")
+	}
+	_, err := zypperRun(args, []int{zypperOK})
+	// zypperInfoUpdateNeeded or zypperInfoSecUpdateNeeded exit codes indicate
+	// pending patches. return clear error
+	if err != nil && containsInt(
+		[]int{zypperInfoUpdateNeeded, zypperInfoSecUpdateNeeded},
+		err.(ZypperError).ExitCode) {
+		return true, nil
+	}
+	return false, err
+}
+
+// Patch installs all available needed patches.
+func Patch(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) error {
+	flags := zypperFlags("", quiet, verbose, nonInteractive, noRefresh)
+	args := append(flags, "patch")
+	if updateStackOnly {
+		args = append(args, "--updatestack-only")
+	}
+	_, err := zypperRun(args, []int{zypperOK})
+	return err
+}
