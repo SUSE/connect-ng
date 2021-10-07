@@ -13,6 +13,7 @@ module GoConnect
 
   attach_function :announce_system, [:string, :string], :pointer
   attach_function :credentials, [:string], :pointer
+  attach_function :create_credentials_file, [:string, :string, :string], :pointer
 end
 
 module SUSE
@@ -62,6 +63,14 @@ module SUSE
             result
           end
 
+          # Creates the system or zypper service credentials file with given login and password.
+          # @param [String] system login - return value of announce_system method
+          # @param [String] system password - return value of announce_system method
+          # @param [String] credentials_file - defaults to /etc/zypp/credentials.d/SCCcredentials
+          def create_credentials_file(login, password, credentials_file = GLOBAL_CREDENTIALS_FILE)
+            GoConnect.create_credentials_file(login, password, credentials_file)
+          end
+
           private
 
           def _consume_str(ptr)
@@ -70,7 +79,7 @@ module SUSE
             return s
           end
 
-        end
+        end 
     end
   end
 end

@@ -34,6 +34,16 @@ func credentials(path *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export create_credentials_file
+func create_credentials_file(login, password, path *C.char) *C.char {
+	err := connect.CreateCredentials(
+		C.GoString(login), C.GoString(password), C.GoString(path))
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString("") // TODO need more consistent return path
+}
+
 func loadConfig(clientParams string) {
 	connect.CFG.Load()
 	connect.CFG.MergeJSON(clientParams)
