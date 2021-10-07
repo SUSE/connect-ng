@@ -10,15 +10,15 @@ require "./lib/suse/connect/errors.rb"
 # SUSEConnect -p PackageHub/15.2/x86_64
 # zypper in ruby2.5-rubygem-ffi
 
-if ARGV.length < 1
-  puts "usage: ./test.rb regcode"
-  puts "with debug: SCCDEBUG=1 ./test.rb regcode"
+if ARGV.length < 2
+  puts "usage: ./test.rb distro_target regcode"
+  puts "or: SCCDEBUG=1 ./test.rb distro_target regcode"
   exit
 end
 
-regcode = ARGV[0]
+distro_target = ARGV[0]
+regcode = ARGV[1]
 settings = {token: regcode, email: "user@acme.org"}
-distro_target = ""
 
 begin
   login, password = SUSE::Connect::YaST.announce_system(settings, distro_target)
@@ -27,14 +27,15 @@ rescue SUSE::Connect::ApiError => e
   exit 1
 end
 
-puts "login: #{login}"
-puts "password: #{password}"
-
-creds = SUSE::Connect::YaST.credentials()
-puts "#{creds}"
+puts "login: #{login}, password: #{password}"
 
 begin
-  SUSE::Connect::YaST.credentials("dont-exist")
+  SUSE::Connect::YaST.credentials()
 rescue => e
   puts e.inspect
 end
+
+SUSE::Connect::YaST.create_credentials_file(login, password)
+
+creds = SUSE::Connect::YaST.credentials()
+puts "#{creds}"
