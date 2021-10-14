@@ -1,0 +1,12 @@
+<?xml version='1.0'?>
+<stream>
+<message type="info">Loading repository data...</message>
+<message type="info">Reading installed packages...</message>
+
+<search-result version="0.0">
+<solvable-list>
+<solvable status="installed" name="SLES" kind="product" edition="15.2-0" arch="x86_64" repository="SLE-Product-SLES15-SP2-Updates"/>
+<solvable status="installed" name="SLES" kind="product" edition="15.2-0" arch="x86_64" repository="SLE-Product-SLES15-SP2-Pool"/>
+</solvable-list>
+</search-result>
+</stream>

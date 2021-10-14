@@ -1,0 +1,11 @@
+#! /bin/sh
+# change root to first parameter or use / as default
+# it is needed to allow restore in installation
+cd ${1:-/}
+{{- range .Paths }}
+rm -rf {{ . -}}
+{{ end }}
+
+tar xvf {{ .Tarball }} --overwrite
+# return back to original dir
+cd -

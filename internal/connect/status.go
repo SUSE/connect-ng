@@ -79,7 +79,7 @@ func getStatuses() (map[string]Status, error) {
 			Arch:       product.Arch,
 			Status:     notRegistered,
 		}
-		if activation, ok := activations[product.toTriplet()]; ok {
+		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = registered
 			if !activation.isFree() {
 				status.RegCode = activation.RegCode
@@ -90,7 +90,7 @@ func getStatuses() (map[string]Status, error) {
 				status.Type = activation.Type
 			}
 		}
-		statuses[product.toTriplet()] = status
+		statuses[product.ToTriplet()] = status
 	}
 	return statuses, nil
 }
@@ -106,4 +106,33 @@ func getStatusText(statuses map[string]Status) (string, error) {
 		return "", err
 	}
 	return output.String(), nil
+}
+
+// SystemProducts returns sum of installed and activated products
+// Products from zypper have priority over products from
+// activations as they have summary field which is missing
+// in the latter.
+func SystemProducts() ([]Product, error) {
+	products, err := installedProducts()
+	if err != nil {
+		return products, err
+	}
+	installedIDs := NewStringSet()
+	for _, prod := range products {
+		installedIDs.Add(prod.ToTriplet())
+	}
+	if !IsRegistered() {
+		return products, nil
+	}
+	activations, err := systemActivations()
+	if err != nil {
+		return products, err
+	}
+	for _, a := range activations {
+		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
+			products = append(products, a.Service.Product)
+		}
+	}
+
+	return products, nil
 }

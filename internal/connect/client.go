@@ -55,7 +55,7 @@ func registerProduct(product Product, installReleasePkg bool) error {
 	}
 	if installReleasePkg {
 		fmt.Println("-> Installing release package ...")
-		if err := installReleasePackage(product.Name); err != nil {
+		if err := InstallReleasePackage(product.Name); err != nil {
 			return err
 		}
 	}
@@ -143,7 +143,7 @@ func deregisterProduct(product Product) error {
 	if err != nil {
 		return err
 	}
-	if product.toTriplet() == base.toTriplet() {
+	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
 	fmt.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
@@ -262,4 +262,20 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 		return nil, err
 	}
 	return instanceData, nil
+}
+
+// ProductMigrations returns the online migration paths for the installed products
+func ProductMigrations(installed []Product) ([]MigrationPath, error) {
+	return productMigrations(installed)
+}
+
+// OfflineProductMigrations returns the offline migration paths for the installed products and target
+func OfflineProductMigrations(installed []Product, targetBaseProduct Product) ([]MigrationPath, error) {
+	return offlineProductMigrations(installed, targetBaseProduct)
+}
+
+// UpgradeProduct upgades the records for given product in SCC/SMT
+// The service record for new product is returned
+func UpgradeProduct(product Product) (Service, error) {
+	return upgradeProduct(product)
 }

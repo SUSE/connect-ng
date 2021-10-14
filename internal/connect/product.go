@@ -2,6 +2,8 @@ package connect
 
 import (
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -10,8 +12,9 @@ type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
+	Release string `xml:"release,attr" json:"-"`
 	Summary string `xml:"summary,attr" json:"-"`
-	IsBase  bool   `xml:"isbase,attr" json:"-"`
+	IsBase  bool   `xml:"isbase,attr" json:"base"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
 	ReleaseType  string `json:"release_type,omitempty"`
@@ -38,12 +41,30 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Edition returns VERSION[-RELEASE] for product
+func (p Product) Edition() string {
+	if p.Release == "" {
+		return p.Version
+	}
+	return p.Version + "-" + p.Release
+}
+
 func (p Product) isEmpty() bool {
 	return p.Name == "" || p.Version == "" || p.Arch == ""
 }
 
-func (p Product) toTriplet() string {
+// ToTriplet returns <name>/<version>/<arch> string for product
+func (p Product) ToTriplet() string {
 	return p.Name + "/" + p.Version + "/" + p.Arch
+}
+
+// SplitTriplet returns a product from given or error for invalid input
+func SplitTriplet(p string) (Product, error) {
+	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, p); !match {
+		return Product{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
+	}
+	parts := strings.Split(p, "/")
+	return Product{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }
 
 func (p Product) toQuery() map[string]string {

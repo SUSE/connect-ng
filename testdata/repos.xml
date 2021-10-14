@@ -1,0 +1,14 @@
+<?xml version='1.0'?>
+<stream>
+    <repo-list>
+        <repo alias="SMT-http_smt-scc_nue_suse_com:SLE-Module-Basesystem15-SP2-Pool" name="SLE-Module-Basesystem15-SP2-Pool" type="rpm-md" priority="99" enabled="1" autorefresh="0" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="0">
+            <url>http://smt-scc.nue.suse.com/repo/SUSE/Products/SLE-Module-Basesystem/15-SP2/x86_64/product?credentials=SMT-http_smt-scc_nue_suse_com</url>
+        </repo>
+        <repo alias="SMT-http_smt-scc_nue_suse_com:SLE15-SP2-Installer-Updates" name="SLE15-SP2-Installer-Updates" priority="50" enabled="0" autorefresh="1" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="1">
+            <url>http://smt-scc.nue.suse.com/repo/SUSE/Updates/SLE-INSTALLER/15-SP2/x86_64/update?credentials=SMT-http_smt-scc_nue_suse_com</url>
+        </repo>
+        <repo alias="SUSE_CA" name="SUSE Internal CA Certificate (SLE_15_SP2)" type="rpm-md" priority="99" enabled="1" autorefresh="0" gpgcheck="1" repo_gpgcheck="1" pkg_gpgcheck="0" raw_gpgcheck="1" gpgkey="http://download.suse.de/ibs/SUSE:/CA/SLE_15_SP2/repodata/repomd.xml.key">
+            <url>http://download.suse.de/ibs/SUSE:/CA/SLE_15_SP2/</url>
+        </repo>
+    </repo-list>
+</stream>

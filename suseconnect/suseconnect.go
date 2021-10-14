@@ -7,37 +7,50 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
+	"path/filepath"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
 
 var (
-	//go:embed usage.txt
-	usageText        string
-	status           bool
-	statusText       bool
-	debug            bool
-	writeConfig      bool
-	deRegister       bool
-	cleanup          bool
-	rollback         bool
-	baseURL          string
-	fsRoot           string
-	namespace        string
-	token            string
-	product          string
-	instanceDataFile string
-	listExtensions   bool
-	email            string
-	version          bool
+	//go:embed connectUsage.txt
+	connectUsageText string
 )
 
-func init() {
+// multi-call entry points
+func main() {
+	switch filepath.Base(os.Args[0]) {
+	case "zypper-migration":
+		migrationMain()
+	default:
+		connectMain()
+	}
+}
+
+func connectMain() {
+	var (
+		status           bool
+		statusText       bool
+		debug            bool
+		writeConfig      bool
+		deRegister       bool
+		cleanup          bool
+		rollback         bool
+		baseURL          string
+		fsRoot           string
+		namespace        string
+		token            string
+		product          string
+		instanceDataFile string
+		listExtensions   bool
+		email            string
+		version          bool
+	)
+
 	// display help like the ruby SUSEConnect
 	flag.Usage = func() {
-		fmt.Print(usageText)
+		fmt.Print(connectUsageText)
 	}
 
 	flag.BoolVar(&status, "status", false, "")
@@ -61,9 +74,7 @@ func init() {
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
-}
 
-func main() {
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
@@ -98,14 +109,14 @@ func main() {
 		connect.CFG.Token = token
 	}
 	if product != "" {
-		if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, product); !match {
+		if p, err := connect.SplitTriplet(product); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
 			os.Exit(1)
+		} else {
+			connect.CFG.Product = p
 		}
-		parts := strings.Split(product, "/")
-		connect.CFG.Product = connect.Product{Name: parts[0], Version: parts[1], Arch: parts[2]}
 	}
 	if instanceDataFile != "" {
 		connect.CFG.InstanceDataFile = instanceDataFile

@@ -164,8 +164,8 @@ func TestUpgradeProduct(t *testing.T) {
 	if service.Name != name {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
-	if service.Product.toTriplet() != product.toTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	if service.Product.ToTriplet() != product.ToTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 
@@ -205,8 +205,8 @@ func TestDeactivateProduct(t *testing.T) {
 	if service.Name != name {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
-	if service.Product.toTriplet() != product.toTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+	if service.Product.ToTriplet() != product.ToTriplet() {
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 
@@ -229,7 +229,7 @@ func TestDeactivateProductSMT(t *testing.T) {
 		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
 	}
 	if !service.Product.isEmpty() {
-		t.Fatalf("Unexpected product %s", service.Product.toTriplet())
+		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
 	}
 }
 
@@ -248,5 +248,22 @@ func TestDeactivateProductError(t *testing.T) {
 		if ae.Code != http.StatusUnprocessableEntity {
 			t.Fatalf("Expecting APIError(422). Got %s", err)
 		}
+	}
+}
+
+func TestProductMigrations(t *testing.T) {
+	createTestCredentials("", "", t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(readTestFile("migrations.json", t))
+	}))
+	defer ts.Close()
+	CFG.BaseURL = ts.URL
+
+	migrations, err := productMigrations(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(migrations) != 2 {
+		t.Fatalf("len(migrations) == %d, expected 2", len(migrations))
 	}
 }

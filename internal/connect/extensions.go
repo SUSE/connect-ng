@@ -68,10 +68,10 @@ func preformatExtensions(extensions []Product, activations map[string]Activation
 
 	var ret []displayExtension
 	for _, e := range sorted {
-		_, activated := activations[e.toTriplet()]
+		_, activated := activations[e.ToTriplet()]
 		ret = append(ret, displayExtension{
 			Product:    e,
-			Code:       e.toTriplet(),
+			Code:       e.ToTriplet(),
 			Activated:  activated,
 			Indent:     strings.Repeat("    ", level),
 			ConnectCmd: cmd,
@@ -92,7 +92,7 @@ func getExtensions() ([]Product, error) {
 		return []Product{}, err
 	}
 
-	if statuses[base.toTriplet()].Status != registered {
+	if statuses[base.ToTriplet()].Status != registered {
 		return []Product{}, ErrListExtensionsUnregistered
 	}
 

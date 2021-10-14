@@ -1,0 +1,90 @@
+[
+  [
+    {
+      "friendly_name": "SUSE Linux Enterprise Server 15 SP4 x86_64",
+      "shortname": "SLES15-SP4",
+      "identifier": "SLES",
+      "version": "15.4",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": true,
+      "product_type": "base",
+      "free": false,
+      "release_stage": "alpha"
+    },
+    {
+      "friendly_name": "Basesystem Module 15 SP4 x86_64",
+      "shortname": "Basesystem-Module",
+      "identifier": "sle-module-basesystem",
+      "version": "15.4",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": false,
+      "product_type": "module",
+      "free": true,
+      "release_stage": "released"
+    },
+    {
+      "friendly_name": "Server Applications Module 15 SP4 x86_64",
+      "shortname": "Server-Applications-Module",
+      "identifier": "sle-module-server-applications",
+      "version": "15.4",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": false,
+      "product_type": "module",
+      "free": true,
+      "release_stage": "released"
+    }
+  ],
+  [
+    {
+      "friendly_name": "SUSE Linux Enterprise Server 15 SP3 x86_64",
+      "shortname": "SLES15-SP3",
+      "identifier": "SLES",
+      "version": "15.3",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": true,
+      "product_type": "base",
+      "free": false,
+      "release_stage": "released"
+    },
+    {
+      "friendly_name": "Basesystem Module 15 SP3 x86_64",
+      "shortname": "Basesystem-Module",
+      "identifier": "sle-module-basesystem",
+      "version": "15.3",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": false,
+      "product_type": "module",
+      "free": true,
+      "release_stage": "released"
+    },
+    {
+      "friendly_name": "Python 2 Module 15 SP3 x86_64",
+      "shortname": "Python2-Module",
+      "identifier": "sle-module-python2",
+      "version": "15.3",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": false,
+      "product_type": "module",
+      "free": true,
+      "release_stage": "released"
+    },
+    {
+      "friendly_name": "Server Applications Module 15 SP3 x86_64",
+      "shortname": "Server-Applications-Module",
+      "identifier": "sle-module-server-applications",
+      "version": "15.3",
+      "arch": "x86_64",
+      "release_type": null,
+      "base": false,
+      "product_type": "module",
+      "free": true,
+      "release_stage": "released"
+    }
+  ]
+]

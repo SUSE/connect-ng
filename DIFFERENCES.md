@@ -26,3 +26,14 @@
   This is a bug and it's already fixed in the Go version.
 - With --debug the Go version sends all debug output to stderr. The Ruby
   version sends http debug to stderr, and other debug to stdout.
+- In zypper-migration plugin, `--download <mode>` flag doesn't validate `<mode>`.
+- Additional `--debug` flag was added to zypper-migration plugin to enable
+  `SUSEConnect` debug info.
+- Contradicting flags are not allowed in zypper-migration plugin to match new
+  zypper behavior (see e.g.: https://github.com/openSUSE/zypper/pull/215 for
+  more details).
+- Zypper backup doesn't use parallel gzip but tar's built in gzip functionality
+  which doesn't require shell pipes.
+- Zypper backup stores both tarball and restore script under `--root` path.
+- Self-update in zypper-migration plugin returns more detailed error information
+  on failure.

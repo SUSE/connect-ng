@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 )
 
+// MigrationPath holds a list of products
+type MigrationPath []Product
+
 // Rollback restores system state to before failed migration
 func Rollback() error {
 	fmt.Println("Starting to sync system product activations to the server. This can take some time...")
@@ -66,7 +69,8 @@ func Rollback() error {
 	return setReleaseVersion(base.Version)
 }
 
-func migrationAddService(URL string, serviceName string) error {
+// MigrationAddService adds zypper service in migration context
+func MigrationAddService(URL string, serviceName string) error {
 	// don't try to add the service if the plugin with the same name exists (bsc#1128969)
 	if fileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
 		return nil
@@ -74,7 +78,8 @@ func migrationAddService(URL string, serviceName string) error {
 	return addService(URL, serviceName, true)
 }
 
-func migrationRemoveService(serviceName string) error {
+// MigrationRemoveService removes zypper service in migration context
+func MigrationRemoveService(serviceName string) error {
 	// don't try to remove the service if the plugin with the same name exists (bsc#1128969)
 	if fileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
 		return nil
@@ -85,15 +90,15 @@ func migrationRemoveService(serviceName string) error {
 func migrationRefreshService(service Service) error {
 	// INFO: Remove old and new service because this could be called after filesystem rollback or
 	// from inside a failed migration
-	if err := migrationRemoveService(service.Name); err != nil {
+	if err := MigrationRemoveService(service.Name); err != nil {
 		return err
 	}
-	if err := migrationRemoveService(service.ObsoletedName); err != nil {
+	if err := MigrationRemoveService(service.ObsoletedName); err != nil {
 		return err
 	}
 
 	// INFO: Add new service for the same product but with new/valid service url
-	migrationAddService(service.URL, service.Name)
+	MigrationAddService(service.URL, service.Name)
 
 	return nil
 }
