@@ -552,7 +552,7 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
-		connect.QuietOut.Println(msg)
+		QuietOut.Println(msg)
 		service, err := connect.UpgradeProduct(p)
 		if err != nil {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
@@ -591,8 +591,8 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 
 // containsProduct returns true if given slice of products contains one with given name.
 func containsProduct(products []connect.Product, name string) bool {
-	for i := range products {
-		if products[i].Name == name {
+	for _, p := range products {
+		if p.Name == name {
 			return true
 		}
 	}
