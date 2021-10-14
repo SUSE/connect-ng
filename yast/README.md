@@ -1,12 +1,10 @@
-Shim for YaST
-=============
+# Shim for YaST
 
 Yast-Registration uses the original SUSEConnect library and both are written in Ruby. However connect-ng is written in Go, so if it is to replace the original Ruby SUSEConnect, then it will have to provide a shim written in Ruby.
 
 The shim will provide the same interface to Yast as the Ruby SUSEConnect, but underneath it will call the Go connect-ng via a shared library to do the work.
 
-Layers
-======
+# Layers
 
 ```
     |---------------------------|
@@ -21,36 +19,35 @@ Layers
 
 ```
 
-YaST Registration
------------------
+## YaST Registration
+
 No change here. It will import the library as before like `require "suse/connect"`.
 
 The packaging for connect-ng will install the new shim gem instead of the suse-connect gem.
+Alternative approach is to bundle the shim code together with yast-registration as the functionality is trimmed to this specific use case.
 
+## Shim
 
-Shim
-----
 Northbound the shim provides the same interface to Yast as the Ruby SUSEConnect. Classes currently implemented in the Ruby SUSEConnect and used by Yast will need to be implemented here.
 
 YaST passes strings and hashes as parameters. The hashes will be converted to JSON and passed on to libsuseconnect as strings.
 
 Southbound the shim uses the Ruby [FFI](https://github.com/ffi/ffi) (Foreign Function Interface) gem to interface with the C library provided by libsuseconnect. Libsuseconnect will return JSON with the results or error details if there was a problem. The shim will raise an exception if there was an error. Otherwise the results will be returned in whatever form YaST is expecting.
 
+Note that generic OpenStruct is used for most structures instead of specific classes like in Ruby SUSEConnect. This should not be a problem because most SUSEConnect structures are anyway based on OpenStruct.
 
-libsuseconnect
---------------
+## libsuseconnect
+
 [Cgo](https://golang.org/cmd/cgo/) allows C shared libraries to be built from Go packages. See the `build-so` target in [Makefile](../Makefile) which builds libsuseconnect.so.
 
 This layer provides a set of C functions that the shim will call. For each function it converts the C strings received in the parameters to Go strings and decodes any JSON. Then it calls the appropriate function in the `internal/connect` package. It checks the return for errors, and builds the appropriate JSON response to include the results and any error information.
 
+## connect-ng
 
-connect-ng
-----------
 No change to this layer.
 
+# Example
 
-Example
-=======
 Currently `yast-registration` [here](https://github.com/yast/yast-registration/blob/134f553e0a0ea75e94b095cfd1fa1fb0fa9bca75/src/lib/registration/registration.rb#L58) calls `SUSE::Connect::YaST.announce_system` [here](https://github.com/SUSE/connect/blob/1b377c95cd08e4e536cbf3d6707eaa1ef21c412e/lib/suse/connect/yast.rb#L21-L28)
 
 The shim will implement the `announce_system` method with the same parameters, return and exceptions. It will convert the `client_params` hash parameter to JSON so it can be passed as a string parameter to the library using FFI.
@@ -61,18 +58,32 @@ Then it will call [AnnounceSystem](https://github.com/SUSE/connect-ng/blob/c5342
 
 The shim layer will decode the JSON returned from libsuseconnect. It will check for errors and raise appropriate exceptions so they can be handled by YaST [here](https://github.com/yast/yast-registration/blob/134f553e0a0ea75e94b095cfd1fa1fb0fa9bca75/src/lib/registration/connect_helpers.rb#L63). Otherwise it will return the login and password up to YaST.
 
-Testing
-========
+# Testing
+
 ```
 $ make build-so
-$ scp -r yast out root@$TEST_HOST:/root
+$ rsync -rav out/libsuseconnect.so root@$TEST_HOST:/usr/lib64
+$ rsync -rav yast root@$TEST_HOST:/root
 
-// On $TEST_HOST backup and replace yast.rb
-# cp -p /usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb \
-    /usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb.orig
-# cp -p /root/yast/lib/suse/connect/yast.rb \
-	/usr/lib64/ruby/gems/2.5.0/gems/suse-connect-0.3.25/lib/suse/connect/yast.rb
+// On $TEST_HOST backup and replace suse-connect/lib (only needed once)
+# cd /usr/lib64/ruby/gems/*/gems/suse-connect-*
+# mv lib lib.org
+# ln -s /root/yast/lib lib
 
 # SCCDEBUG=1 yast registration 2>sc.log
 // also check /var/log/YaST2/y2log
+```
+
+Following script can be used to quickly toggle between original and new implementation:
+
+```
+#!/bin/sh
+cd /usr/lib64/ruby/gems/*/gems/suse-connect-*
+if [ -e lib.org ]; then
+  mv lib lib.new
+  mv lib.org lib
+else
+  mv lib lib.org
+  mv lib.new lib
+fi
 ```

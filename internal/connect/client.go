@@ -292,3 +292,27 @@ func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error
 	}
 	return searchPackage(query, baseProd)
 }
+
+// ShowProduct fetches product details from SCC/SMT
+func ShowProduct(productQuery Product) (Product, error) {
+	return showProduct(productQuery)
+}
+
+// ActivatedProducts returns list of products activated in SCC/SMT
+func ActivatedProducts() ([]Product, error) {
+	var products []Product
+	activations, err := systemActivations()
+	if err != nil {
+		return products, err
+	}
+	for _, a := range activations {
+		products = append(products, a.Service.Product)
+	}
+	return products, nil
+}
+
+// ActivateProduct activates given product in SMT/SCC
+// returns Service to be added to zypper
+func ActivateProduct(product Product, email string) (Service, error) {
+	return activateProduct(product, email)
+}

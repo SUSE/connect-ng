@@ -20,10 +20,10 @@ const (
 // Config holds the config!
 type Config struct {
 	Path             string
-	BaseURL          string
-	Language         string
-	Insecure         bool
-	Namespace        string
+	BaseURL          string `json:"url"`
+	Language         string `json:"language"`
+	Insecure         bool   `json:"insecure"`
+	Namespace        string `json:"namespace"`
 	FsRoot           string
 	Token            string
 	Product          Product

@@ -3,8 +3,9 @@ package main
 import (
 	"C"
 	"encoding/json"
-	"github.com/SUSE/connect-ng/internal/connect"
 	"os"
+
+	"github.com/SUSE/connect-ng/internal/connect"
 )
 
 //export announce_system
@@ -42,6 +43,83 @@ func create_credentials_file(login, password, path *C.char) *C.char {
 		return C.CString(errorToJSON(err))
 	}
 	return C.CString("") // TODO need more consistent return path
+}
+
+//export show_product
+func show_product(clientParams, product *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var productQuery connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	productData, err := connect.ShowProduct(productQuery)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(productData)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export activate_product
+func activate_product(clientParams, product, email *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var p connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &p)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	service, err := connect.ActivateProduct(p, C.GoString(email))
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(service)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export activated_products
+func activated_products(clientParams *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	products, err := connect.ActivatedProducts()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(products)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export get_config
+func get_config(path *C.char) *C.char {
+	var c connect.Config
+	c.Path = C.GoString(path)
+	c.Load()
+	jsn, err := json.Marshal(c)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export write_config
+func write_config(clientParams *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+	err := connect.CFG.Save()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString("{}")
 }
 
 func loadConfig(clientParams string) {
