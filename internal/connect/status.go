@@ -19,6 +19,7 @@ var (
 
 // Status is used to create JSON output
 type Status struct {
+	Name       string `json:"name,omitempty"`
 	Summary    string `json:"-"`
 	Identifier string `json:"identifier"`
 	Version    string `json:"version"`
@@ -82,6 +83,7 @@ func getStatuses() (map[string]Status, error) {
 		if activation, ok := activations[product.toTriplet()]; ok {
 			status.Status = registered
 			if !activation.isFree() {
+				status.Name = activation.Name
 				status.RegCode = activation.RegCode
 				layout := "2006-01-02 15:04:05 MST"
 				status.StartsAt = activation.StartsAt.Format(layout)

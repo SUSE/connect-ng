@@ -6,6 +6,7 @@ import (
 
 // Activation mimics the shape of the json from the api
 type Activation struct {
+	Name      string    `json:"name"`
 	Status    string    `json:"status"`
 	RegCode   string    `json:"regcode"`
 	Type      string    `json:"type"`
