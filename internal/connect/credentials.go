@@ -91,7 +91,11 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 
 func (c Credentials) write() error {
 	Debug.Print("Writing credentials: ", c)
-	dir := filepath.Dir(c.Filename)
+	path := c.Filename
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(CFG.FsRoot, defaulCredentialsDir, path)
+	}
+	dir := filepath.Dir(path)
 	if !fileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -100,7 +104,7 @@ func (c Credentials) write() error {
 	}
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, "username=%s\npassword=%s\n", c.Username, c.Password)
-	return os.WriteFile(c.Filename, buf.Bytes(), 0600)
+	return os.WriteFile(path, buf.Bytes(), 0600)
 }
 
 // CreateCredentials writes credentials to path
