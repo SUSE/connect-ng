@@ -147,9 +147,6 @@ func main() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if token != "" && instanceDataFile != "" {
-			fmt.Print("Please use either --regcode or --instance-data\n")
-			os.Exit(1)
 		} else if connect.URLDefault() && token == "" && product == "" {
 			flag.Usage()
 			os.Exit(1)
