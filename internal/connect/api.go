@@ -73,9 +73,7 @@ func showProduct(productQuery Product) (Product, error) {
 }
 
 func upgradeProduct(product Product) (Service, error) {
-	// NOTE: this can add some extra attributes to json payload which
-	//       seem to be safely ignored by the API.
-	payload, err := json.Marshal(product)
+	payload, err := json.Marshal(product.BasicProduct)
 	remoteService := Service{}
 	if err != nil {
 		return remoteService, err
@@ -96,16 +94,12 @@ func downgradeProduct(product Product) (Service, error) {
 
 func activateProduct(product Product, email string) (Service, error) {
 	var payload = struct {
-		Indentifier string `json:"identifier"`
-		Version     string `json:"version"`
-		Arch        string `json:"arch"`
+		BasicProduct
 		ReleaseType string `json:"release_type"`
 		Token       string `json:"token"`
 		Email       string `json:"email"`
 	}{
-		product.Name,
-		product.Version,
-		product.Arch,
+		product.BasicProduct,
 		product.ReleaseType,
 		CFG.Token,
 		email,
@@ -128,9 +122,7 @@ func activateProduct(product Product, email string) (Service, error) {
 }
 
 func deactivateProduct(product Product) (Service, error) {
-	// NOTE: this can add some extra attributes to json payload which
-	//       seem to be safely ignored by the API.
-	payload, err := json.Marshal(product)
+	payload, err := json.Marshal(product.BasicProduct)
 	remoteService := Service{}
 	if err != nil {
 		return remoteService, err
@@ -153,9 +145,12 @@ func deregisterSystem() error {
 func syncProducts(products []Product) ([]Product, error) {
 	remoteProducts := make([]Product, 0)
 	var payload struct {
-		Products []Product `json:"products"`
+		Products []BasicProduct `json:"products"`
 	}
-	payload.Products = products
+	payload.Products = make([]BasicProduct, 0)
+	for _, p := range products {
+		payload.Products = append(payload.Products, p.BasicProduct)
+	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return remoteProducts, err

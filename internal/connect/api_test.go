@@ -114,7 +114,7 @@ func TestGetProduct(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
+	productQuery := NewProduct("SLES", "15.2", "x86_64")
 	product, err := showProduct(productQuery)
 	if err != nil {
 		t.Fatalf("%s", err)
@@ -137,7 +137,7 @@ func TestGetProductError(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	productQuery := Product{Name: "Dummy"}
+	productQuery := NewProduct("Dummy", "", "")
 	_, err := showProduct(productQuery)
 	if ae, ok := err.(APIError); ok {
 		if ae.Code != http.StatusUnprocessableEntity {
@@ -155,7 +155,7 @@ func TestUpgradeProduct(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	product := NewProduct("SUSE-MicroOS", "5.0", "x86_64")
 	service, err := upgradeProduct(product)
 	if err != nil {
 		t.Fatalf("%s", err)
@@ -178,7 +178,7 @@ func TestUpgradeProductError(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "Dummy"}
+	product := NewProduct("Dummy", "", "")
 	_, err := upgradeProduct(product)
 	if ae, ok := err.(APIError); ok {
 		if ae.Code != http.StatusUnprocessableEntity {
@@ -196,7 +196,7 @@ func TestDeactivateProduct(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+	product := NewProduct("sle-module-basesystem", "15.2", "x86_64")
 	service, err := deactivateProduct(product)
 	if err != nil {
 		t.Fatalf("%s", err)
@@ -219,7 +219,7 @@ func TestDeactivateProductSMT(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	product := NewProduct("SUSE-MicroOS", "5.0", "x86_64")
 	service, err := deactivateProduct(product)
 	if err != nil {
 		t.Fatalf("%s", err)
@@ -242,7 +242,7 @@ func TestDeactivateProductError(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "Dummy"}
+	product := NewProduct("Dummy", "", "")
 	_, err := deactivateProduct(product)
 	if ae, ok := err.(APIError); ok {
 		if ae.Code != http.StatusUnprocessableEntity {

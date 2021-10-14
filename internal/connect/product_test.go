@@ -6,7 +6,7 @@ import (
 )
 
 func TestDistroTarget(t *testing.T) {
-	p := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+	p := NewProduct("sle-module-basesystem", "15.2", "x86_64")
 	got := p.distroTarget()
 	expect := "sle-15-x86_64"
 	if got != expect {
@@ -20,12 +20,12 @@ func TestEmptyProduct(t *testing.T) {
 		t.Errorf("expected %v to be empty", p1)
 	}
 
-	p2 := Product{Name: "Dummy"}
+	p2 := NewProduct("Dummy", "", "")
 	if !p2.isEmpty() {
 		t.Errorf("expected %v to be empty", p2)
 	}
 
-	p3 := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+	p3 := NewProduct("sle-module-basesystem", "15.2", "x86_64")
 	if p3.isEmpty() {
 		t.Errorf("expected %v not to be empty", p3)
 	}
