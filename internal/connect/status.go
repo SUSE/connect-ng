@@ -38,15 +38,11 @@ func GetProductStatuses(format string) (string, error) {
 		return "", err
 	}
 	if format == "json" {
-		statusList := make([]Status, 0, len(statuses))
-		for _, s := range statuses {
-			statusList = append(statusList, s)
-		}
-		jsonStr, err := json.Marshal(statusList)
+		jsn, err := json.Marshal(statuses)
 		if err != nil {
 			return "", err
 		}
-		return string(jsonStr), nil
+		return string(jsn), nil
 	}
 
 	text, err := getStatusText(statuses)
@@ -56,8 +52,8 @@ func GetProductStatuses(format string) (string, error) {
 	return text, nil
 }
 
-func getStatuses() (map[string]Status, error) {
-	statuses := make(map[string]Status)
+func getStatuses() ([]Status, error) {
+	var statuses []Status
 	products, err := installedProducts()
 	if err != nil {
 		return statuses, err
@@ -90,12 +86,12 @@ func getStatuses() (map[string]Status, error) {
 				status.Type = activation.Type
 			}
 		}
-		statuses[product.ToTriplet()] = status
+		statuses = append(statuses, status)
 	}
 	return statuses, nil
 }
 
-func getStatusText(statuses map[string]Status) (string, error) {
+func getStatusText(statuses []Status) (string, error) {
 	t, err := template.New("status-text").Parse(statusTemplate)
 	if err != nil {
 		return "", err
