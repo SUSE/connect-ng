@@ -3,7 +3,6 @@ require 'ffi'
 require 'suse/toolkit/shim_utils'
 
 # TODO
-# - sort extensions list
 # - get proxy credentials from .curlrc
 # - logging
 

@@ -27,6 +27,7 @@ type Product struct {
 	Description string `xml:"description" json:"description,omitempty"`
 	EULAURL     string `json:"eula_url,omitempty"`
 	FormerName  string `json:"former_identifier"`
+	ProductType string `json:"product_type"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
 }
