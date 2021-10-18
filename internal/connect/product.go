@@ -22,14 +22,18 @@ type Product struct {
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
 	Recommended  bool   `json:"recommended"`
-	// these are used by YaST
-	ID          int    `json:"id"`
-	Description string `xml:"description" json:"description,omitempty"`
-	EULAURL     string `json:"eula_url,omitempty"`
-	FormerName  string `json:"former_identifier"`
-	ProductType string `json:"product_type"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
+
+	// these are used by YaST
+	ID           int    `json:"id"`
+	Description  string `xml:"description" json:"description,omitempty"`
+	EULAURL      string `json:"eula_url,omitempty"`
+	FormerName   string `json:"former_identifier,omitempty"`
+	ProductType  string `json:"product_type,omitempty"`
+	LongName     string `json:"name,omitempty"`
+	ReleaseStage string `json:"release_stage,omitempty"`
+	Repositories []Repo `json:"repositories,omitempty"`
 }
 
 // UnmarshalJSON custom unmarshaller for Product.
