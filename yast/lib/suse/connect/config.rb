@@ -10,10 +10,9 @@ module SUSE
       DEFAULT_URL = 'https://scc.suse.com'
 
       def initialize(file = DEFAULT_CONFIG_FILE)
-        super()
         jsn_out = _consume_str(GoConnect.get_config(file))
         cfg = JSON.parse(jsn_out)
-        cfg.each { |k, v| self[k] = v }
+        super(cfg)
       end
     end
   end
