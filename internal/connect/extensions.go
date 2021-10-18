@@ -28,7 +28,7 @@ func GetExtensionsList() (string, error) {
 	if !IsRegistered() {
 		return "", ErrListExtensionsUnregistered
 	}
-	extensions, err := getExtensions()
+	base, err := baseProduct()
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +36,14 @@ func GetExtensionsList() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return printExtensions(extensions, activations, isRootFSWritable())
+	if _, ok := activations[base.ToTriplet()]; !ok {
+		return "", ErrListExtensionsUnregistered
+	}
+	product, err := showProduct(base)
+	if err != nil {
+		return "", err
+	}
+	return printExtensions(product.Extensions, activations, isRootFSWritable())
 }
 
 func printExtensions(extensions []Product, activations map[string]Activation, rootFSWritable bool) (string, error) {
@@ -80,25 +87,4 @@ func preformatExtensions(extensions []Product, activations map[string]Activation
 		ret = append(ret, preformatExtensions(e.Extensions, activations, cmd, level+1)...)
 	}
 	return ret
-}
-
-func getExtensions() ([]Product, error) {
-	base, err := baseProduct()
-	if err != nil {
-		return []Product{}, err
-	}
-	statuses, err := getStatuses()
-	if err != nil {
-		return []Product{}, err
-	}
-
-	if statuses[base.ToTriplet()].Status != registered {
-		return []Product{}, ErrListExtensionsUnregistered
-	}
-
-	remoteProductData, err := showProduct(base)
-	if err != nil {
-		return []Product{}, err
-	}
-	return remoteProductData.Extensions, nil
 }
