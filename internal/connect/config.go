@@ -28,7 +28,7 @@ type Config struct {
 	Token            string
 	Product          Product
 	InstanceDataFile string
-	Email            string
+	Email            string `json:"email"`
 	NoZypperRefresh  bool
 }
 

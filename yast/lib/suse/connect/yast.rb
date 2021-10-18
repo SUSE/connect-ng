@@ -5,6 +5,8 @@ require 'suse/toolkit/shim_utils'
 # TODO
 # - get proxy credentials from .curlrc
 # - logging
+# - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
+# - check required Repo fields
 
 module Stdio
   extend FFI::Library
