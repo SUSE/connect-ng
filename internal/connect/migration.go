@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"fmt"
 	"path/filepath"
 )
 
@@ -10,7 +9,7 @@ type MigrationPath []Product
 
 // Rollback restores system state to before failed migration
 func Rollback() error {
-	fmt.Println("Starting to sync system product activations to the server. This can take some time...")
+	Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
 	base, err := baseProduct()
 	if err != nil {
