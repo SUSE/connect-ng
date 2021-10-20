@@ -4,7 +4,6 @@ require 'suse/toolkit/shim_utils'
 
 # TODO
 # - get proxy credentials from .curlrc
-# - logging
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:
@@ -38,6 +37,9 @@ end
 module GoConnect
   extend FFI::Library
   ffi_lib 'suseconnect'
+
+  callback :log_line, [:int, :string], :void
+  attach_function :set_log_callback, [:log_line], :void
 
   attach_function :announce_system, [:string, :string], :pointer
   attach_function :credentials, [:string], :pointer

@@ -1,12 +1,50 @@
 package main
 
+// #include <stdlib.h>
+// typedef void (*logLineFunc)(int level, const char* message);
+// void log_bridge_fun(logLineFunc f, int level, const char* message);
+import "C"
+
 import (
-	"C"
 	"encoding/json"
 	"os"
+	"unsafe"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
+
+// log level
+const (
+	llDebug   = 1
+	llInfo    = 2
+	llWarning = 3
+	llError   = 4
+	llFatal   = 5
+)
+
+// simple Writer interface implementation which forwards messages
+// to log callback
+type callbackWriter struct {
+	level int
+}
+
+func (w callbackWriter) Write(p []byte) (n int, err error) {
+	message := C.CString(string(p))
+	C.log_bridge_fun(logFun, C.int(w.level), message)
+	C.free(unsafe.Pointer(message))
+	return len(p), nil
+}
+
+// function pointer to log callback passed from ruby
+var logFun C.logLineFunc
+
+//export set_log_callback
+func set_log_callback(logCallback C.logLineFunc) {
+	logFun = logCallback
+	connect.Debug.SetOutput(callbackWriter{llDebug})
+	connect.Info.SetOutput(callbackWriter{llInfo})
+	// TODO: add other levels?
+}
 
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {

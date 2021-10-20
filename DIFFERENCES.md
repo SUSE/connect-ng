@@ -39,3 +39,14 @@
   on failure.
 - Package search only reports missing API for 404 responses if there's no error
   message returned (e.g. "base product not found")
+- Logs passed from Connect to YaST are not tagged with real source but "proxy"
+  location. e.g.:
+  ```
+  2021-10-14 09:38:39 <1> test-host(17235) [Ruby] connect/client.rb:101
+  Announcing system to http://smt-scc.nue.suse.com ...
+  ```
+  becomes:
+  ```
+  2021-10-14 09:38:39 <1> test-host(17235) [Ruby] connect/logger.rb:28
+  Announcing system to http://smt-scc.nue.suse.com ...
+  ```
