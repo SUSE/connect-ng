@@ -169,3 +169,8 @@ func parseCurlrcCredentials(r io.Reader) (Credentials, error) {
 	}
 	return Credentials{}, ErrNoProxyCredentials
 }
+
+// ReadCurlrcCredentials reads proxy credentials from default path
+func ReadCurlrcCredentials() (Credentials, error) {
+	return readCurlrcCredentials(curlrcCredentialsFile())
+}

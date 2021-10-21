@@ -83,6 +83,16 @@ func create_credentials_file(login, password, path *C.char) *C.char {
 	return C.CString("") // TODO need more consistent return path
 }
 
+//export curlrc_credentials
+func curlrc_credentials() *C.char {
+	creds, err := connect.ReadCurlrcCredentials()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, _ := json.Marshal(&creds)
+	return C.CString(string(jsn))
+}
+
 //export show_product
 func show_product(clientParams, product *C.char) *C.char {
 	loadConfig(C.GoString(clientParams))

@@ -1,15 +1,17 @@
+require 'suse/toolkit/shim_utils'
+
 class SUSE::Toolkit::CurlrcDotfile
-#  def initialize
-#    @file_location = File.join(Etc.getpwuid.dir, CURLRC_LOCATION)
-#  end
+  include SUSE::Toolkit::ShimUtils
+
+  def initialize
+    @creds = _process_result(GoConnect.curlrc_credentials())
+  end
 
   def username
-    # TODO:
-#    line_with_credentials.match(CURLRC_CREDENTIALS_REGEXP)[1] rescue nil
+    @creds.username
   end
 
   def password
-    # TODO
-#    line_with_credentials.match(CURLRC_CREDENTIALS_REGEXP)[2] rescue nil
+    @creds.password
   end
 end

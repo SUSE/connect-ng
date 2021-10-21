@@ -3,7 +3,6 @@ require 'ffi'
 require 'suse/toolkit/shim_utils'
 
 # TODO
-# - get proxy credentials from .curlrc
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:
@@ -44,6 +43,7 @@ module GoConnect
   attach_function :announce_system, [:string, :string], :pointer
   attach_function :credentials, [:string], :pointer
   attach_function :create_credentials_file, [:string, :string, :string], :pointer
+  attach_function :curlrc_credentials, [], :pointer
   attach_function :show_product, [:string, :string], :pointer
   attach_function :activated_products, [:string], :pointer
   attach_function :activate_product, [:string, :string, :string], :pointer
