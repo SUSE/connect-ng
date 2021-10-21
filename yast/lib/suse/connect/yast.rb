@@ -6,17 +6,13 @@ require 'suse/toolkit/shim_utils'
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:
-#     lib/registration/ui/migration_repos_workflow.rb:          SUSE::Connect::YaST::DEFAULT_CREDENTIALS_DIR, "NCCcredentials")
-#     lib/registration/finish_dialog.rb:        SUSE::Connect::YaST::DEFAULT_CREDENTIALS_DIR, "NCCcredentials")
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
 #     lib/registration/ssl_certificate.rb:    # @raise Connect::SystemCallError
 #     lib/registration/ssl_certificate.rb:      ::SUSE::Connect::YaST.import_certificate(x509_cert)
 #     lib/registration/ssl_certificate.rb:    rescue ::SUSE::Connect::SystemCallError => e
 #     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha1_fingerprint(x509_cert)
 #     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha256_fingerprint(x509_cert)
-#     lib/registration/sw_mgmt.rb:            ::SUSE::Connect::YaST::DEFAULT_CREDENTIALS_DIR,
 #     lib/registration/sw_mgmt.rb:        SUSE::Connect::YaST.create_credentials_file(credentials.username,
-#     lib/registration/sw_mgmt.rb:      dir = SUSE::Connect::YaST::DEFAULT_CREDENTIALS_DIR
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.upgrade_product(product_ident, params)
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.downgrade_product(product_ident, params)
 #     lib/registration/registration.rb:      SUSE::Connect::YaST.synchronize(remote_products, connect_params)
@@ -24,7 +20,6 @@ require 'suse/toolkit/shim_utils'
 #     lib/registration/registration.rb:        migrations = SUSE::Connect::YaST.system_migrations(installed_products, connect_params)
 #     lib/registration/registration.rb:        migration_paths = SUSE::Connect::YaST.system_offline_migrations(installed_products, target_base_product, connect_params)
 #     lib/registration/registration.rb:      updates = SUSE::Connect::YaST.list_installer_updates(remote_product, connect_params)
-#     lib/registration/url_helpers.rb:      dir = SUSE::Connect::YaST::DEFAULT_CREDENTIALS_DIR
 #     lib/registration/helpers.rb:      cmd = SUSE::Connect::YaST::UPDATE_CERTIFICATES
 
 module Stdio
@@ -56,6 +51,7 @@ module SUSE
     class YaST
       DEFAULT_CONFIG_FILE = SUSE::Connect::Config::DEFAULT_CONFIG_FILE
       DEFAULT_URL = SUSE::Connect::Config::DEFAULT_URL
+      DEFAULT_CREDENTIALS_DIR = "/etc/zypp/credentials.d"
       GLOBAL_CREDENTIALS_FILE = "/etc/zypp/credentials.d/SCCcredentials"
       SERVER_CERT_FILE = SUSE::Connect::SSLCertificate::SERVER_CERT_FILE
 
