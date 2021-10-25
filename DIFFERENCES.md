@@ -37,3 +37,5 @@
 - Zypper backup stores both tarball and restore script under `--root` path.
 - Self-update in zypper-migration plugin returns more detailed error information
   on failure.
+- Package search only reports missing API for 404 responses if there's no error
+  message returned (e.g. "base product not found")
