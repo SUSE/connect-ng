@@ -23,9 +23,9 @@ module SUSE
           error = SUSE::Connect::ApiError.new(OpenStruct.new(r))
           raise error, error.message
         when "MalformedSccCredentialsFile"
-          raise MalformedSccCredentialsFile, r[:message]
+          raise SUSE::Connect::MalformedSccCredentialsFile, r[:message]
         when "MissingCredentialsFile"
-          raise MissingSccCredentialsFile, r[:message]
+          raise SUSE::Connect::MissingSccCredentialsFile, r[:message]
         else
           raise r[:message] if r.key?(:message)
           raise r.to_s
