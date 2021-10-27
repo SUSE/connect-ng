@@ -6,6 +6,7 @@ module SUSE
 
     # simplified version of the original for demonstration
     class ApiError < StandardError
+      attr_accessor :response
 
       def initialize(response)
         @response = response

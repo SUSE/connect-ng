@@ -20,7 +20,7 @@ module SUSE
         return unless r.is_a?(Hash) && r.key?(:err_type)
         case r[:err_type]
         when "APIError"
-          error = SUSE::Connect::ApiError.new(r)
+          error = SUSE::Connect::ApiError.new(OpenStruct.new(r))
           raise error, error.message
         when "MalformedSccCredentialsFile"
           raise MalformedSccCredentialsFile, r[:message]
