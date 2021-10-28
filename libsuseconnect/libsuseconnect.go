@@ -150,7 +150,7 @@ func activated_products(clientParams *C.char) *C.char {
 
 //export get_config
 func get_config(path *C.char) *C.char {
-	var c connect.Config
+	c := connect.NewConfig()
 	c.Path = C.GoString(path)
 	c.Load()
 	jsn, err := json.Marshal(c)
