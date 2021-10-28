@@ -3,16 +3,20 @@ require 'ffi'
 require 'suse/toolkit/shim_utils'
 
 # TODO
+# - more error reporting (see https://github.com/yast/yast-registration/blob/master/src/lib/registration/connect_helpers.rb#L63)
+# - check verify_callback https://github.com/yast/yast-registration/blob/master/src/lib/registration/registration.rb#L314
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:
+# TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
+# TODO: these are only used by yast in installation mode, maybe they can be moved to shim?
 #     lib/registration/ssl_certificate.rb:    # @raise Connect::SystemCallError
 #     lib/registration/ssl_certificate.rb:      ::SUSE::Connect::YaST.import_certificate(x509_cert)
 #     lib/registration/ssl_certificate.rb:    rescue ::SUSE::Connect::SystemCallError => e
 #     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha1_fingerprint(x509_cert)
 #     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha256_fingerprint(x509_cert)
-#     lib/registration/sw_mgmt.rb:        SUSE::Connect::YaST.create_credentials_file(credentials.username,
+
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.upgrade_product(product_ident, params)
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.downgrade_product(product_ident, params)
 #     lib/registration/registration.rb:      SUSE::Connect::YaST.synchronize(remote_products, connect_params)

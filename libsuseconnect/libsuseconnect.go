@@ -7,7 +7,7 @@ import "C"
 
 import (
 	"encoding/json"
-	"os"
+	"strconv"
 	"unsafe"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -41,7 +41,7 @@ var logFun C.logLineFunc
 //export set_log_callback
 func set_log_callback(logCallback C.logLineFunc) {
 	logFun = logCallback
-	connect.Debug.SetOutput(callbackWriter{llDebug})
+	// NOTE: Debug is not redirected here as it is disabled by default
 	connect.Info.SetOutput(callbackWriter{llInfo})
 	// TODO: add other levels?
 }
@@ -173,9 +173,16 @@ func write_config(clientParams *C.char) *C.char {
 func loadConfig(clientParams string) {
 	connect.CFG.Load()
 	connect.CFG.MergeJSON(clientParams)
-	if _, ok := os.LookupEnv("SCCDEBUG"); ok {
-		connect.EnableDebug()
+	// unmarshal extra config fields only for local use
+	var extConfig struct {
+		Debug string `json:"debug"`
 	}
+	json.Unmarshal([]byte(clientParams), &extConfig)
+	// enable debug output if "debug" was set in json
+	if v, _ := strconv.ParseBool(extConfig.Debug); v {
+		connect.Debug.SetOutput(callbackWriter{llDebug})
+	}
+	connect.Debug.Printf("Merged options: %v", clientParams)
 }
 
 func errorToJSON(err error) string {

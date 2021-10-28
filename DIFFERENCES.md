@@ -50,3 +50,4 @@
   2021-10-14 09:38:39 <1> test-host(17235) [Ruby] connect/logger.rb:28
   Announcing system to http://smt-scc.nue.suse.com ...
   ```
+- HTTP debug logs are passed to default YaST logger not to STDERR.
