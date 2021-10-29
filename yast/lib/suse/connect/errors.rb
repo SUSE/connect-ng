@@ -3,6 +3,7 @@ module SUSE
 
     class MalformedSccCredentialsFile < StandardError; end
     class MissingSccCredentialsFile < StandardError; end
+    class SystemCallError < StandardError; end
 
     # simplified version of the original for demonstration
     class ApiError < StandardError

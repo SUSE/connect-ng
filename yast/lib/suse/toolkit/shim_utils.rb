@@ -1,6 +1,12 @@
 module SUSE
   module Toolkit
     module ShimUtils
+      @@verify_callback = nil
+
+      def _set_verify_callback(f)
+        @@verify_callback = f
+      end
+
       def _process_result(ptr)
         jsn_out = _consume_str(ptr)
         result = JSON.parse(jsn_out, object_class: OpenStruct)
@@ -26,6 +32,11 @@ module SUSE
           raise SUSE::Connect::MalformedSccCredentialsFile, r[:message]
         when "MissingCredentialsFile"
           raise SUSE::Connect::MissingSccCredentialsFile, r[:message]
+        when "SSLError"
+          # create dummy context and pass it to YaST
+          ctx = OpenStruct.new({error: r[:code], error_string: r[:message], current_cert: r[:data]})
+          @@verify_callback != nil && @@verify_callback.call(false, ctx)
+          raise OpenSSL::SSL::SSLError, r[:message]
         else
           raise r[:message] if r.key?(:message)
           raise r.to_s

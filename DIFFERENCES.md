@@ -51,3 +51,7 @@
   Announcing system to http://smt-scc.nue.suse.com ...
   ```
 - HTTP debug logs are passed to default YaST logger not to STDERR.
+- SSL error mapping for YaST is not exact because Go doesn't have separate errors
+  for all expected OpenSSL error cases.
+- In some cases (e.g. when some of intermediate certs in chain is invalid)
+  the SSL cert presented to the user will be different than in Ruby version.

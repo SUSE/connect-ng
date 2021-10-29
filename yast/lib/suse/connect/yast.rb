@@ -4,19 +4,11 @@ require 'suse/toolkit/shim_utils'
 
 # TODO
 # - more error reporting (see https://github.com/yast/yast-registration/blob/master/src/lib/registration/connect_helpers.rb#L63)
-# - check verify_callback https://github.com/yast/yast-registration/blob/master/src/lib/registration/registration.rb#L314
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:
 # TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
-# TODO: these are only used by yast in installation mode, maybe they can be moved to shim?
-#     lib/registration/ssl_certificate.rb:    # @raise Connect::SystemCallError
-#     lib/registration/ssl_certificate.rb:      ::SUSE::Connect::YaST.import_certificate(x509_cert)
-#     lib/registration/ssl_certificate.rb:    rescue ::SUSE::Connect::SystemCallError => e
-#     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha1_fingerprint(x509_cert)
-#     lib/registration/ssl_certificate.rb:        ::SUSE::Connect::YaST.cert_sha256_fingerprint(x509_cert)
-
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.upgrade_product(product_ident, params)
 #     lib/registration/registration.rb:        service = SUSE::Connect::YaST.downgrade_product(product_ident, params)
 #     lib/registration/registration.rb:      SUSE::Connect::YaST.synchronize(remote_products, connect_params)
@@ -72,6 +64,7 @@ module SUSE
         #
         # @return [Array <String>] SCC / system credentials - login and password tuple
         def announce_system(client_params = {}, distro_target = nil)
+          _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           _process_result(GoConnect.announce_system(jsn_params, distro_target)).credentials
         end
@@ -87,6 +80,7 @@ module SUSE
         #
         # @return [Service] Service
         def activate_product(product, client_params = {}, email = nil)
+          _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           jsn_product = JSON.generate(product.to_h)
           _process_result(GoConnect.activate_product(jsn_params, jsn_product, email))
@@ -120,6 +114,7 @@ module SUSE
         #
         # @return [OpenStruct] {Product} from registration server with all extensions included
         def show_product(product, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           jsn_product = JSON.generate(product.to_h)
           _process_result(GoConnect.show_product(jsn_params, jsn_product))
@@ -132,13 +127,33 @@ module SUSE
         #  - :insecure [Boolean]
         #  - :url [String]
         def write_config(client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           _process_result(GoConnect.write_config(jsn_params))
+        end
+
+        # Adds given certificate to trusted
+        # @param certificate [OpenSSL::X509::Certificate]
+        def import_certificate(certificate)
+          SUSE::Connect::SSLCertificate.import(certificate)
+        end
+
+        # Provides SHA-1 fingerprint of given certificate
+        # @param certificate [OpenSSL::X509::Certificate]
+        def cert_sha1_fingerprint(certificate)
+          SUSE::Connect::SSLCertificate.sha1_fingerprint(certificate)
+        end
+
+        # Provides SHA-256 fingerprint of given certificate
+        # @param certificate [OpenSSL::X509::Certificate]
+        def cert_sha256_fingerprint(certificate)
+          SUSE::Connect::SSLCertificate.sha256_fingerprint(certificate)
         end
 
         # Provides access to current system status in terms of activated products
         # @param [Hash] client_params parameters to instantiate {Client}
         def status(client_params)
+          _set_verify_callback(client_params[:verify_callback])
           Status.new(client_params)
         end
       end
