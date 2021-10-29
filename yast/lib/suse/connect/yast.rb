@@ -3,7 +3,6 @@ require 'ffi'
 require 'suse/toolkit/shim_utils'
 
 # TODO
-# - more error reporting (see https://github.com/yast/yast-registration/blob/master/src/lib/registration/connect_helpers.rb#L63)
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - check required Repo fields
 # - make sure following code paths are covered by shim:

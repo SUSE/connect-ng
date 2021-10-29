@@ -37,6 +37,12 @@ module SUSE
           ctx = OpenStruct.new({error: r[:code], error_string: r[:message], current_cert: r[:data]})
           @@verify_callback != nil && @@verify_callback.call(false, ctx)
           raise OpenSSL::SSL::SSLError, r[:message]
+        when "JSONError"
+          raise JSON::ParserError, r[:message]
+        when "NetError"
+          raise SocketError, r[:message]
+        when "Timeout"
+          raise Timeout::Error, r[:message]
         else
           raise r[:message] if r.key?(:message)
           raise r.to_s

@@ -5,7 +5,6 @@ module SUSE
     class MissingSccCredentialsFile < StandardError; end
     class SystemCallError < StandardError; end
 
-    # simplified version of the original for demonstration
     class ApiError < StandardError
       attr_accessor :response
 

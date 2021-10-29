@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"net"
 	"net/url"
 	"strconv"
 	"unsafe"
@@ -213,9 +214,12 @@ func errorToJSON(err error) string {
 		s.ErrType = "APIError"
 		s.Code = ae.Code
 		s.Message = ae.Message
-	} else if _, ok := err.(*url.Error); ok {
+	} else if uerr, ok := err.(*url.Error); ok {
 		ierr := errors.Unwrap(err)
-		if ce, ok := ierr.(x509.CertificateInvalidError); ok {
+		if uerr.Timeout() {
+			s.ErrType = "Timeout"
+			s.Message = ierr.Error()
+		} else if ce, ok := ierr.(x509.CertificateInvalidError); ok {
 			s.ErrType = "SSLError"
 			s.Message = ierr.Error()
 			s.Data = certToPEM(ce.Cert)
@@ -234,10 +238,16 @@ func errorToJSON(err error) string {
 			s.Message = ierr.Error()
 			// ruby version doesn't have this but it might be useful
 			s.Data = certToPEM(ce.Certificate)
+		} else if _, ok := ierr.(*net.OpError); ok {
+			s.ErrType = "NetError"
+			s.Message = ierr.Error()
 		} else {
 			connect.Debug.Printf("url.Error: %T: %v", ierr, err)
 			s.Message = err.Error()
 		}
+	} else if je, ok := err.(connect.JSONError); ok {
+		s.ErrType = "JSONError"
+		s.Message = errors.Unwrap(je).Error()
 	} else {
 		switch err {
 		case connect.ErrMalformedSccCredFile:

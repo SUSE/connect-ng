@@ -61,3 +61,7 @@ type JSONError struct {
 func (je JSONError) Error() string {
 	return fmt.Sprintf("JSON Error: %v", je.Err)
 }
+
+func (je JSONError) Unwrap() error {
+	return je.Err
+}
