@@ -82,7 +82,7 @@ func buildStatuses(products []Product, activations map[string]Activation) []Stat
 		}
 		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = registered
-			if !activation.isFree() {
+			if activation.RegCode != "" {
 				status.Name = activation.Name
 				status.RegCode = activation.RegCode
 				layout := "2006-01-02 15:04:05 MST"
