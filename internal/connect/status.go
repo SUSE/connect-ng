@@ -17,7 +17,8 @@ var (
 	statusTemplate string
 )
 
-// Status is used to create JSON output
+// Status is used to create the JSON for `SUSEConnect --status`.
+// And to render the template for `SUSEConnect --status-text`.
 type Status struct {
 	Name       string `json:"name,omitempty"`
 	Summary    string `json:"-"`
