@@ -161,6 +161,9 @@ func connectMain() {
 		} else if connect.URLDefault() && token == "" && product == "" {
 			flag.Usage()
 			os.Exit(1)
+		} else if fileExists("/etc/sysconfig/rhn/systemid") {
+			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
+			os.Exit(1)
 		} else {
 			err := connect.Register()
 			exitOnError(err)
@@ -241,4 +244,11 @@ func validateURL(s string) error {
 		return fmt.Errorf("Missing scheme or host")
 	}
 	return nil
+}
+
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
