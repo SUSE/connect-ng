@@ -28,3 +28,11 @@ cd connect-ng
 podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16 make build
 ```
 This will create a `out/suseconnect` binary on the host.
+
+### Build and run in Docker
+```
+$ docker build -t connect-ng .
+$ docker run --privileged --rm -it connect-ng:latest bash
+a7d6df6a156e:/ # SUSEConnect --status
+```
+The `--privileged` is required because `dmidecode` needs `/dev/mem`.
