@@ -54,20 +54,24 @@ func GetProductStatuses(format string) (string, error) {
 }
 
 func getStatuses() ([]Status, error) {
-	var statuses []Status
 	products, err := installedProducts()
 	if err != nil {
-		return statuses, err
+		return nil, err
 	}
 
 	activations := make(map[string]Activation) // default empty map
 	if IsRegistered() {
 		activations, err = systemActivations()
 		if err != nil {
-			return statuses, err
+			return nil, err
 		}
 	}
+	statuses := buildStatuses(products, activations)
+	return statuses, nil
+}
 
+func buildStatuses(products []Product, activations map[string]Activation) []Status {
+	var statuses []Status
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
@@ -90,7 +94,7 @@ func getStatuses() ([]Status, error) {
 		}
 		statuses = append(statuses, status)
 	}
-	return statuses, nil
+	return statuses
 }
 
 func getStatusText(statuses []Status) (string, error) {
