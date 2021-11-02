@@ -105,7 +105,7 @@ func show_product(clientParams, product *C.char) *C.char {
 	var productQuery connect.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
-		return C.CString(errorToJSON(err))
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 	productData, err := connect.ShowProduct(productQuery)
 	if err != nil {
@@ -125,7 +125,7 @@ func activate_product(clientParams, product, email *C.char) *C.char {
 	var p connect.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
-		return C.CString(errorToJSON(err))
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 	service, err := connect.ActivateProduct(p, C.GoString(email))
 	if err != nil {
@@ -290,7 +290,7 @@ func list_installer_updates(clientParams, product *C.char) *C.char {
 	var productQuery connect.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
-		return C.CString(errorToJSON(err))
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 	repos, err := connect.InstallerUpdates(productQuery)
 	if err != nil {

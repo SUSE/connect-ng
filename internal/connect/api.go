@@ -224,8 +224,10 @@ func productMigrations(installed []Product) ([]MigrationPath, error) {
 	if err != nil {
 		return migrations, err
 	}
-	err = json.Unmarshal(resp, &migrations)
-	return migrations, err
+	if err = json.Unmarshal(resp, &migrations); err != nil {
+		return migrations, JSONError{err}
+	}
+	return migrations, nil
 }
 
 func offlineProductMigrations(installed []Product, target Product) ([]MigrationPath, error) {
@@ -244,8 +246,10 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 	if err != nil {
 		return migrations, err
 	}
-	err = json.Unmarshal(resp, &migrations)
-	return migrations, err
+	if err = json.Unmarshal(resp, &migrations); err != nil {
+		return migrations, JSONError{err}
+	}
+	return migrations, nil
 }
 
 func installerUpdates(product Product) ([]Repo, error) {
