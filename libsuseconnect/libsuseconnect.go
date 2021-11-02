@@ -274,4 +274,13 @@ func getstatus(format *C.char) *C.char {
 	return C.CString(output)
 }
 
+//export update_certificates
+func update_certificates() *C.char {
+	err := connect.UpdateCertificates()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString("{}")
+}
+
 func main() {}

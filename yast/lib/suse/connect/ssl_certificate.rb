@@ -1,13 +1,11 @@
 module SUSE
   module Connect
     class SSLCertificate
+      include SUSE::Toolkit::ShimUtils
       # where to save the imported certificate
       SERVER_CERT_FILE = '/usr/share/pki/trust/anchors/registration_server.pem'
 
-      # script for updating the system certificates
-      #UPDATE_CERTIFICATES = '/usr/sbin/update-ca-certificates'
-
-      # compute SHA1 fingerprint of a certificate
+        # compute SHA1 fingerprint of a certificate
       # @param cert [OpenSSL::X509::Certificate] the certificate
       # @return [String] fingerprint in "AB:CD:EF:..." format
       def self.sha1_fingerprint(cert)
@@ -30,9 +28,7 @@ module SUSE
         File.write(SERVER_CERT_FILE, cert.to_pem)
 
         # update the symlinks
-        #GlobalLogger.instance.log.debug "Executing #{UPDATE_CERTIFICATES}..."
-        # TODO: move to go side to avoid redundancy
-        #execute(UPDATE_CERTIFICATES)
+        _process_result(GoConnect.update_certificates())
       end
 
       # @param digest_class [Class] target digest class (e.g. OpenSSL::Digest::SHA1)

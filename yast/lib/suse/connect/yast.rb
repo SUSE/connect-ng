@@ -15,7 +15,6 @@ require 'suse/toolkit/shim_utils'
 #     lib/registration/registration.rb:        migrations = SUSE::Connect::YaST.system_migrations(installed_products, connect_params)
 #     lib/registration/registration.rb:        migration_paths = SUSE::Connect::YaST.system_offline_migrations(installed_products, target_base_product, connect_params)
 #     lib/registration/registration.rb:      updates = SUSE::Connect::YaST.list_installer_updates(remote_product, connect_params)
-#     lib/registration/helpers.rb:      cmd = SUSE::Connect::YaST::UPDATE_CERTIFICATES
 
 module Stdio
   extend FFI::Library
@@ -39,6 +38,7 @@ module GoConnect
   attach_function :activate_product, [:string, :string, :string], :pointer
   attach_function :get_config, [:string], :pointer
   attach_function :write_config, [:string], :pointer
+  attach_function :update_certificates, [], :pointer
 end
 
 module SUSE
@@ -49,6 +49,7 @@ module SUSE
       DEFAULT_CREDENTIALS_DIR = "/etc/zypp/credentials.d"
       GLOBAL_CREDENTIALS_FILE = "/etc/zypp/credentials.d/SCCcredentials"
       SERVER_CERT_FILE = SUSE::Connect::SSLCertificate::SERVER_CERT_FILE
+      UPDATE_CERTIFICATES = "/usr/sbin/update-ca-certificates"
 
       class << self
         include SUSE::Toolkit::ShimUtils

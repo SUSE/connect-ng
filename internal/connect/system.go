@@ -114,3 +114,10 @@ func Cleanup() error {
 	}
 	return nil
 }
+
+// UpdateCertificates runs system certificate update command
+func UpdateCertificates() error {
+	cmd := []string{"/usr/sbin/update-ca-certificates"}
+	_, err := execute(cmd, []int{0})
+	return err
+}
