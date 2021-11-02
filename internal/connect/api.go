@@ -247,3 +247,15 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 	err = json.Unmarshal(resp, &migrations)
 	return migrations, err
 }
+
+func installerUpdates(product Product) ([]Repo, error) {
+	repos := make([]Repo, 0)
+	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.toQuery(), authNone)
+	if err != nil {
+		return repos, err
+	}
+	if err = json.Unmarshal(resp, &repos); err != nil {
+		return repos, JSONError{err}
+	}
+	return repos, nil
+}

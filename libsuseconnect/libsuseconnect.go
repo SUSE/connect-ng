@@ -283,4 +283,24 @@ func update_certificates() *C.char {
 	return C.CString("{}")
 }
 
+//export list_installer_updates
+func list_installer_updates(clientParams, product *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var productQuery connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	repos, err := connect.InstallerUpdates(productQuery)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(repos)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
 func main() {}

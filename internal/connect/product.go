@@ -80,9 +80,10 @@ func SplitTriplet(p string) (Product, error) {
 
 func (p Product) toQuery() map[string]string {
 	return map[string]string{
-		"identifier": p.Name,
-		"version":    p.Version,
-		"arch":       p.Arch,
+		"identifier":   p.Name,
+		"version":      p.Version,
+		"arch":         p.Arch,
+		"release_type": p.ReleaseType,
 	}
 }
 

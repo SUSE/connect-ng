@@ -283,6 +283,12 @@ type Repo struct {
 	Priority int    `xml:"priority,attr" json:"-"`
 	Enabled  bool   `xml:"enabled,attr" json:"enabled"`
 	URL      string `xml:"url" json:"url"`
+
+	DistroTarget     string   `json:"distro_target,omitempty"`
+	Description      string   `json:"description,omitempty"`
+	AutoRefresh      bool     `json:"autorefresh"`
+	InstallerUpdates bool     `json:"installer_updates"`
+	Arch             []string `json:"arch,omitempty"`
 }
 
 func parseReposXML(xmlDoc []byte) ([]Repo, error) {

@@ -4,7 +4,7 @@ require 'suse/toolkit/shim_utils'
 
 # TODO
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
-# - check required Repo fields
+# - check required Repo fields (ID is sometimes int, sometimes string (SMT?))
 # - make sure following code paths are covered by shim:
 # TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
@@ -14,7 +14,6 @@ require 'suse/toolkit/shim_utils'
 #     lib/registration/registration.rb:      ret = SUSE::Connect::YaST.update_system(connect_params, target_distro)
 #     lib/registration/registration.rb:        migrations = SUSE::Connect::YaST.system_migrations(installed_products, connect_params)
 #     lib/registration/registration.rb:        migration_paths = SUSE::Connect::YaST.system_offline_migrations(installed_products, target_base_product, connect_params)
-#     lib/registration/registration.rb:      updates = SUSE::Connect::YaST.list_installer_updates(remote_product, connect_params)
 
 module Stdio
   extend FFI::Library
@@ -39,6 +38,7 @@ module GoConnect
   attach_function :get_config, [:string], :pointer
   attach_function :write_config, [:string], :pointer
   attach_function :update_certificates, [], :pointer
+  attach_function :list_installer_updates, [:string, :string], :pointer
 end
 
 module SUSE
@@ -118,6 +118,19 @@ module SUSE
           jsn_params = JSON.generate(client_params)
           jsn_product = JSON.generate(product.to_h)
           _process_result(GoConnect.show_product(jsn_params, jsn_product))
+        end
+
+        # List available Installer-Updates repositories for the given product
+        #
+        # @param [Remote::Product] list repositories for this product
+        # @param [Hash] client_params parameters to instantiate {Client}
+        #
+        # @return [Array <OpenStruct>] list of Installer-Updates repositories
+        def list_installer_updates(product, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_product = JSON.generate(product.to_h)
+          _process_result(GoConnect.list_installer_updates(jsn_params, jsn_product))
         end
 
         # Writes the config file with the given parameters, overwriting any existing contents

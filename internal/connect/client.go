@@ -318,3 +318,8 @@ func ActivatedProducts() ([]Product, error) {
 func ActivateProduct(product Product, email string) (Service, error) {
 	return activateProduct(product, email)
 }
+
+// InstallerUpdates returns an array of Installer-Updates repositories for the given product
+func InstallerUpdates(product Product) ([]Repo, error) {
+	return installerUpdates(product)
+}
