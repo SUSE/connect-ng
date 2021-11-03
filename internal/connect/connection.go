@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 )
 
 type authType int
@@ -85,7 +86,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
 			Proxy:           proxyWithAuth,
 		}
-		httpclient = &http.Client{Transport: tr}
+		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
 	}
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
