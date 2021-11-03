@@ -44,11 +44,17 @@ func TestUnmarshalJSONsmt(t *testing.T) {
 	if !p.Available {
 		t.Error("Expected p.Aailable == true, got false")
 	}
+	if p.IsBase {
+		t.Error("Expected p.IsBase == false, got true")
+	}
 	if p.Extensions[0].Name != "extension1" {
 		t.Errorf("Expected p.Extensions[0].Name == product1, got %s", p.Extensions[0].Name)
 	}
 	if p.Extensions[0].Available {
 		t.Error("Expected p.Extensions[0].Available == false, got true")
+	}
+	if p.Extensions[0].IsBase {
+		t.Error("Expected p.Extensions[0].IsBase == false, got true")
 	}
 }
 
@@ -63,13 +69,49 @@ func TestUnmarshalJSONscc(t *testing.T) {
 		t.Errorf("Expected p.Name == product1, got %s", p.Name)
 	}
 	if !p.Available {
-		t.Error("Expected p.Aailable == true, got false")
+		t.Error("Expected p.Available == true, got false")
 	}
 	if p.Extensions[0].Name != "extension1" {
 		t.Errorf("Expected p.Extensions[0].Name == product1, got %s", p.Extensions[0].Name)
 	}
 	if !p.Extensions[0].Available {
 		t.Error("Expected p.Extensions[0].Available == true, got false")
+	}
+}
+
+func TestUnmarshalJSONBase(t *testing.T) {
+	jsn := `{"identifier": "product1", "base": true}`
+
+	var p Product
+	if err := json.Unmarshal([]byte(jsn), &p); err != nil {
+		t.Errorf("Error unmarshalling: %s", err)
+	}
+	if !p.IsBase {
+		t.Error("Expected p.IsBase == true, got false")
+	}
+}
+
+func TestUnmarshalJSONIsBase(t *testing.T) {
+	jsn := `{"identifier": "product1", "isbase": true}`
+
+	var p Product
+	if err := json.Unmarshal([]byte(jsn), &p); err != nil {
+		t.Errorf("Error unmarshalling: %s", err)
+	}
+	if !p.IsBase {
+		t.Error("Expected p.IsBase == true, got false")
+	}
+}
+
+func TestUnmarshalJSONProductTypeBase(t *testing.T) {
+	jsn := `{"identifier": "product1", "product_type": "base"}`
+
+	var p Product
+	if err := json.Unmarshal([]byte(jsn), &p); err != nil {
+		t.Errorf("Error unmarshalling: %s", err)
+	}
+	if !p.IsBase {
+		t.Error("Expected p.IsBase == true, got false")
 	}
 }
 

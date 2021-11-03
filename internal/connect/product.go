@@ -14,7 +14,7 @@ type Product struct {
 	Arch    string `xml:"arch,attr" json:"arch"`
 	Release string `xml:"release,attr" json:"-"`
 	Summary string `xml:"summary,attr" json:"-"`
-	IsBase  bool   `xml:"isbase,attr" json:"base"`
+	IsBase  bool   `xml:"isbase,attr" json:"isbase"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
 	ReleaseType  string `xml:"registerrelease,attr" json:"release_type,omitempty"`
@@ -41,13 +41,23 @@ type Product struct {
 // SCC does not, and the default Unmarshal() sets Available to the
 // boolean zero-value which is false. This sets it to true instead.
 func (p *Product) UnmarshalJSON(data []byte) error {
-	type product Product // use type alias to prevent infinite recursion
+	type product Product
 	prod := product{
 		Available: true,
 	}
 	if err := json.Unmarshal(data, &prod); err != nil {
 		return err
 	}
+	// migration paths contain is-base information as "base" attribute
+	// while we default to "isbase" for YaST integration.
+	// the rest of the SCC API uses `product_type="base"` instead.
+	mProd := struct {
+		Base bool `json:"base"`
+	}{}
+	if err := json.Unmarshal(data, &mProd); err != nil {
+		return err
+	}
+	prod.IsBase = prod.IsBase || mProd.Base || prod.ProductType == "base"
 	*p = Product(prod)
 	return nil
 }
