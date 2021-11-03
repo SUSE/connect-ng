@@ -18,6 +18,11 @@ module SUSE
         jsn_params = JSON.generate(@client_params)
         _process_result(GoConnect.activated_products(jsn_params))
       end
+
+      def activations
+        jsn_params = JSON.generate(@client_params)
+        _process_result(GoConnect.system_activations(jsn_params))
+      end
     end
   end
 end

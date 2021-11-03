@@ -319,6 +319,11 @@ func ActivateProduct(product Product, email string) (Service, error) {
 	return activateProduct(product, email)
 }
 
+// SystemActivations returns a map keyed by "Identifier/Version/Arch"
+func SystemActivations() (map[string]Activation, error) {
+	return systemActivations()
+}
+
 // InstallerUpdates returns an array of Installer-Updates repositories for the given product
 func InstallerUpdates(product Product) ([]Repo, error) {
 	return installerUpdates(product)

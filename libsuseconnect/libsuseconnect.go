@@ -387,4 +387,24 @@ func synchronize(clientParams, products *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export system_activations
+func system_activations(clientParams *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	// converting from map to list as expected by Ruby clients
+	actList := make([]connect.Activation, 0)
+	actMap, err := connect.SystemActivations()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	for _, a := range actMap {
+		actList = append(actList, a)
+	}
+	jsn, err := json.Marshal(actList)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
 func main() {}

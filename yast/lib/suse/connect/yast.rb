@@ -38,6 +38,7 @@ module GoConnect
   attach_function :offline_system_migrations, [:string, :string, :string], :pointer
   attach_function :upgrade_product, [:string, :string], :pointer
   attach_function :synchronize, [:string, :string], :pointer
+  attach_function :system_activations, [:string], :pointer
 end
 
 module SUSE
