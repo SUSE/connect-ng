@@ -31,6 +31,7 @@ type Product struct {
 	EULAURL      string `json:"eula_url,omitempty"`
 	FormerName   string `json:"former_identifier,omitempty"`
 	ProductType  string `json:"product_type,omitempty"`
+	ShortName    string `json:"shortname,omitempty"`
 	LongName     string `json:"name,omitempty"`
 	ReleaseStage string `json:"release_stage,omitempty"`
 	Repositories []Repo `json:"repositories,omitempty"`

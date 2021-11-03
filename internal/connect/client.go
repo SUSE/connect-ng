@@ -323,3 +323,8 @@ func ActivateProduct(product Product, email string) (Service, error) {
 func InstallerUpdates(product Product) ([]Repo, error) {
 	return installerUpdates(product)
 }
+
+// SyncProducts synchronizes activated system products to the registration server
+func SyncProducts(products []Product) ([]Product, error) {
+	return syncProducts(products)
+}

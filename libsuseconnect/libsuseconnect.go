@@ -303,4 +303,88 @@ func list_installer_updates(clientParams, product *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export system_migrations
+func system_migrations(clientParams, products *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	installed := make([]connect.Product, 0)
+	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	migrations, err := connect.ProductMigrations(installed)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(migrations)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export offline_system_migrations
+func offline_system_migrations(clientParams, products, targetBaseProduct *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	installed := make([]connect.Product, 0)
+	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	var target connect.Product
+	if err := json.Unmarshal([]byte(C.GoString(targetBaseProduct)), &target); err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	migrations, err := connect.OfflineProductMigrations(installed, target)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(migrations)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export upgrade_product
+func upgrade_product(clientParams, product *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var prod connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &prod)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	service, err := connect.UpgradeProduct(prod)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(service)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export synchronize
+func synchronize(clientParams, products *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	prods := make([]connect.Product, 0)
+	err := json.Unmarshal([]byte(C.GoString(products)), &prods)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	activated, err := connect.SyncProducts(prods)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(activated)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
 func main() {}

@@ -8,12 +8,7 @@ require 'suse/toolkit/shim_utils'
 # - make sure following code paths are covered by shim:
 # TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
-#     lib/registration/registration.rb:        service = SUSE::Connect::YaST.upgrade_product(product_ident, params)
-#     lib/registration/registration.rb:        service = SUSE::Connect::YaST.downgrade_product(product_ident, params)
-#     lib/registration/registration.rb:      SUSE::Connect::YaST.synchronize(remote_products, connect_params)
 #     lib/registration/registration.rb:      ret = SUSE::Connect::YaST.update_system(connect_params, target_distro)
-#     lib/registration/registration.rb:        migrations = SUSE::Connect::YaST.system_migrations(installed_products, connect_params)
-#     lib/registration/registration.rb:        migration_paths = SUSE::Connect::YaST.system_offline_migrations(installed_products, target_base_product, connect_params)
 
 module Stdio
   extend FFI::Library
@@ -39,6 +34,10 @@ module GoConnect
   attach_function :write_config, [:string], :pointer
   attach_function :update_certificates, [], :pointer
   attach_function :list_installer_updates, [:string, :string], :pointer
+  attach_function :system_migrations, [:string, :string], :pointer
+  attach_function :offline_system_migrations, [:string, :string, :string], :pointer
+  attach_function :upgrade_product, [:string, :string], :pointer
+  attach_function :synchronize, [:string, :string], :pointer
 end
 
 module SUSE
@@ -86,6 +85,47 @@ module SUSE
           _process_result(GoConnect.activate_product(jsn_params, jsn_product, email))
         end
 
+        # Upgrades a product on SCC / the registration server.
+        # Expects product_ident parameter to be a hash identifying the new product.
+        # Token / regcode is not required. The new product needs to be available to the regcode the old
+        # product was registered with, or be a free product.
+        # Returns a service object for the new activated product.
+        #
+        # @param [OpenStruct] product with identifier, arch and version defined
+        # @param [Hash] client_params parameters to instantiate {Client}
+        #
+        # @return [Service] Service
+        def upgrade_product(product, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_product = JSON.generate(product.to_h)
+          _process_result(GoConnect.upgrade_product(jsn_params, jsn_product))
+        end
+
+        # Downgrades a product on SCC / the registration server.
+        # Expects product_ident parameter to be a hash identifying the new product.
+        # Token / regcode is not required. The new product needs to be available to the regcode the old
+        # product was registered with, or be a free product.
+        # Returns a service object for the new activated product.
+        #
+        # @param [OpenStruct] product with identifier, arch and version defined
+        # @param [Hash] client_params parameters to instantiate {Client}
+        #
+        # @return [Service] Service
+        alias_method :downgrade_product, :upgrade_product
+
+        # Synchronize activated system products with registration server.
+        # This will remove obsolete activations on the server after all installed products went through a downgrade().
+        #
+        # @param [OpenStruct] products - list of activated system products with identifier, arch and version defined
+        # @param [Hash] client_params parameters to instantiate {Client}
+        def synchronize(products, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_products = JSON.generate(products.map(&:to_h))
+          _process_result(GoConnect.synchronize(jsn_params, jsn_products))
+        end
+
         # Reads credentials file.
         # Returns the credentials object with login, password and credentials file
         #
@@ -118,6 +158,44 @@ module SUSE
           jsn_params = JSON.generate(client_params)
           jsn_product = JSON.generate(product.to_h)
           _process_result(GoConnect.show_product(jsn_params, jsn_product))
+        end
+
+        # Lists all available online migration paths for a given list of products.
+        # Accepts an array of products, and returns an array of possible
+        # migration paths. A migration path is a list of products that may
+        # be upgraded.
+        #
+        # @param [Array <OpenStruct>] the list of currently installed {Product}s in the system
+        # @param [Hash] client_params parameters to instantiate {Client}
+        #
+        # @return [Array <Array <OpenStruct>>] the list of possible migration paths for the given {Product}s,
+        #   where a migration path is an array of OpenStruct objects with the attributes
+        #   identifier, arch, version, and release_type
+        def system_migrations(products, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_products = JSON.generate(products.map(&:to_h))
+          _process_result(GoConnect.system_migrations(jsn_params, jsn_products))
+        end
+
+        # Lists all available offline migration paths for a given list of products.
+        # Accepts an array of products, and returns an array of possible
+        # migration paths. A migration path is a list of products that may
+        # be upgraded.
+        #
+        # @param installed_products [Array <OpenStruct>] the list of currently installed {Product}s in the system
+        # @param target_base_product [OpenStruct] the {Product} that the system wants to upgrade to
+        # @param client_params [Hash] parameters to instantiate {Client}
+        #
+        # @return [Array <Array <OpenStruct>>] the list of possible migration paths for the given {Product}s,
+        #   where a migration path is an array of OpenStruct objects with the attributes
+        #   identifier, arch, version, and release_type
+        def system_offline_migrations(installed_products, target_base_product, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_products = JSON.generate(installed_products.map(&:to_h))
+          jsn_target = JSON.generate(target_base_product.to_h)
+          _process_result(GoConnect.offline_system_migrations(jsn_params, jsn_products, jsn_target))
         end
 
         # List available Installer-Updates repositories for the given product
