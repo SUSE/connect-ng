@@ -68,6 +68,17 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export update_system
+func update_system(clientParams, distroTarget *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	if err := connect.UpdateSystem(C.GoString(distroTarget), ""); err != nil {
+		return C.CString(errorToJSON(err))
+	}
+
+	return C.CString("{}")
+}
+
 //export credentials
 func credentials(path *C.char) *C.char {
 	creds, err := connect.ReadCredentials(C.GoString(path))

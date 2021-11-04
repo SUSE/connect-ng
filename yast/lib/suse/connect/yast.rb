@@ -8,7 +8,6 @@ require 'suse/toolkit/shim_utils'
 # - make sure following code paths are covered by shim:
 # TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
-#     lib/registration/registration.rb:      ret = SUSE::Connect::YaST.update_system(connect_params, target_distro)
 
 module Stdio
   extend FFI::Library
@@ -24,6 +23,7 @@ module GoConnect
   attach_function :set_log_callback, [:log_line], :void
 
   attach_function :announce_system, [:string, :string], :pointer
+  attach_function :update_system, [:string, :string], :pointer
   attach_function :credentials, [:string], :pointer
   attach_function :create_credentials_file, [:string, :string, :string], :pointer
   attach_function :curlrc_credentials, [], :pointer
@@ -67,6 +67,15 @@ module SUSE
           _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           _process_result(GoConnect.announce_system(jsn_params, distro_target)).credentials
+        end
+
+        # Updates the systems hardware info on the server
+        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [String] distro_target desired distro target
+        def update_system(client_params = {}, distro_target = nil)
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          _process_result(GoConnect.update_system(jsn_params, distro_target))
         end
 
         # Activates a product on SCC / the registration server.
