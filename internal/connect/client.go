@@ -78,7 +78,7 @@ func registerProductTree(product Product) error {
 
 // Deregister deregisters the system
 func Deregister() error {
-	if fileExists("/usr/sbin/registercloudguest") {
+	if fileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration is disabled for on-demand instances. " +
 			"Use `registercloudguest --clean` instead.")
