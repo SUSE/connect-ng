@@ -277,6 +277,8 @@ func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs 
 
 // Repo holds repository data as returned by `zypper repos` or "show_product" API
 type Repo struct {
+	// SCC docs say that "id" should be integer but SMT returns string sometimes
+	// not mapping to struct field as it doesn't seem to be used by Connect
 	Name     string `xml:"name,attr" json:"name"`
 	Alias    string `xml:"alias,attr" json:"-"`
 	Type     string `xml:"type,attr" json:"-"`

@@ -4,7 +4,6 @@ require 'suse/toolkit/shim_utils'
 
 # TODO
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
-# - check required Repo fields (ID is sometimes int, sometimes string (SMT?))
 # - make sure following code paths are covered by shim:
 # TODO: after package search is merged
 #     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
