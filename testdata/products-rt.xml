@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<stream>
+  <product-list>
+    <product name="suse-openstack-cloud" version="8" release="0" arch="x86_64" productline="suse-openstack-cloud" registerrelease=""></product>
+    <product name="SLES" version="12.5" release="0" arch="x86_64" productline="sles" registerrelease=""></product>
+    <product name="SLES-OEM-test1" productline="sles" registerrelease="rel1"></product>
+    <product name="SLES-OEM-test2" productline="" registerrelease="rel2"></product>
+    <product name="SLES-OEM-test3" productline="" registerrelease=""></product>
+  </product-list>
+</stream>

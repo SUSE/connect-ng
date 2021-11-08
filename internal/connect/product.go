@@ -17,7 +17,8 @@ type Product struct {
 	IsBase  bool   `xml:"isbase,attr" json:"base"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
-	ReleaseType  string `json:"release_type,omitempty"`
+	ReleaseType  string `xml:"registerrelease,attr" json:"release_type,omitempty"`
+	ProductLine  string `xml:"productline,attr"`
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
 	Recommended  bool   `json:"recommended"`

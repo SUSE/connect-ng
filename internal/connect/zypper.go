@@ -2,11 +2,15 @@ package connect
 
 import (
 	"encoding/xml"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
 	zypperPath = "/usr/bin/zypper"
+	oemPath    = "/var/lib/suseRegister/OEM"
 )
 
 const (
@@ -58,6 +62,26 @@ func installedProducts() ([]Product, error) {
 	return parseProductsXML(output)
 }
 
+// get first line of OEM file if present
+func oemReleaseType(productLine string) (string, error) {
+	if productLine == "" {
+		return "", fmt.Errorf("empty productline")
+	}
+	oemFile := filepath.Join(CFG.FsRoot, oemPath, productLine)
+	if !fileExists(oemFile) {
+		return "", fmt.Errorf("OEM file not found: %v", oemFile)
+	}
+	data, err := os.ReadFile(oemFile)
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 {
+		return "", fmt.Errorf("empty OEM file: %v", oemFile)
+	}
+	return strings.TrimSpace(lines[0]), nil
+}
+
 // parseProductsXML returns products parsed from zypper XML
 func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	var products struct {
@@ -65,6 +89,12 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	}
 	if err := xml.Unmarshal(xmlDoc, &products); err != nil {
 		return []Product{}, err
+	}
+	// override ProductType with OEM value if defined
+	for i, p := range products.Products {
+		if oemValue, err := oemReleaseType(p.ProductLine); err == nil {
+			products.Products[i].ReleaseType = oemValue
+		}
 	}
 	return products.Products, nil
 }
