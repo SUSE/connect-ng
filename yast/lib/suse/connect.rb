@@ -5,6 +5,8 @@ module SUSE
     require 'suse/connect/config'
     require 'suse/connect/ssl_certificate'
     require 'suse/connect/status'
+    require 'suse/connect/zypper'
+    require 'suse/connect/package_search'
     require 'suse/connect/yast'
   end
   module Toolkit

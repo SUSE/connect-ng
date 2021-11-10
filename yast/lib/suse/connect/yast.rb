@@ -4,9 +4,7 @@ require 'suse/toolkit/shim_utils'
 
 # TODO
 # - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
-# - make sure following code paths are covered by shim:
-# TODO: after package search is merged
-#     lib/registration/package_search.rb:      SUSE::Connect::PackageSearch.search(text, product: connect_product(product))
+# - review comments on ruby shim functions (e.g. return types)
 
 module Stdio
   extend FFI::Library
@@ -38,6 +36,7 @@ module GoConnect
   attach_function :upgrade_product, [:string, :string], :pointer
   attach_function :synchronize, [:string, :string], :pointer
   attach_function :system_activations, [:string], :pointer
+  attach_function :search_package, [:string, :string, :string], :pointer
 end
 
 module SUSE

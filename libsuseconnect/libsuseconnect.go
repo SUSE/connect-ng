@@ -418,4 +418,24 @@ func system_activations(clientParams *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
+//export search_package
+func search_package(clientParams, product, query *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var p connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &p)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	results, err := connect.SearchPackage(C.GoString(query), p)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(results)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
 func main() {}
