@@ -42,7 +42,7 @@ func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 	output, err := execute(cmd, validExitCodes)
 	if err != nil {
 		if ee, ok := err.(ExecuteError); ok {
-			return nil, ZypperError{ExitCode: ee.ExitCode, Output: ee.Output}
+			return nil, ZypperError{Commmand: ee.Commmand, ExitCode: ee.ExitCode, Output: ee.Output}
 		}
 	}
 	return output, nil
