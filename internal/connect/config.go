@@ -105,5 +105,7 @@ func parseConfig(r io.Reader, c *Config) {
 
 // MergeJSON merges attributes of jsn that match Config fields
 func (c *Config) MergeJSON(jsn string) error {
-	return json.Unmarshal([]byte(jsn), c)
+	err := json.Unmarshal([]byte(jsn), c)
+	Debug.Printf("Merged options: %+v", c)
+	return err
 }

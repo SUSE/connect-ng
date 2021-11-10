@@ -187,8 +187,6 @@ func write_config(clientParams *C.char) *C.char {
 }
 
 func loadConfig(clientParams string) {
-	connect.CFG.Load()
-	connect.CFG.MergeJSON(clientParams)
 	// unmarshal extra config fields only for local use
 	var extConfig struct {
 		Debug string `json:"debug"`
@@ -198,7 +196,8 @@ func loadConfig(clientParams string) {
 	if v, _ := strconv.ParseBool(extConfig.Debug); v {
 		connect.Debug.SetOutput(callbackWriter{llDebug})
 	}
-	connect.Debug.Printf("Merged options: %v", clientParams)
+	connect.CFG.Load()
+	connect.CFG.MergeJSON(clientParams)
 }
 
 func certToPEM(cert *x509.Certificate) string {
