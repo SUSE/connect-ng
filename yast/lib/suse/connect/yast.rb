@@ -3,7 +3,6 @@ require 'ffi'
 require 'suse/toolkit/shim_utils'
 
 # TODO
-# - check if SUSE::Connect::Zypper::Product.determine_release_type() is needed
 # - review comments on ruby shim functions (e.g. return types)
 
 module Stdio
