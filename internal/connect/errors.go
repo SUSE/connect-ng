@@ -3,6 +3,7 @@ package connect
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // export errors that package main needs
@@ -32,12 +33,14 @@ func (ee ExecuteError) Error() string {
 
 // ZypperError is returned by zypperRun on error
 type ZypperError struct {
+	Commmand []string
 	ExitCode int
 	Output   []byte
 }
 
 func (ze ZypperError) Error() string {
-	return fmt.Sprintf("Error: zypper returned %d with '%s'", ze.ExitCode, ze.Output)
+	return fmt.Sprintf("command '%s' failed\nError: zypper returned %d with '%s'",
+		strings.Join(ze.Commmand, " "), ze.ExitCode, ze.Output)
 }
 
 // APIError is returned on failed HTTP requests
