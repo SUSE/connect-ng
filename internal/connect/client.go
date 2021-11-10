@@ -279,3 +279,8 @@ func OfflineProductMigrations(installed []Product, targetBaseProduct Product) ([
 func UpgradeProduct(product Product) (Service, error) {
 	return upgradeProduct(product)
 }
+
+// SearchPackage returns packages which are available in the extensions tree for given base product
+func SearchPackage(query string, baseProduct Product) ([]SearchPackageResult, error) {
+	return searchPackage(query, baseProduct)
+}
