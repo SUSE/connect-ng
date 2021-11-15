@@ -1,6 +1,8 @@
 package connect
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -14,6 +16,40 @@ func TestParseProductsXML(t *testing.T) {
 	}
 	if products[0].ToTriplet() != "SUSE-MicroOS/5.0/x86_64" {
 		t.Errorf("Expected SUSE-MicroOS/5.0/x86_64 Got %s", products[0].ToTriplet())
+	}
+}
+
+func TestParseProductsXML_ReleaseType(t *testing.T) {
+	CFG.FsRoot = t.TempDir()
+	// write test OEM file
+	testRT := "SLES-OEM-TEST"
+	oemDir := filepath.Join(CFG.FsRoot, oemPath)
+	if err := os.MkdirAll(oemDir, 0755); err != nil {
+		t.Fatalf("Error creating OEM dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(oemDir, "sles"), []byte(testRT), 0600); err != nil {
+		t.Fatalf("Error writing OEM file: %v", err)
+	}
+
+	products, err := parseProductsXML(readTestFile("products-rt.xml", t))
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	if products[0].ReleaseType != "" {
+		t.Errorf("Expected empty ReleaseType Got %v", products[0].ReleaseType)
+	}
+	if products[1].ReleaseType != testRT {
+		t.Errorf("Expected ReleaseType=%v Got %v", testRT, products[1].ReleaseType)
+	}
+	if products[2].ReleaseType != testRT {
+		t.Errorf("Expected ReleaseType=%v Got %v", testRT, products[2].ReleaseType)
+	}
+	if products[3].ReleaseType != "rel2" {
+		t.Errorf("Expected ReleaseType=rel2 Got %v", products[3].ReleaseType)
+	}
+	if products[4].ReleaseType != "" {
+		t.Errorf("Expected empty ReleaseType Got %v", products[4].ReleaseType)
 	}
 }
 
