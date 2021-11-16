@@ -23,6 +23,8 @@ func main() {
 	switch filepath.Base(os.Args[0]) {
 	case "zypper-migration":
 		migrationMain()
+	case "zypper-search-packages":
+		searchPackagesMain()
 	default:
 		connectMain()
 	}
