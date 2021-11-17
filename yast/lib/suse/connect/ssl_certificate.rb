@@ -1,8 +1,8 @@
 module SUSE
   module Connect
     class SSLCertificate
-      include SUSE::Toolkit::ShimUtils
-      include SUSE::Connect::Logger
+      extend SUSE::Toolkit::ShimUtils
+      extend SUSE::Connect::Logger
 
       # where to save the imported certificate
       SERVER_CERT_FILE = '/usr/share/pki/trust/anchors/registration_server.pem'
