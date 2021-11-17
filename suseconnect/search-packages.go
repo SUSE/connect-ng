@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
@@ -14,6 +15,59 @@ var (
 	//go:embed searchPackagesUsage.txt
 	searchPackagesUsageText string
 )
+
+type searchResult struct {
+	Name    string
+	Version string
+	Release string
+	Arch    string
+	// package from addon
+	ProdIdent   string
+	ProdName    string
+	ProdEdition string
+	ProdArch    string
+	ProdFree    bool
+	// package from local repo
+	Repo      string
+	PkgStatus string
+}
+
+func (sr searchResult) FullName() string {
+	return fmt.Sprintf("%s-%s-%s.%s", sr.Name, sr.Version, sr.Release, sr.Arch)
+}
+
+func (sr searchResult) ConnectCmd() string {
+	if sr.ProdIdent == "" {
+		return ""
+	}
+	ret := "SUSEConnect --product " + sr.ProdIdent
+	if !sr.ProdFree {
+		ret += " -r ADDITIONAL REGCODE"
+	}
+	return ret
+}
+
+func (sr searchResult) ModuleOrRepo() string {
+	if sr.ProdIdent != "" {
+		return sr.ProdIdent
+	}
+	return sr.Repo
+}
+
+func (sr searchResult) ProdNameOrPkgStatus() string {
+	if sr.ProdName != "" {
+		return sr.ProdName
+	}
+	return sr.PkgStatus
+}
+
+func (sr searchResult) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	p := struct {
+		Name   string `xml:"name"`
+		Module string `xml:"module"`
+	}{sr.FullName(), sr.ModuleOrRepo()}
+	return e.EncodeElement(p, start)
+}
 
 func searchPackagesMain() {
 	var (
@@ -91,7 +145,141 @@ func searchPackagesMain() {
 		os.Exit(1)
 	}
 
-	fmt.Println("TODO: actual search")
+	results := searchInModules(flag.Args(), matchExact, caseSensitive)
+	// TODO
+	// repo_results = search_pkgs_in_repos(options, params)
+	// results.concat repo_results
+
+	if len(results) == 0 && !xmlout {
+		fmt.Print("No package found\n\n")
+		os.Exit(0)
+	}
+
+	if xmlout {
+		var xmldata struct {
+			XMLName xml.Name       `xml:"packages"`
+			Results []searchResult `xml:"package"`
+		}
+		xmldata.Results = results
+		xmltext, _ := xml.MarshalIndent(xmldata, "", "  ")
+		fmt.Print(xml.Header)
+		fmt.Println(string(xmltext))
+		fmt.Println()
+		os.Exit(0)
+	}
+
+	fmt.Print("Following packages were found in following modules:\n\n")
+
+	resultsTable := make([][]string, 0)
+	if details {
+		for _, r := range results {
+			resultsTable = append(resultsTable, []string{r.FullName(), r.ModuleOrRepo(), r.ConnectCmd()})
+		}
+	} else {
+		for _, r := range results {
+			resultsTable = append(resultsTable, []string{r.Name, r.ProdNameOrPkgStatus(), r.ConnectCmd()})
+		}
+	}
+	// TODO
+	// results.uniq!
+
+	header := []string{"Package", "Module or Repository", "SUSEConnect Activation Command"}
+	if groupByModule {
+		header = []string{"Module or Repository", "Package"}
+		// TODO
+		//   modules = {}
+		//   results.each do | entry |
+		//     modules[entry[1]] ||= [];
+		//     modules[entry[1]].push entry[0];
+		//   end
+		//   results = []
+		//   modules.each do | mod, packages |
+		//     pkg = packages.shift
+		//     results.push [ mod, pkg ]
+		//     packages.each do | pkg |
+		//       results.push [ "", pkg ]
+		//     end
+		//   end
+	} else if sortByName {
+		// TODO
+		//   results.sort! { | a, b |
+		//     a[0] <=> b[0]
+		//   }
+	} else if sortByRepo {
+		// TODO
+		//   results.sort! { | a, b |
+		//     a[1] <=> b[1]
+		//   }
+	}
+
+	printTable(header, resultsTable)
+
+	fmt.Print("\nTo activate the respective module or product, use SUSEConnect --product.\nUse SUSEConnect --help for more details.\n\n")
+}
+
+func printTable(header []string, table [][]string) {
+	// calculate column widths
+	maxLengths := make([]int, len(header))
+	for _, row := range table {
+		for i, e := range row {
+			s := len(e)
+			if s > maxLengths[i] {
+				maxLengths[i] = s
+			}
+		}
+	}
+	// generate separators and format strings
+	separators := make([]string, len(header))
+	formats := make([]string, len(header))
+	for i, s := range maxLengths {
+		separators[i] = strings.Repeat("-", s)
+		formats[i] = fmt.Sprintf("%%-%ds ", s)
+	}
+	// add header and separator to results table
+	table = append([][]string{header, separators}, table...)
+	// print table using formats
+	for _, row := range table {
+		for i, e := range row {
+			fmt.Printf(formats[i], e)
+		}
+		fmt.Println()
+	}
+}
+
+func searchInModules(patterns []string, matchExact, caseSensitive bool) []searchResult {
+	ret := make([]searchResult, 0)
+	for _, query := range patterns {
+		found, err := connect.SearchPackage(query, connect.Product{})
+		if err != nil {
+			fmt.Printf("Could not search for the package: %v", err)
+		}
+		for _, pkg := range found {
+			// skip unwanted packages depending on the flags
+			if matchExact {
+				if caseSensitive && pkg.Name != query ||
+					strings.ToLower(pkg.Name) != strings.ToLower(query) {
+					continue
+				}
+			} else if caseSensitive && !strings.Contains(pkg.Name, query) {
+				continue
+			}
+			for _, p := range pkg.Products {
+				sr := searchResult{
+					Name:        pkg.Name,
+					Version:     pkg.Version,
+					Release:     pkg.Release,
+					Arch:        pkg.Arch,
+					ProdName:    fmt.Sprintf("%s (%s)", p.Name, p.Ident), // TODO: anything better? do we need raw p.Name?
+					ProdIdent:   p.Ident,
+					ProdEdition: p.Edition,
+					ProdArch:    p.Arch,
+					ProdFree:    p.Free,
+				}
+				ret = append(ret, sr)
+			}
+		}
+	}
+	return ret
 }
 
 func checkUnsupportedFlags() error {
