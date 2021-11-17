@@ -2,6 +2,8 @@ module SUSE
   module Connect
     class SSLCertificate
       include SUSE::Toolkit::ShimUtils
+      include SUSE::Connect::Logger
+
       # where to save the imported certificate
       SERVER_CERT_FILE = '/usr/share/pki/trust/anchors/registration_server.pem'
 
@@ -23,8 +25,8 @@ module SUSE
       # @see https://github.com/openSUSE/ca-certificates
       # @param cert [OpenSSL::X509::Certificate] the certificate
       def self.import(cert)
-        GlobalLogger.instance.log.debug "Writing a SSL certificate to #{SERVER_CERT_FILE} file..."
-        GlobalLogger.instance.log.warn 'The certificate file already exists, rewriting...' if File.exist?(SERVER_CERT_FILE)
+        log.debug "Writing a SSL certificate to #{SERVER_CERT_FILE} file..."
+        log.warn 'The certificate file already exists, rewriting...' if File.exist?(SERVER_CERT_FILE)
         File.write(SERVER_CERT_FILE, cert.to_pem)
 
         # update the symlinks

@@ -4,5 +4,6 @@ typedef void (*logLineFunc)(int level, const char *message);
 // to Go via function pointer
 void log_bridge_fun(logLineFunc f, int level, const char *message)
 {
-    f(level, message);
+    if (f)
+        f(level, message);
 }
