@@ -281,6 +281,14 @@ func UpgradeProduct(product Product) (Service, error) {
 }
 
 // SearchPackage returns packages which are available in the extensions tree for given base product
-func SearchPackage(query string, baseProduct Product) ([]SearchPackageResult, error) {
-	return searchPackage(query, baseProduct)
+func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error) {
+	// default to system base product if empty product passed
+	if baseProd.isEmpty() {
+		var err error
+		baseProd, err = baseProduct()
+		if err != nil {
+			return []SearchPackageResult{}, err
+		}
+	}
+	return searchPackage(query, baseProd)
 }
