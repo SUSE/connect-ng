@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -190,30 +191,25 @@ func searchPackagesMain() {
 	header := []string{"Package", "Module or Repository", "SUSEConnect Activation Command"}
 	if groupByModule {
 		header = []string{"Module or Repository", "Package"}
-		// TODO
-		//   modules = {}
-		//   results.each do | entry |
-		//     modules[entry[1]] ||= [];
-		//     modules[entry[1]].push entry[0];
-		//   end
-		//   results = []
-		//   modules.each do | mod, packages |
-		//     pkg = packages.shift
-		//     results.push [ mod, pkg ]
-		//     packages.each do | pkg |
-		//       results.push [ "", pkg ]
-		//     end
-		//   end
+		modules := make(map[string][]string, 0)
+		for _, row := range resultsTable {
+			modules[row[1]] = append(modules[row[1]], row[0])
+		}
+		resultsTable = nil
+		for mod, packages := range modules {
+			resultsTable = append(resultsTable, []string{mod, packages[0]})
+			for _, p := range packages[1:] {
+				resultsTable = append(resultsTable, []string{"", p})
+			}
+		}
 	} else if sortByName {
-		// TODO
-		//   results.sort! { | a, b |
-		//     a[0] <=> b[0]
-		//   }
+		sort.Slice(resultsTable, func(i, j int) bool {
+			return resultsTable[i][0] < resultsTable[j][0]
+		})
 	} else if sortByRepo {
-		// TODO
-		//   results.sort! { | a, b |
-		//     a[1] <=> b[1]
-		//   }
+		sort.Slice(resultsTable, func(i, j int) bool {
+			return resultsTable[i][1] < resultsTable[j][1]
+		})
 	}
 
 	printTable(header, resultsTable)
