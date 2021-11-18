@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 )
 
 type authType int
@@ -81,11 +82,11 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 
 func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
 	if httpclient == nil {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: CFG.Insecure},
-			Proxy:           proxyWithAuth,
-		}
-		httpclient = &http.Client{Transport: tr}
+		// use defaults from DefaultTransport
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: CFG.Insecure}
+		tr.Proxy = proxyWithAuth
+		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
 	}
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
