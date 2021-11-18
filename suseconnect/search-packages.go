@@ -288,10 +288,10 @@ func packageWanted(name, query string, matchExact, caseSensitive bool) bool {
 		name = strings.ToLower(name)
 		query = strings.ToLower(query)
 	}
-	if matchExact && name == query || !matchExact && strings.Contains(name, query) {
-		return true
+	if matchExact {
+		return name == query
 	}
-	return false
+	return strings.Contains(name, query)
 }
 
 func searchInRepos(patterns []string, matchExact, caseSensitive bool) []searchResult {
