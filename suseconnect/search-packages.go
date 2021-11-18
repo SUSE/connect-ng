@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -146,9 +149,10 @@ func searchPackagesMain() {
 	}
 
 	results := searchInModules(flag.Args(), matchExact, caseSensitive)
-	// TODO
-	// repo_results = search_pkgs_in_repos(options, params)
-	// results.concat repo_results
+	if !noLocalRepos {
+		repoResults := searchInRepos(flag.Args(), matchExact, caseSensitive)
+		results = append(results, repoResults...)
+	}
 
 	if len(results) == 0 && !xmlout {
 		fmt.Print("No package found\n\n")
@@ -180,8 +184,8 @@ func searchPackagesMain() {
 			resultsTable = append(resultsTable, []string{r.Name, r.ProdNameOrPkgStatus(), r.ConnectCmd()})
 		}
 	}
-	// TODO
-	// results.uniq!
+
+	resultsTable = uniqueTable(resultsTable)
 
 	header := []string{"Package", "Module or Repository", "SUSEConnect Activation Command"}
 	if groupByModule {
@@ -246,6 +250,87 @@ func printTable(header []string, table [][]string) {
 	}
 }
 
+func readRepoIndex(path string) ([]searchResult, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return []searchResult{}, err
+	}
+	defer f.Close()
+	return parseRepoIndex(f), nil
+}
+
+func parseRepoIndex(r io.Reader) []searchResult {
+	ret := make([]searchResult, 0)
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		parts := strings.Split(line, "\t")
+		if len(parts) != 3 {
+			continue
+		}
+		// extract release from version
+		version := parts[1]
+		release := ""
+		vr := strings.Split(version, "-")
+		if len(vr) > 1 {
+			release = vr[len(vr)-1]
+			version = strings.Join(vr[:len(vr)-1], "-")
+		}
+		sr := searchResult{
+			Name:    parts[0],
+			Version: version,
+			Release: release,
+			Arch:    parts[2],
+		}
+		ret = append(ret, sr)
+	}
+	return ret
+}
+
+func packageWanted(name, query string, matchExact, caseSensitive bool) bool {
+	if !caseSensitive {
+		name = strings.ToLower(name)
+		query = strings.ToLower(query)
+	}
+	if matchExact && name == query || !matchExact && strings.Contains(name, query) {
+		return true
+	}
+	return false
+}
+
+func searchInRepos(patterns []string, matchExact, caseSensitive bool) []searchResult {
+	ret := make([]searchResult, 0)
+	reposPath := "/var/cache/zypp/solv"
+	repos, _ := os.ReadDir(reposPath)
+	for _, repo := range repos {
+		if !repo.IsDir() {
+			continue
+		}
+		reponame := repo.Name()
+		pkgStatus := "Available in repo " + reponame
+
+		if reponame == "@System" {
+			reponame = "Installed"
+			pkgStatus = "Installed"
+		}
+		repoPackages, err := readRepoIndex(filepath.Join(reposPath, repo.Name(), "solv.idx"))
+		if err != nil {
+			fmt.Printf("Cannot read index for repository %v.\n", reponame)
+		}
+		for _, p := range repoPackages {
+			p.Repo = reponame
+			p.PkgStatus = pkgStatus
+			for _, query := range patterns {
+				if packageWanted(p.Name, query, matchExact, caseSensitive) {
+					ret = append(ret, p)
+					break
+				}
+			}
+		}
+	}
+	return ret
+}
+
 func searchInModules(patterns []string, matchExact, caseSensitive bool) []searchResult {
 	ret := make([]searchResult, 0)
 	for _, query := range patterns {
@@ -254,13 +339,7 @@ func searchInModules(patterns []string, matchExact, caseSensitive bool) []search
 			fmt.Printf("Could not search for the package: %v", err)
 		}
 		for _, pkg := range found {
-			// skip unwanted packages depending on the flags
-			if matchExact {
-				if caseSensitive && pkg.Name != query ||
-					strings.ToLower(pkg.Name) != strings.ToLower(query) {
-					continue
-				}
-			} else if caseSensitive && !strings.Contains(pkg.Name, query) {
+			if !packageWanted(pkg.Name, query, matchExact, caseSensitive) {
 				continue
 			}
 			for _, p := range pkg.Products {
@@ -314,4 +393,18 @@ func checkUnsupportedFlags() error {
 		return fmt.Errorf("Cannot perform extended package search:\n\n%v", strings.Join(reasons.Strings(), "\n"))
 	}
 	return nil
+}
+
+func uniqueTable(table [][]string) [][]string {
+	ret := make([][]string, 0)
+	// key is row cells joined with '|'
+	present := make(map[string]struct{}, 0)
+	for _, row := range table {
+		key := strings.Join(row, "|")
+		if _, found := present[key]; !found {
+			present[key] = struct{}{}
+			ret = append(ret, row)
+		}
+	}
+	return ret
 }
