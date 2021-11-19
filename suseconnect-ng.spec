@@ -95,6 +95,7 @@ ln -s %_bindir/suseconnect %buildroot/usr/lib/zypper/commands/zypper-search-pack
 #/usr/share/man/man5/SUSEConnect.5.gz
 #/usr/share/man/man8/SUSEConnect.8.gz
 #/usr/share/man/man8/zypper-migration.8.gz
+#/usr/share/man/man8/zypper-search-packages.8.gz
 
 find %_builddir/..
 # we currently do not ship the source for any go module
