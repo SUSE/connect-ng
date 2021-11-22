@@ -101,10 +101,8 @@ func create_credentials_file(login, password, path *C.char) *C.char {
 
 //export curlrc_credentials
 func curlrc_credentials() *C.char {
-	creds, err := connect.ReadCurlrcCredentials()
-	if err != nil {
-		return C.CString(errorToJSON(err))
-	}
+	// NOTE: errors are ignored to match original
+	creds, _ := connect.ReadCurlrcCredentials()
 	jsn, _ := json.Marshal(&creds)
 	return C.CString(string(jsn))
 }

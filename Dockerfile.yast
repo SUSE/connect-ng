@@ -1,0 +1,18 @@
+FROM registry.opensuse.org/yast/head/containers/yast-ruby:latest
+
+RUN zypper --no-gpg-checks --non-interactive install 'rubygem(ffi)'
+
+RUN rm -r /usr/lib64/ruby/gems/*/gems/suse-connect-*
+
+# invalidate github cache
+ADD https://api.github.com/repos/skazi0/yast-registration/git/refs/heads/connect-ng-test-updates version.json
+
+WORKDIR /yast-registration
+
+#RUN git clone --depth 1 https://github.com/yast/yast-registration.git /yast-registration
+RUN git clone --depth 1 https://github.com/skazi0/yast-registration.git --branch connect-ng-test-updates /yast-registration
+
+COPY out/libsuseconnect.so /usr/lib64
+COPY yast/lib /usr/lib64/ruby/vendor_ruby/2.7.0
+CMD ["rake", "test:unit"]
+
