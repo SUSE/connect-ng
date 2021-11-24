@@ -225,7 +225,6 @@ module SUSE
         #  - :insecure [Boolean]
         #  - :url [String]
         def write_config(client_params = {})
-          _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
           _process_result(GoConnect.write_config(jsn_params))
         end

@@ -7,7 +7,7 @@ module SUSE
       # where to save the imported certificate
       SERVER_CERT_FILE = '/usr/share/pki/trust/anchors/registration_server.pem'
 
-        # compute SHA1 fingerprint of a certificate
+      # compute SHA1 fingerprint of a certificate
       # @param cert [OpenSSL::X509::Certificate] the certificate
       # @return [String] fingerprint in "AB:CD:EF:..." format
       def self.sha1_fingerprint(cert)
