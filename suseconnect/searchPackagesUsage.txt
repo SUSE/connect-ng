@@ -14,6 +14,6 @@ Usage: zypper search-packages [options] package1 [package2 [...]]
         --sort-by-repo               Sort packages by repository or module.
     -g, --group-by-module            Group the results by module (default: group by package)
         --no-query-local             Do not search installed packages and packages in available repositories.
-    -d, --details                    Display more detailed information about found packages
+    -s, --details                    Display more detailed information about found packages
         --xmlout                     Switch to XML output
     -h, --help                       Display this help
