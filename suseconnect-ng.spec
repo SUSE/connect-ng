@@ -31,12 +31,12 @@ BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
-Obsoletes:      SUSEConnect
-Provides:       SUSEConnect
-Obsoletes:      zypper-migration-plugin
-Provides:       zypper-migration-plugin
-Obsoletes:      zypper-search-packages-plugin
-Provides:       zypper-search-packages-plugin
+Obsoletes:      SUSEConnect < 0.3.99
+Provides:       SUSEConnect = 0.3.99
+Obsoletes:      zypper-migration-plugin < 0.99
+Provides:       zypper-migration-plugin = 0.99
+Obsoletes:      zypper-search-packages-plugin < 0.99
+Provides:       zypper-search-packages-plugin = 0.99
 %if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
 Requires:       ca-certificates
 %else
@@ -72,6 +72,8 @@ replaced SUSEConnect.
 %package -n libsuseconnect
 Summary:        C interface to suseconnect-ng.
 Group:          System/Management
+# the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
+Requires:       suseconnect-ng
 %description -n libsuseconnect
 This package contains library which provides C interface to selected
 suseconnect-ng functions.
@@ -96,7 +98,8 @@ go list all
 %gobuild suseconnect
 mkdir -p %_builddir/go/lib
 go build -v -buildmode=c-shared -o %_builddir/go/lib/libsuseconnect.so %import_path/libsuseconnect
-# only to test that it compiles, nothing from it is installed for now
+# this builds examples and another copy of library just to test that it compiles
+# nothing from it is packaged for now
 make -C %_builddir/go/src/%import_path build-so-example
 find %_builddir/..
 
