@@ -119,6 +119,7 @@ func searchPackagesMain() {
 	flag.BoolVar(&sortByName, "sort-by-name", false, "")
 	flag.BoolVar(&sortByRepo, "sort-by-repo", false, "")
 	flag.BoolVar(&groupByModule, "group-by-module", false, "")
+	flag.BoolVar(&groupByModule, "g", false, "")
 	flag.BoolVar(&noLocalRepos, "no-query-local", false, "")
 	flag.BoolVar(&details, "details", false, "")
 	flag.BoolVar(&details, "s", false, "")
