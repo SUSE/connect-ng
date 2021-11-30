@@ -98,9 +98,6 @@ go list all
 %gobuild suseconnect
 mkdir -p %_builddir/go/lib
 go build -v -buildmode=c-shared -o %_builddir/go/lib/libsuseconnect.so %import_path/libsuseconnect
-# this builds examples and another copy of library just to test that it compiles
-# nothing from it is packaged for now
-make -C %_builddir/go/src/%import_path build-so-example
 find %_builddir/..
 
 %install
