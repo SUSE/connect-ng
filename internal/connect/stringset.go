@@ -38,3 +38,12 @@ func (ss StringSet) Contains(s string) bool {
 func (ss StringSet) Len() int {
 	return len(ss.m)
 }
+
+// Strings returns all strings from the set as a slice
+func (ss StringSet) Strings() []string {
+	strs := make([]string, 0, len(ss.m))
+	for s := range ss.m {
+		strs = append(strs, s)
+	}
+	return strs
+}

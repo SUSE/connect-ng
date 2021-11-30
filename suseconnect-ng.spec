@@ -34,6 +34,8 @@ Obsoletes:      SUSEConnect
 Provides:       SUSEConnect
 Obsoletes:      zypper-migration-plugin
 Provides:       zypper-migration-plugin
+Obsoletes:      zypper-search-packages-plugin
+Provides:       zypper-search-packages-plugin
 %if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
 Requires:       ca-certificates
 %else
@@ -86,12 +88,14 @@ ln -s suseconnect %buildroot/%_bindir/SUSEConnect
 mkdir -p %buildroot/%_sbindir %buildroot/usr/lib/zypper/commands
 ln -s ../bin/suseconnect %buildroot/%_sbindir/SUSEConnect
 ln -s %_bindir/suseconnect %buildroot/usr/lib/zypper/commands/zypper-migration
+ln -s %_bindir/suseconnect %buildroot/usr/lib/zypper/commands/zypper-search-packages
 #TODO package ruby module
 #cp /home/abuild/rpmbuild/BUILD/go/src/github.com/SUSE/connect-ng/ext/libsuseconnect.so %_libdir/libsuseconnect.so
 #TODO man pages not yet available in source, these are the names frome the ruby version
 #/usr/share/man/man5/SUSEConnect.5.gz
 #/usr/share/man/man8/SUSEConnect.8.gz
 #/usr/share/man/man8/zypper-migration.8.gz
+#/usr/share/man/man8/zypper-search-packages.8.gz
 
 find %_builddir/..
 # we currently do not ship the source for any go module
