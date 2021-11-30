@@ -17,7 +17,8 @@ var (
 	statusTemplate string
 )
 
-// Status is used to create JSON output
+// Status is used to create the JSON for `SUSEConnect --status`.
+// And to render the template for `SUSEConnect --status-text`.
 type Status struct {
 	Name       string `json:"name,omitempty"`
 	Summary    string `json:"-"`
@@ -54,20 +55,24 @@ func GetProductStatuses(format string) (string, error) {
 }
 
 func getStatuses() ([]Status, error) {
-	var statuses []Status
 	products, err := installedProducts()
 	if err != nil {
-		return statuses, err
+		return nil, err
 	}
 
 	activations := make(map[string]Activation) // default empty map
 	if IsRegistered() {
 		activations, err = systemActivations()
 		if err != nil {
-			return statuses, err
+			return nil, err
 		}
 	}
+	statuses := buildStatuses(products, activations)
+	return statuses, nil
+}
 
+func buildStatuses(products []Product, activations map[string]Activation) []Status {
+	var statuses []Status
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
@@ -78,7 +83,7 @@ func getStatuses() ([]Status, error) {
 		}
 		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = registered
-			if !activation.isFree() {
+			if activation.RegCode != "" {
 				status.Name = activation.Name
 				status.RegCode = activation.RegCode
 				layout := "2006-01-02 15:04:05 MST"
@@ -90,7 +95,7 @@ func getStatuses() ([]Status, error) {
 		}
 		statuses = append(statuses, status)
 	}
-	return statuses, nil
+	return statuses
 }
 
 func getStatusText(statuses []Status) (string, error) {
