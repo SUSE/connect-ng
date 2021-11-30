@@ -39,3 +39,19 @@
   on failure.
 - Package search only reports missing API for 404 responses if there's no error
   message returned (e.g. "base product not found")
+- Logs passed from Connect to YaST are not tagged with real source but "proxy"
+  location. e.g.:
+  ```
+  2021-10-14 09:38:39 <1> test-host(17235) [Ruby] connect/client.rb:101
+  Announcing system to http://smt-scc.nue.suse.com ...
+  ```
+  becomes:
+  ```
+  2021-10-14 09:38:39 <1> test-host(17235) [Ruby] connect/logger.rb:28
+  Announcing system to http://smt-scc.nue.suse.com ...
+  ```
+- HTTP debug logs are passed to default YaST logger not to STDERR.
+- SSL error mapping for YaST is not exact because Go doesn't have separate errors
+  for all expected OpenSSL error cases.
+- In some cases (e.g. when some of intermediate certs in chain is invalid)
+  the SSL cert presented to the user will be different than in Ruby version.

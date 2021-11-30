@@ -275,14 +275,22 @@ func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs 
 	return err
 }
 
-// Repo holds repository data as returned by `zypper repos`
+// Repo holds repository data as returned by `zypper repos` or "show_product" API
 type Repo struct {
-	Name     string `xml:"name,attr"`
-	Alias    string `xml:"alias,attr"`
-	Type     string `xml:"type,attr"`
-	Priority int    `xml:"priority,attr"`
-	Enabled  bool   `xml:"enabled,attr"`
-	URL      string `xml:"url"`
+	// SCC docs say that "id" should be integer but SMT returns string sometimes
+	// not mapping to struct field as it doesn't seem to be used by Connect
+	Name     string `xml:"name,attr" json:"name"`
+	Alias    string `xml:"alias,attr" json:"-"`
+	Type     string `xml:"type,attr" json:"-"`
+	Priority int    `xml:"priority,attr" json:"-"`
+	Enabled  bool   `xml:"enabled,attr" json:"enabled"`
+	URL      string `xml:"url" json:"url"`
+
+	DistroTarget     string   `json:"distro_target,omitempty"`
+	Description      string   `json:"description,omitempty"`
+	AutoRefresh      bool     `json:"autorefresh"`
+	InstallerUpdates bool     `json:"installer_updates"`
+	Arch             []string `json:"arch,omitempty"`
 }
 
 func parseReposXML(xmlDoc []byte) ([]Repo, error) {

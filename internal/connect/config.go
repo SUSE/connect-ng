@@ -3,6 +3,7 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -19,15 +20,15 @@ const (
 // Config holds the config!
 type Config struct {
 	Path             string
-	BaseURL          string
-	Language         string
-	Insecure         bool
-	Namespace        string
+	BaseURL          string `json:"url"`
+	Language         string `json:"language"`
+	Insecure         bool   `json:"insecure"`
+	Namespace        string `json:"namespace"`
 	FsRoot           string
 	Token            string
 	Product          Product
 	InstanceDataFile string
-	Email            string
+	Email            string `json:"email"`
 	NoZypperRefresh  bool
 }
 
@@ -100,4 +101,11 @@ func parseConfig(r io.Reader, c *Config) {
 			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
 	}
+}
+
+// MergeJSON merges attributes of jsn that match Config fields
+func (c *Config) MergeJSON(jsn string) error {
+	err := json.Unmarshal([]byte(jsn), c)
+	Debug.Printf("Merged options: %+v", c)
+	return err
 }

@@ -24,9 +24,9 @@ var (
 
 // Credentials stores the SCC or service credentials
 type Credentials struct {
-	Filename string
-	Username string
-	Password string
+	Filename string `json:"file"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func (c Credentials) String() string {
@@ -53,15 +53,15 @@ func curlrcCredentialsFile() string {
 
 // getCredentials reads the system credentials from the SCCcredentials file
 func getCredentials() (Credentials, error) {
-	path := systemCredentialsFile()
+	return ReadCredentials(systemCredentialsFile())
+}
+
+// ReadCredentials returns the credentials from path
+func ReadCredentials(path string) (Credentials, error) {
+	Debug.Print("Reading credentials: ", path)
 	if !fileExists(path) {
 		return Credentials{}, ErrMissingCredentialsFile
 	}
-	return readCredentials(path)
-}
-
-func readCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading credentials: ", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return Credentials{}, err
@@ -91,7 +91,11 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 
 func (c Credentials) write() error {
 	Debug.Print("Writing credentials: ", c)
-	dir := filepath.Dir(c.Filename)
+	path := c.Filename
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(CFG.FsRoot, defaulCredentialsDir, path)
+	}
+	dir := filepath.Dir(path)
 	if !fileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -100,13 +104,22 @@ func (c Credentials) write() error {
 	}
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, "username=%s\npassword=%s\n", c.Username, c.Password)
-	return os.WriteFile(c.Filename, buf.Bytes(), 0600)
+	return os.WriteFile(path, buf.Bytes(), 0600)
+}
+
+// CreateCredentials writes credentials to path
+func CreateCredentials(login, password, path string) error {
+	c := Credentials{
+		Filename: path,
+		Username: login,
+		Password: password,
+	}
+	return c.write()
 }
 
 func writeSystemCredentials(login, password string) error {
 	path := systemCredentialsFile()
-	c := Credentials{Filename: path, Username: login, Password: password}
-	return c.write()
+	return CreateCredentials(login, password, path)
 }
 
 func writeServiceCredentials(serviceName string) error {
@@ -115,11 +128,7 @@ func writeServiceCredentials(serviceName string) error {
 		return err
 	}
 	path := serviceCredentialsFile(serviceName)
-	s := Credentials{
-		Filename: path,
-		Username: c.Username,
-		Password: c.Password}
-	return s.write()
+	return CreateCredentials(c.Username, c.Password, path)
 }
 
 func removeSystemCredentials() error {
@@ -159,4 +168,9 @@ func parseCurlrcCredentials(r io.Reader) (Credentials, error) {
 		}
 	}
 	return Credentials{}, ErrNoProxyCredentials
+}
+
+// ReadCurlrcCredentials reads proxy credentials from default path
+func ReadCurlrcCredentials() (Credentials, error) {
+	return readCurlrcCredentials(curlrcCredentialsFile())
 }

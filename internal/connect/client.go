@@ -38,23 +38,23 @@ func Register() error {
 			return err
 		}
 	}
-	fmt.Print(bold(greenText("\nSuccessfully registered system\n")))
+	Info.Print(bold(greenText("\nSuccessfully registered system")))
 	return nil
 }
 
 // registerProduct activates the product, adds the service and installs the release package
 func registerProduct(product Product, installReleasePkg bool) error {
-	fmt.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	service, err := activateProduct(product, CFG.Email)
 	if err != nil {
 		return err
 	}
-	fmt.Println("-> Adding service to system ...")
+	Info.Print("-> Adding service to system ...")
 	if err := addService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
 		return err
 	}
 	if installReleasePkg {
-		fmt.Println("-> Installing release package ...")
+		Info.Print("-> Installing release package ...")
 		if err := InstallReleasePackage(product.Name); err != nil {
 			return err
 		}
@@ -129,11 +129,11 @@ func Deregister() error {
 	if err := removeOrRefreshService(baseProductService); err != nil {
 		return err
 	}
-	fmt.Println("\nCleaning up ...")
+	Info.Print("\nCleaning up ...")
 	if err := Cleanup(); err != nil {
 		return err
 	}
-	fmt.Println(bold(greenText("Successfully deregistered system")))
+	Info.Print(bold(greenText("Successfully deregistered system")))
 
 	return nil
 }
@@ -146,7 +146,7 @@ func deregisterProduct(product Product) error {
 	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
-	fmt.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	service, err := deactivateProduct(product)
 	if err != nil {
 		return err
@@ -154,7 +154,7 @@ func deregisterProduct(product Product) error {
 	if err := removeOrRefreshService(service); err != nil {
 		return err
 	}
-	fmt.Println("-> Removing release package ...")
+	Info.Print("-> Removing release package ...")
 	return removeReleasePackage(product.Name)
 }
 
@@ -162,17 +162,17 @@ func deregisterProduct(product Product) error {
 // Refreshing the service instead to remove the repos of deregistered product.
 func removeOrRefreshService(service Service) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
-		fmt.Println("-> Refreshing service ...")
+		Info.Print("-> Refreshing service ...")
 		refreshAllServices()
 		return nil
 	}
-	fmt.Println("-> Removing service from system ...")
+	Info.Print("-> Removing service from system ...")
 	return removeService(service.Name)
 }
 
 // AnnounceSystem announce system via SCC/Registration Proxy
 func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, error) {
-	fmt.Printf(bold("\nAnnouncing system to " + CFG.BaseURL + " ...\n"))
+	Info.Printf(bold("\nAnnouncing system to %s ..."), CFG.BaseURL)
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
 		return "", "", err
@@ -186,7 +186,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, 
 
 // UpdateSystem resend the system's hardware details on SCC
 func UpdateSystem(distroTarget, instanceDataFile string) error {
-	fmt.Printf(bold("\nUpdating system details on %s ...\n"), CFG.BaseURL)
+	Info.Printf(bold("\nUpdating system details on %s ..."), CFG.BaseURL)
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
 		return err
@@ -241,15 +241,15 @@ func printInformation(action string) {
 		server = "registration proxy " + CFG.BaseURL
 	}
 	if action == "register" {
-		fmt.Printf(bold("Registering system to %s\n"), server)
+		Info.Printf(bold("Registering system to %s"), server)
 	} else {
-		fmt.Printf(bold("Deregistering system from %s\n"), server)
+		Info.Printf(bold("Deregistering system from %s"), server)
 	}
 	if CFG.FsRoot != "" {
-		fmt.Println("Rooted at:", CFG.FsRoot)
+		Info.Print("Rooted at:", CFG.FsRoot)
 	}
 	if CFG.Email != "" {
-		fmt.Println("Using E-Mail:", CFG.Email)
+		Info.Print("Using E-Mail:", CFG.Email)
 	}
 }
 
@@ -257,7 +257,9 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 	if instanceDataFile == "" {
 		return nil, nil
 	}
-	instanceData, err := os.ReadFile(filepath.Join(CFG.FsRoot, instanceDataFile))
+	path := filepath.Join(CFG.FsRoot, instanceDataFile)
+	Debug.Print("Reading file from: ", path)
+	instanceData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -291,4 +293,43 @@ func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error
 		}
 	}
 	return searchPackage(query, baseProd)
+}
+
+// ShowProduct fetches product details from SCC/SMT
+func ShowProduct(productQuery Product) (Product, error) {
+	return showProduct(productQuery)
+}
+
+// ActivatedProducts returns list of products activated in SCC/SMT
+func ActivatedProducts() ([]Product, error) {
+	var products []Product
+	activations, err := systemActivations()
+	if err != nil {
+		return products, err
+	}
+	for _, a := range activations {
+		products = append(products, a.Service.Product)
+	}
+	return products, nil
+}
+
+// ActivateProduct activates given product in SMT/SCC
+// returns Service to be added to zypper
+func ActivateProduct(product Product, email string) (Service, error) {
+	return activateProduct(product, email)
+}
+
+// SystemActivations returns a map keyed by "Identifier/Version/Arch"
+func SystemActivations() (map[string]Activation, error) {
+	return systemActivations()
+}
+
+// InstallerUpdates returns an array of Installer-Updates repositories for the given product
+func InstallerUpdates(product Product) ([]Repo, error) {
+	return installerUpdates(product)
+}
+
+// SyncProducts synchronizes activated system products to the registration server
+func SyncProducts(products []Product) ([]Product, error) {
+	return syncProducts(products)
 }

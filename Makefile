@@ -17,14 +17,14 @@ build: out internal/connect/version.txt
 test: internal/connect/version.txt
 	go test -v ./internal/connect
 
+test-yast: build-so
+	docker build -t go-connect-test-yast -f Dockerfile.yast . && docker run -t go-connect-test-yast
+
 gofmt:
 	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
 
 build-so: out internal/connect/version.txt
 	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
-
-build-so-example: build-so
-	gcc libsuseconnect-examples/use-lib.c -o out/use-lib -Lout -lsuseconnect
 
 build-arm: out internal/connect/version.txt
 	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/suseconnect

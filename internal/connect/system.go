@@ -21,7 +21,7 @@ func SetSystemEcho(v bool) bool {
 
 // Assign function for running external commands to a variable so it can be mocked by tests.
 var execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
-	Debug.Printf("Executing: %s\n", cmd)
+	Debug.Print("Executing: ", cmd)
 	var stderr, stdout bytes.Buffer
 	comm := exec.Command(cmd[0], cmd[1:]...)
 	if systemEcho {
@@ -36,10 +36,10 @@ var execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
 	exitCode := comm.ProcessState.ExitCode()
 	Debug.Printf("Return code: %d\n", exitCode)
 	if stdout.Len() > 0 {
-		Debug.Println("Output:", stdout.String())
+		Debug.Print("Output: ", stdout.String())
 	}
 	if stderr.Len() > 0 {
-		Debug.Println("Error:", stderr.String())
+		Debug.Print("Error: ", stderr.String())
 	}
 	// TODO Ruby version also checks stderr for "ABORT request"
 	if err != nil && !containsInt(validExitCodes, exitCode) {
@@ -113,4 +113,11 @@ func Cleanup() error {
 
 	}
 	return nil
+}
+
+// UpdateCertificates runs system certificate update command
+func UpdateCertificates() error {
+	cmd := []string{"/usr/sbin/update-ca-certificates"}
+	_, err := execute(cmd, []int{0})
+	return err
 }

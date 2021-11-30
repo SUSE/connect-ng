@@ -11,6 +11,7 @@ RUN zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Basesystem/15
     zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Legacy/15-SP3/x86_64/product legacy &&\
     zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Development-Tools/15-SP3/x86_64/product devtools &&\
     zypper ar http://download.suse.de/ibs/SUSE/Updates/SLE-Module-Development-Tools/15-SP3/x86_64/update devtools-updates &&\
+    zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-HA/15/x86_64/product ha-for-ffi &&\
     zypper --non-interactive ref &&\
     zypper ar https://download.opensuse.org/repositories/openSUSE:/Tools/SLE_15_SP3/ opensuse-tools &&\
     zypper --non-interactive --gpg-auto-import-keys ref opensuse-tools &&\

@@ -13,8 +13,8 @@ type Product struct {
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
 	Release string `xml:"release,attr" json:"-"`
-	Summary string `xml:"summary,attr" json:"-"`
-	IsBase  bool   `xml:"isbase,attr" json:"base"`
+	Summary string `xml:"summary,attr" json:"summary,omitempty"`
+	IsBase  bool   `xml:"isbase,attr" json:"isbase"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
 	ReleaseType  string `xml:"registerrelease,attr" json:"release_type,omitempty"`
@@ -24,6 +24,17 @@ type Product struct {
 	Recommended  bool   `json:"recommended"`
 	// optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
+
+	// these are used by YaST
+	ID           int    `json:"id"`
+	Description  string `xml:"description" json:"description,omitempty"`
+	EULAURL      string `json:"eula_url,omitempty"`
+	FormerName   string `json:"former_identifier,omitempty"`
+	ProductType  string `json:"product_type,omitempty"`
+	ShortName    string `json:"shortname,omitempty"`
+	LongName     string `json:"name,omitempty"`
+	ReleaseStage string `json:"release_stage,omitempty"`
+	Repositories []Repo `json:"repositories,omitempty"`
 }
 
 // UnmarshalJSON custom unmarshaller for Product.
@@ -31,13 +42,23 @@ type Product struct {
 // SCC does not, and the default Unmarshal() sets Available to the
 // boolean zero-value which is false. This sets it to true instead.
 func (p *Product) UnmarshalJSON(data []byte) error {
-	type product Product // use type alias to prevent infinite recursion
+	type product Product
 	prod := product{
 		Available: true,
 	}
 	if err := json.Unmarshal(data, &prod); err != nil {
 		return err
 	}
+	// migration paths contain is-base information as "base" attribute
+	// while we default to "isbase" for YaST integration.
+	// the rest of the SCC API uses `product_type="base"` instead.
+	mProd := struct {
+		Base bool `json:"base"`
+	}{}
+	if err := json.Unmarshal(data, &mProd); err != nil {
+		return err
+	}
+	prod.IsBase = prod.IsBase || mProd.Base || prod.ProductType == "base"
 	*p = Product(prod)
 	return nil
 }
@@ -70,9 +91,10 @@ func SplitTriplet(p string) (Product, error) {
 
 func (p Product) toQuery() map[string]string {
 	return map[string]string{
-		"identifier": p.Name,
-		"version":    p.Version,
-		"arch":       p.Arch,
+		"identifier":   p.Name,
+		"version":      p.Version,
+		"arch":         p.Arch,
+		"release_type": p.ReleaseType,
 	}
 }
 
