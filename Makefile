@@ -15,7 +15,7 @@ build: out internal/connect/version.txt
 	go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
 test: internal/connect/version.txt
-	go test -v ./internal/connect
+	go test -v ./internal/connect ./suseconnect
 
 test-yast: build-so
 	docker build -t go-connect-test-yast -f Dockerfile.yast . && docker run -t go-connect-test-yast
