@@ -47,9 +47,7 @@ func getHwinfo() (hwinfo, error) {
 		}
 		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
 		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
-		if hw.UUID, err = uuid(); err != nil {
-			return hwinfo{}, err
-		}
+		hw.UUID, _ = uuid() // ignore error to match original
 	}
 
 	if hw.Arch == archX86 {
