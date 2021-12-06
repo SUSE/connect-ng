@@ -31,6 +31,15 @@ BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
+# packages required for hwinfo tests
+%ifarch %ix86 ia64 x86_64 %arm aarch64
+BuildRequires:  dmidecode
+%endif
+%ifarch s390x
+BuildRequires:  s390-tools
+%endif
+BuildRequires:  systemd
+
 Obsoletes:      SUSEConnect < 0.3.99
 Provides:       SUSEConnect = 0.3.99
 Obsoletes:      zypper-migration-plugin < 0.99
