@@ -6,7 +6,6 @@ module SUSE
     # and subscriptions as known by registration server.
     # At first it collects all installed products from the system, then it gets its `activations`
     # from the registration server. This information is merged and printed out.
-    # rubocop:disable ClassLength
     class Status
       include SUSE::Toolkit::ShimUtils
 

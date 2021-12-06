@@ -1,6 +1,9 @@
 module SUSE
   module Toolkit
+    # This module implements common boilerplate for wrapping libsuseconnect
+    # functions and creating ruby interfaces.
     module ShimUtils
+      # lambda used to handle SSL cert validation errors
       @@verify_callback = nil
 
       def _set_verify_callback(f)
