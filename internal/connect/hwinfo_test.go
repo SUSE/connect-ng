@@ -1,9 +1,12 @@
 package connect
 
 import (
+	"flag"
 	"net"
 	"testing"
 )
+
+var testHwinfo = flag.Bool("test-hwinfo", false, "")
 
 func TestLscpu2mapPhysical(t *testing.T) {
 	m := lscpu2map(readTestFile("lscpu_phys.txt", t))
@@ -119,5 +122,27 @@ func TestReadValues2map(t *testing.T) {
 		if m[k] != expect[k] {
 			t.Errorf("m[%s]==%s, expected %s", k, m[k], v)
 		}
+	}
+}
+
+func TestGetHwinfo(t *testing.T) {
+	if !*testHwinfo {
+		t.SkipNow()
+	}
+	hw, err := getHwinfo()
+	if err != nil {
+		t.Fatalf("getHwinfo() failed: %s", err)
+	}
+	if hw.Hostname == "" {
+		t.Error(`Hostname=="", expected not empty`)
+	}
+	if hw.UUID == "" {
+		t.Errorf(`UUID=="", expected not empty`)
+	}
+	if hw.Cpus == 0 {
+		t.Error("Cpus==0, expected>0")
+	}
+	if hw.Sockets == 0 {
+		t.Error("Sockets==0, expected>0")
 	}
 }

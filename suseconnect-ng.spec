@@ -121,7 +121,7 @@ find %_builddir/..
 rm -rf %buildroot/usr/share/go
 
 %check
-%gotest -v %import_path/internal/connect
+%gotest -v %import_path/internal/connect -test-hwinfo
 %gotest -v %import_path/suseconnect
 make -C %_builddir/go/src/%import_path gofmt
 
