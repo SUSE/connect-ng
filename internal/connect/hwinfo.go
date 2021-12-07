@@ -26,6 +26,7 @@ type hwinfo struct {
 	Hostname      string `json:"hostname"`
 	Cpus          int    `json:"cpus"`
 	Sockets       int    `json:"sockets"`
+	Clusters      int    `json:"-"`
 	Hypervisor    string `json:"hypervisor"`
 	Arch          string `json:"arch"`
 	UUID          string `json:"uuid"`
@@ -56,6 +57,7 @@ func getHwinfo() (hwinfo, error) {
 	}
 
 	if hw.Arch == archARM {
+		hw.Clusters, _ = strconv.Atoi(lscpuM["Cluster(s)"])
 		// ignore errors to avoid failing on systems without systemd
 		hw.Hypervisor, _ = hypervisor()
 	}
