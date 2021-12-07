@@ -19,6 +19,7 @@ const (
 	archX86  = "x86_64"
 	archARM  = "aarch64"
 	archS390 = "s390x"
+	archPPC  = "ppc64le"
 )
 
 type hwinfo struct {
@@ -41,7 +42,7 @@ func getHwinfo() (hwinfo, error) {
 	hw.CloudProvider = cloudProvider()
 
 	var lscpuM map[string]string
-	if hw.Arch == archX86 || hw.Arch == archARM {
+	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
 		if lscpuM, err = lscpu(); err != nil {
 			return hwinfo{}, err
 		}
@@ -50,7 +51,7 @@ func getHwinfo() (hwinfo, error) {
 		hw.UUID, _ = uuid() // ignore error to match original
 	}
 
-	if hw.Arch == archX86 {
+	if hw.Arch == archX86 || hw.Arch == archPPC {
 		hw.Hypervisor = lscpuM["Hypervisor vendor"]
 	}
 
