@@ -34,6 +34,10 @@ func EnableDebug() {
 	Debug.SetOutput(os.Stderr)
 }
 
+func isLoggerEnabled(l *log.Logger) bool {
+	return l.Writer() != io.Discard
+}
+
 func greenText(text string) string {
 	return fmt.Sprintf("\x1b[32m%s\x1b[0m", text)
 }

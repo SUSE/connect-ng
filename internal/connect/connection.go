@@ -105,16 +105,21 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 	req.URL.RawQuery = values.Encode()
 
-	reqBlob, _ := httputil.DumpRequestOut(req, true)
-	Debug.Printf("%s\n", reqBlob)
+	if isLoggerEnabled(Debug) {
+		reqBlob, _ := httputil.DumpRequestOut(req, true)
+		Debug.Printf("%s\n", reqBlob)
+	}
 
 	resp, err := httpclient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	respBlob, _ := httputil.DumpResponse(resp, true)
-	Debug.Printf("%s\n", respBlob)
+
+	if isLoggerEnabled(Debug) {
+		respBlob, _ := httputil.DumpResponse(resp, true)
+		Debug.Printf("%s\n", respBlob)
+	}
 
 	if !successCode(resp.StatusCode) {
 		errMsg := parseError(resp.Body)
