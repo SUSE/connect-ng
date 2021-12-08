@@ -2,9 +2,6 @@ require 'json'
 require 'ffi'
 require 'suse/toolkit/shim_utils'
 
-# TODO
-# - review comments on ruby shim functions (e.g. return types)
-
 module Stdio
   extend FFI::Library
   ffi_lib FFI::Platform::LIBC
@@ -56,7 +53,7 @@ module SUSE
         # Additionally, distro_target should be set to avoid calls to Zypper.
         # Returns the system credentials from SCC.
         #
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         # @param [String] distro_target desired distro target
         #
         # @return [Array <String>] SCC / system credentials - login and password tuple
@@ -67,7 +64,7 @@ module SUSE
         end
 
         # Updates the systems hardware info on the server
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         # @param [String] distro_target desired distro target
         def update_system(client_params = {}, distro_target = nil)
           _set_verify_callback(client_params[:verify_callback])
@@ -76,15 +73,15 @@ module SUSE
         end
 
         # Activates a product on SCC / the registration server.
-        # Expects product_ident parameter to be a hash identifying the product.
+        # Expects product parameter to identify the product.
         # Requires a token / regcode except for free products/extensions.
         # Returns a service object for the activated product.
         #
         # @param [OpenStruct] product with identifier, arch and version defined
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         # @param [String] email email to which this activation should be connected to
         #
-        # @return [Service] Service
+        # @return [OpenStruct] Service object as openstruct
         def activate_product(product, client_params = {}, email = nil)
           _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
@@ -93,15 +90,15 @@ module SUSE
         end
 
         # Upgrades a product on SCC / the registration server.
-        # Expects product_ident parameter to be a hash identifying the new product.
+        # Expects product parameter to identify the product.
         # Token / regcode is not required. The new product needs to be available to the regcode the old
         # product was registered with, or be a free product.
         # Returns a service object for the new activated product.
         #
         # @param [OpenStruct] product with identifier, arch and version defined
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
-        # @return [Service] Service
+        # @return [OpenStruct] Service object as openstruct
         def upgrade_product(product, client_params = {})
           _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
@@ -110,22 +107,22 @@ module SUSE
         end
 
         # Downgrades a product on SCC / the registration server.
-        # Expects product_ident parameter to be a hash identifying the new product.
+        # Expects product parameter to identify the product.
         # Token / regcode is not required. The new product needs to be available to the regcode the old
         # product was registered with, or be a free product.
         # Returns a service object for the new activated product.
         #
         # @param [OpenStruct] product with identifier, arch and version defined
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
-        # @return [Service] Service
+        # @return [OpenStruct] Service object as openstruct
         alias_method :downgrade_product, :upgrade_product
 
         # Synchronize activated system products with registration server.
         # This will remove obsolete activations on the server after all installed products went through a downgrade().
         #
         # @param [OpenStruct] products - list of activated system products with identifier, arch and version defined
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         def synchronize(products, client_params = {})
           _set_verify_callback(client_params[:verify_callback])
           jsn_params = JSON.generate(client_params)
@@ -152,12 +149,12 @@ module SUSE
         end
 
         # Lists all available products for a system.
-        # Accepts a parameter product_ident, which scopes the result set down to all
+        # Accepts a parameter product, which scopes the result set down to all
         # products for the system that are extensions to the specified product.
         # Gets the list from SCC and returns them.
         #
         # @param [OpenStruct] product to list extensions for
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
         # @return [OpenStruct] {Product} from registration server with all extensions included
         def show_product(product, client_params = {})
@@ -173,7 +170,7 @@ module SUSE
         # be upgraded.
         #
         # @param [Array <OpenStruct>] the list of currently installed {Product}s in the system
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
         # @return [Array <Array <OpenStruct>>] the list of possible migration paths for the given {Product}s,
         #   where a migration path is an array of OpenStruct objects with the attributes
@@ -192,7 +189,7 @@ module SUSE
         #
         # @param installed_products [Array <OpenStruct>] the list of currently installed {Product}s in the system
         # @param target_base_product [OpenStruct] the {Product} that the system wants to upgrade to
-        # @param client_params [Hash] parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
         # @return [Array <Array <OpenStruct>>] the list of possible migration paths for the given {Product}s,
         #   where a migration path is an array of OpenStruct objects with the attributes
@@ -207,8 +204,8 @@ module SUSE
 
         # List available Installer-Updates repositories for the given product
         #
-        # @param [Remote::Product] list repositories for this product
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [OpenStruct] list repositories for this product
+        # @param [Hash] client_params parameters to override SUSEConnect config
         #
         # @return [Array <OpenStruct>] list of Installer-Updates repositories
         def list_installer_updates(product, client_params = {})
@@ -219,11 +216,8 @@ module SUSE
         end
 
         # Writes the config file with the given parameters, overwriting any existing contents
-        # Only persistent connection parameters (url, insecure) are written by this method
-        # Regcode, language, debug etc are not
-        # @param [Hash] client_params
-        #  - :insecure [Boolean]
-        #  - :url [String]
+        # Attributes not defined in client_params will not be modified
+        # @param [Hash] client_params parameters to override SUSEConnect config
         def write_config(client_params = {})
           jsn_params = JSON.generate(client_params)
           _process_result(GoConnect.write_config(jsn_params))
@@ -248,7 +242,7 @@ module SUSE
         end
 
         # Provides access to current system status in terms of activated products
-        # @param [Hash] client_params parameters to instantiate {Client}
+        # @param [Hash] client_params parameters to override SUSEConnect config
         def status(client_params)
           _set_verify_callback(client_params[:verify_callback])
           Status.new(client_params)

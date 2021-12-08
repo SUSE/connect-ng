@@ -2,8 +2,7 @@ require 'suse/toolkit/shim_utils'
 
 module SUSE
   module Connect
-    # Enable connect and zypper extensions/scripts to search packages for a
-    # certain product
+    # Enable extensions/scripts to search packages for a certain product
     class PackageSearch
       class << self
         include SUSE::Toolkit::ShimUtils
@@ -15,7 +14,7 @@ module SUSE
         # @param product [SUSE::Connect::Zypper::Product] product to base search on
         # @param config_params [<Hash>] overwrites from the config file
         #
-        # @return [Array< <Hash>>] Returns all matched packages or an empty array if no matches where found
+        # @return [Array< OpenStruct >] Returns all matched packages or an empty array if no matches where found
         def search(query, product: nil, config_params: {})
           # NOTE: product and config_params above are named parameters unlike the rest of
           #       Connect interface
