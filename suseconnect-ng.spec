@@ -51,12 +51,12 @@ Requires:       dmidecode
 %ifarch s390x
 Requires:       s390-tools
 %endif
-Requires:       systemd
 Requires:       zypper
 # lscpu is only used on those
 %ifarch x86_64 aarch64
 Requires:       util-linux
 %endif
+Recommends:     systemd
 
 %description
 This package provides a command line tool for connecting a

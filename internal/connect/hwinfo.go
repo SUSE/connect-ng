@@ -57,9 +57,8 @@ func getHwinfo() (hwinfo, error) {
 	}
 
 	if hw.Arch == archARM {
-		if hw.Hypervisor, err = hypervisor(); err != nil {
-			return hwinfo{}, err
-		}
+		// ignore errors to avoid failing on systems without systemd
+		hw.Hypervisor, _ = hypervisor()
 	}
 
 	if hw.Arch == archS390 {
