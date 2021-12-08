@@ -86,6 +86,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 		tr := http.DefaultTransport.(*http.Transport).Clone()
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: CFG.Insecure}
 		tr.Proxy = proxyWithAuth
+		tr.ForceAttemptHTTP2 = false
 		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
 	}
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
