@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+const (
+	appName = "SUSEConnect-ng"
+)
+
 type authType int
 
 const (
@@ -46,7 +50,7 @@ func addHeaders(req *http.Request) {
 		req.Header.Add("Accept-Language", CFG.Language)
 	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
-	req.Header.Add("User-Agent", AppName+"/"+GetShortenedVersion())
+	req.Header.Add("User-Agent", appName+"/"+GetShortenedVersion())
 }
 
 func addAuthHeader(req *http.Request, auth authType) error {

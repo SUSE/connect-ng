@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-const (
-	// AppName holds the name of this SUSE connect client
-	AppName = "SUSEConnect-ng" // REVISIT
-)
-
 var (
 	// CFG is the global struct for config
 	CFG = NewConfig()
