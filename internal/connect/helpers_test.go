@@ -3,20 +3,20 @@ package connect
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
 func readTestFile(name string, t *testing.T) []byte {
+	t.Helper()
 	data, err := os.ReadFile(filepath.Join("../../testdata", name))
 	if err != nil {
-		_, filename, num, _ := runtime.Caller(1)
-		t.Fatalf("\n%s:%d: %s", filepath.Base(filename), num, err)
+		t.Fatal(err)
 	}
 	return data
 }
 
 func createTestCredentials(username, password string, t *testing.T) {
+	t.Helper()
 	if username == "" {
 		username = "test"
 	}
@@ -26,7 +26,6 @@ func createTestCredentials(username, password string, t *testing.T) {
 	CFG.FsRoot = t.TempDir()
 	err := writeSystemCredentials(username, password)
 	if err != nil {
-		_, filename, num, _ := runtime.Caller(1)
-		t.Fatalf("\n%s:%d: %s", filepath.Base(filename), num, err)
+		t.Fatal(err)
 	}
 }
