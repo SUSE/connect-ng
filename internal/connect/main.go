@@ -8,8 +8,6 @@ import (
 )
 
 var (
-	// CFG is the global struct for config
-	CFG = NewConfig()
 	// Debug logger for debugging output
 	Debug *log.Logger
 	// Info logger for standard info output

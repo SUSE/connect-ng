@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+var (
+	// CFG is the global struct for config
+	CFG = NewConfig()
+)
+
 const (
 	defaultConfigPath = "/etc/SUSEConnect"
 	defaultBaseURL    = "https://scc.suse.com"
