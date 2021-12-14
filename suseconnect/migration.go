@@ -58,6 +58,7 @@ func migrationMain() {
 		breakMySystem  bool
 		query          bool
 		disableRepos   bool
+		autoImportKeys bool
 		migrationNum   int
 		fsRoot         string
 		toProduct      string
@@ -85,6 +86,7 @@ func migrationMain() {
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.BoolVar(&query, "query", false, "")
 	flag.BoolVar(&disableRepos, "disable-repos", false, "")
+	flag.BoolVar(&autoImportKeys, "gpg-auto-import-keys", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&toProduct, "product", "", "")
@@ -190,7 +192,7 @@ func migrationMain() {
 
 	// This is only necessary, if we run with --root option
 	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive); err != nil {
+	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive, autoImportKeys); err != nil {
 		fmt.Println("repository refresh failed, exiting")
 		os.Exit(1)
 	}
@@ -635,7 +637,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 	}
 
 	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false); err != nil {
+	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false, false); err != nil {
 		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
 	}
 	if interrupted {

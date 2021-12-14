@@ -255,11 +255,14 @@ func zypperFlags(version string, quiet bool, verbose bool,
 }
 
 // RefreshRepos runs zypper to refresh all repositories
-func RefreshRepos(version string, force bool, quiet bool, verbose bool, nonInteractive bool) error {
+func RefreshRepos(version string, force, quiet, verbose, nonInteractive, importKeys bool) error {
 	args := []string{"ref"}
 	flags := zypperFlags(version, quiet, verbose, nonInteractive, false)
 	if force {
 		args = append(args, "-f")
+	}
+	if importKeys {
+		args = append(args, "--gpg-auto-import-keys")
 	}
 	args = append(flags, args...)
 	_, err := zypperRun(args, []int{zypperOK})
