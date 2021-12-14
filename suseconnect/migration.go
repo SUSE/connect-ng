@@ -49,22 +49,23 @@ func (a *multiArg) Set(v string) error {
 
 func migrationMain() {
 	var (
-		debug          bool
-		verbose        bool
-		quiet          bool
-		nonInteractive bool
-		noSnapshots    bool
-		noSelfUpdate   bool
-		breakMySystem  bool
-		query          bool
-		disableRepos   bool
-		autoImportKeys bool
-		migrationNum   int
-		fsRoot         string
-		toProduct      string
-		from           multiArg
-		repo           multiArg
-		download       multiArg // using multiArg here to make flags simpler to visit
+		debug                    bool
+		verbose                  bool
+		quiet                    bool
+		nonInteractive           bool
+		noSnapshots              bool
+		noSelfUpdate             bool
+		breakMySystem            bool
+		query                    bool
+		disableRepos             bool
+		autoImportKeys           bool
+		failDupOnlyOnFatalErrors bool
+		migrationNum             int
+		fsRoot                   string
+		toProduct                string
+		from                     multiArg
+		repo                     multiArg
+		download                 multiArg // using multiArg here to make flags simpler to visit
 	)
 
 	flag.Usage = func() {
@@ -87,6 +88,7 @@ func migrationMain() {
 	flag.BoolVar(&query, "query", false, "")
 	flag.BoolVar(&disableRepos, "disable-repos", false, "")
 	flag.BoolVar(&autoImportKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&failDupOnlyOnFatalErrors, "strict-errors-dist-migration", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&toProduct, "product", "", "")
@@ -312,7 +314,8 @@ func migrationMain() {
 
 	dupArgs := zypperDupArgs()
 	fsInconsistent, err := applyMigration(migration, systemProducts,
-		quiet, verbose, nonInteractive, disableRepos, dupArgs)
+		quiet, verbose, nonInteractive, disableRepos,
+		failDupOnlyOnFatalErrors, dupArgs)
 
 	if err != nil {
 		fmt.Println(err)
@@ -601,9 +604,25 @@ func containsProduct(products []connect.Product, name string) bool {
 	return false
 }
 
+func isFatalZypperError(code int) bool {
+	// In zypper any return code == 0 or >= 100 is considered success.
+	// Any return code different from 0 and < 100 is treated as an
+	// error we care for. Return codes >= 100 indicates an issue
+	// like 'new kernel needs reboot of the system' or similar which
+	// cam be ignored in the scope of migrating
+	if code == 0 || code >= 100 {
+		// Treat the following exit codes as error
+		// 104 - ZYPPER_EXIT_INF_CAP_NOT_FOUND
+		// 105 - ZYPPER_EXIT_ON_SIGNAL
+		// 106 - ZYPPER_EXIT_INF_REPOS_SKIPPED
+		return code == 104 || code == 105 || code == 106
+	}
+	return true
+}
+
 // returns fs_inconsistent flag
 func applyMigration(migration connect.MigrationPath, systemProducts []connect.Product,
-	quiet, verbose, nonInteractive, forceDisableRepos bool,
+	quiet, verbose, nonInteractive, forceDisableRepos, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
 	fsInconsistent := false
@@ -646,9 +665,16 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 
 	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, nonInteractive, dupArgs)
 	connect.SetSystemEcho(echo)
-	// TODO: export connect.zypperErrCommit (8)?
-	if err != nil && err.(connect.ZypperError).ExitCode == 8 {
-		fsInconsistent = true
+	if err != nil {
+		ze := err.(connect.ZypperError)
+		// TODO: export connect.zypperErrCommit (8)?
+		if ze.ExitCode == 8 {
+			fsInconsistent = true
+		}
+		// ignore some non-fatal errors
+		if failDupOnlyOnFatalErrors && !isFatalZypperError(ze.ExitCode) {
+			err = nil
+		}
 	}
 	if interrupted {
 		return fsInconsistent, ErrInterrupted
