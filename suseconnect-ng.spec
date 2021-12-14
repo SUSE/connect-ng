@@ -18,6 +18,9 @@
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
+# set this to 1 to enable hwinfo test in %check
+%global test_hwinfo 0
+
 Name:           suseconnect-ng
 Version:        0.0.3~git112.d4980ea
 Release:        0
@@ -31,7 +34,9 @@ BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
-# packages required for hwinfo tests
+%if 0%{?test_hwinfo}
+%global test_hwinfo_args -test-hwinfo
+# packages required only for hwinfo tests
 %ifarch %ix86 ia64 x86_64 %arm aarch64
 BuildRequires:  dmidecode
 %endif
@@ -39,6 +44,7 @@ BuildRequires:  dmidecode
 BuildRequires:  s390-tools
 %endif
 BuildRequires:  systemd
+%endif # test_hwinfo
 
 Obsoletes:      SUSEConnect < 0.3.99
 Provides:       SUSEConnect = 0.3.99
@@ -130,7 +136,7 @@ find %_builddir/..
 rm -rf %buildroot/usr/share/go
 
 %check
-%gotest -v %import_path/internal/connect -test-hwinfo
+%gotest -v %import_path/internal/connect %{?test_hwinfo_args}
 %gotest -v %import_path/suseconnect
 make -C %_builddir/go/src/%import_path gofmt
 
