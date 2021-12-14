@@ -682,7 +682,7 @@ func zypperDupArgs() []string {
 	wanted := connect.NewStringSet("auto-agree-with-licenses", "l",
 		"allow-vendor-change", "no-allow-vendor-change",
 		"debug-solver", "recommends", "no-recommends",
-		"replacefiles:", "details", "download",
+		"replacefiles", "details", "download",
 		"download-only", "from", "repo")
 
 	args := []string{}
