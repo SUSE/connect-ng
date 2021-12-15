@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	appName = "SUSEConnect-ng"
+	appName       = "SUSEConnect-ng"
+	sccAPIVersion = "v4"
 )
 
 type authType int
@@ -44,7 +45,7 @@ func parseError(body io.Reader) string {
 
 func addHeaders(req *http.Request) {
 	req.Header.Add("Content-Type", "application/json")
-	accept := "application/json,application/vnd.scc.suse.com." + APIVersion + "+json"
+	accept := "application/json,application/vnd.scc.suse.com." + sccAPIVersion + "+json"
 	req.Header.Add("Accept", accept)
 	if CFG.Language != "" {
 		req.Header.Add("Accept-Language", CFG.Language)

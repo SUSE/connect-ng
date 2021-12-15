@@ -5,11 +5,6 @@ import (
 	"net/http"
 )
 
-const (
-	// APIVersion is the SCC API version
-	APIVersion = "v4"
-)
-
 // announceSystem announces a system to SCC
 // https://scc.suse.com/connect/v4/documentation#/subscriptions/post_subscriptions_systems
 // The body parameter is produced by makeSysInfoBody()
