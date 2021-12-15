@@ -19,12 +19,14 @@ const (
 	archX86  = "x86_64"
 	archARM  = "aarch64"
 	archS390 = "s390x"
+	archPPC  = "ppc64le"
 )
 
 type hwinfo struct {
 	Hostname      string `json:"hostname"`
 	Cpus          int    `json:"cpus"`
 	Sockets       int    `json:"sockets"`
+	Clusters      int    `json:"-"`
 	Hypervisor    string `json:"hypervisor"`
 	Arch          string `json:"arch"`
 	UUID          string `json:"uuid"`
@@ -41,22 +43,21 @@ func getHwinfo() (hwinfo, error) {
 	hw.CloudProvider = cloudProvider()
 
 	var lscpuM map[string]string
-	if hw.Arch == archX86 || hw.Arch == archARM {
+	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
 		if lscpuM, err = lscpu(); err != nil {
 			return hwinfo{}, err
 		}
 		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
 		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
-		if hw.UUID, err = uuid(); err != nil {
-			return hwinfo{}, err
-		}
+		hw.UUID, _ = uuid() // ignore error to match original
 	}
 
-	if hw.Arch == archX86 {
+	if hw.Arch == archX86 || hw.Arch == archPPC {
 		hw.Hypervisor = lscpuM["Hypervisor vendor"]
 	}
 
 	if hw.Arch == archARM {
+		hw.Clusters, _ = strconv.Atoi(lscpuM["Cluster(s)"])
 		// ignore errors to avoid failing on systems without systemd
 		hw.Hypervisor, _ = hypervisor()
 	}
