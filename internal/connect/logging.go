@@ -7,27 +7,14 @@ import (
 	"os"
 )
 
-const (
-	// AppName holds the name of this SUSE connect client
-	AppName = "SUSEConnect-ng" // REVISIT
-)
-
 var (
-	// CFG is the global struct for config
-	CFG = NewConfig()
 	// Debug logger for debugging output
-	Debug *log.Logger
-	// Info logger for standard info output
-	Info *log.Logger
-	// QuietOut is used to simplify --quiet option
-	QuietOut *log.Logger
-)
-
-func init() {
 	Debug = log.New(io.Discard, "", 0)
+	// Info logger for standard info output
 	Info = log.New(os.Stdout, "", 0)
+	// QuietOut is used to simplify --quiet option
 	QuietOut = log.New(io.Discard, "", 0)
-}
+)
 
 // EnableDebug turns on debugging output
 func EnableDebug() {

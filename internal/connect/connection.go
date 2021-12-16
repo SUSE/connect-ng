@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	appName       = "SUSEConnect-ng"
+	sccAPIVersion = "v4"
+)
+
 type authType int
 
 const (
@@ -40,13 +45,13 @@ func parseError(body io.Reader) string {
 
 func addHeaders(req *http.Request) {
 	req.Header.Add("Content-Type", "application/json")
-	accept := "application/json,application/vnd.scc.suse.com." + APIVersion + "+json"
+	accept := "application/json,application/vnd.scc.suse.com." + sccAPIVersion + "+json"
 	req.Header.Add("Accept", accept)
 	if CFG.Language != "" {
 		req.Header.Add("Accept-Language", CFG.Language)
 	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
-	req.Header.Add("User-Agent", AppName+"/"+GetShortenedVersion())
+	req.Header.Add("User-Agent", appName+"/"+GetShortenedVersion())
 }
 
 func addAuthHeader(req *http.Request, auth authType) error {
