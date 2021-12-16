@@ -99,7 +99,8 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	return products.Products, nil
 }
 
-func installedServices() ([]Service, error) {
+// InstalledServices returns list of services installed on the system
+func InstalledServices() ([]Service, error) {
 	args := []string{"--xmlout", "--non-interactive", "services", "-d"}
 	// Don't fail when zypper exits with 6 (no repositories)
 	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})

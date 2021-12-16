@@ -548,12 +548,23 @@ func cleanupProductRepos(p connect.Product, force bool) error {
 	return nil
 }
 
+// checks if given service is provided by SUSE
+func isSUSEService(service connect.Service) bool {
+	return strings.Contains(service.URL, connect.CFG.BaseURL) ||
+		strings.Contains(service.URL, "plugin:/susecloud") ||
+		strings.Contains(service.URL, "plugin:susecloud") ||
+		strings.Contains(service.URL, "susecloud.net")
+}
+
 // updates system records in SCC/SMT
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
 func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (string, error) {
 	var baseProductVersion string
+
+	systemServices, _ := connect.InstalledServices()
+	migratedServices := connect.NewStringSet()
 
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
@@ -589,6 +600,19 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 		}
 		if interrupted {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, ErrInterrupted)
+		}
+		// mark OLD service as migrated to skip it from cleanup step below
+		migratedServices.Add(service.ObsoletedName)
+	}
+	// remove SUSE services which don't have migration available (bsc#1161891)
+	for _, s := range systemServices {
+		if isSUSEService(s) && !migratedServices.Contains(s.Name) {
+			msg := "Removing service " + s.Name + " (no migration available)"
+			VerboseOut.Println(msg)
+			err := connect.MigrationRemoveService(s.Name)
+			if err != nil {
+				return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
+			}
 		}
 	}
 	return baseProductVersion, nil

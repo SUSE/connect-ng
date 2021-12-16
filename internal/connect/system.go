@@ -2,7 +2,6 @@ package connect
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -94,7 +93,7 @@ func Cleanup() error {
 	}
 
 	// remove all suse services from zypper
-	services, err := installedServices()
+	services, err := InstalledServices()
 	if err != nil {
 		return err
 	}
@@ -104,7 +103,7 @@ func Cleanup() error {
 		//       on the configuration (e.g. listen on https but API
 		//       returns URL with http).
 		if !strings.Contains(service.URL, CFG.BaseURL) {
-			fmt.Printf("%s not in %s\n", CFG.BaseURL, service.URL)
+			Debug.Printf("%s not in %s\n", CFG.BaseURL, service.URL)
 			continue
 		}
 		if err := removeService(service.Name); err != nil {
