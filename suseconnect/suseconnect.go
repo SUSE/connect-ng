@@ -77,11 +77,11 @@ func connectMain() {
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
 
+	flag.Parse()
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
 	}
-	flag.Parse()
 	if debug {
 		connect.EnableDebug()
 	}
