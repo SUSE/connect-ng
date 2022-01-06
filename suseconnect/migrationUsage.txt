@@ -10,6 +10,9 @@ Usage: zypper migration [options]
         --from REPO                  Restrict upgrade to specified repository
     -r, --repo REPO                  Load only the specified repository
     -l, --auto-agree-with-licenses   Automatically say 'yes' to third party license confirmation prompt
+        --gpg-auto-import-keys       Automatically trust and import new repository signing keys
+        --strict-errors-dist-migration
+                                     Handle only breaking distro migration errors
         --debug-solver               Create solver test case for debugging
         --recommends                 Install also recommended packages
         --no-recommends              Do not install recommended packages

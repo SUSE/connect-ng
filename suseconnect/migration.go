@@ -49,21 +49,23 @@ func (a *multiArg) Set(v string) error {
 
 func migrationMain() {
 	var (
-		debug          bool
-		verbose        bool
-		quiet          bool
-		nonInteractive bool
-		noSnapshots    bool
-		noSelfUpdate   bool
-		breakMySystem  bool
-		query          bool
-		disableRepos   bool
-		migrationNum   int
-		fsRoot         string
-		toProduct      string
-		from           multiArg
-		repo           multiArg
-		download       multiArg // using multiArg here to make flags simpler to visit
+		debug                    bool
+		verbose                  bool
+		quiet                    bool
+		nonInteractive           bool
+		noSnapshots              bool
+		noSelfUpdate             bool
+		breakMySystem            bool
+		query                    bool
+		disableRepos             bool
+		autoImportKeys           bool
+		failDupOnlyOnFatalErrors bool
+		migrationNum             int
+		fsRoot                   string
+		toProduct                string
+		from                     multiArg
+		repo                     multiArg
+		download                 multiArg // using multiArg here to make flags simpler to visit
 	)
 
 	flag.Usage = func() {
@@ -85,6 +87,8 @@ func migrationMain() {
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.BoolVar(&query, "query", false, "")
 	flag.BoolVar(&disableRepos, "disable-repos", false, "")
+	flag.BoolVar(&autoImportKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&failDupOnlyOnFatalErrors, "strict-errors-dist-migration", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&toProduct, "product", "", "")
@@ -190,7 +194,7 @@ func migrationMain() {
 
 	// This is only necessary, if we run with --root option
 	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive); err != nil {
+	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive, autoImportKeys); err != nil {
 		fmt.Println("repository refresh failed, exiting")
 		os.Exit(1)
 	}
@@ -310,7 +314,8 @@ func migrationMain() {
 
 	dupArgs := zypperDupArgs()
 	fsInconsistent, err := applyMigration(migration, systemProducts,
-		quiet, verbose, nonInteractive, disableRepos, dupArgs)
+		quiet, verbose, nonInteractive, disableRepos,
+		failDupOnlyOnFatalErrors, dupArgs)
 
 	if err != nil {
 		fmt.Println(err)
@@ -543,12 +548,23 @@ func cleanupProductRepos(p connect.Product, force bool) error {
 	return nil
 }
 
+// checks if given service is provided by SUSE
+func isSUSEService(service connect.Service) bool {
+	return strings.Contains(service.URL, connect.CFG.BaseURL) ||
+		strings.Contains(service.URL, "plugin:/susecloud") ||
+		strings.Contains(service.URL, "plugin:susecloud") ||
+		strings.Contains(service.URL, "susecloud.net")
+}
+
 // updates system records in SCC/SMT
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
 func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (string, error) {
 	var baseProductVersion string
+
+	systemServices, _ := connect.InstalledServices()
+	migratedServices := connect.NewStringSet()
 
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
@@ -585,6 +601,19 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 		if interrupted {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, ErrInterrupted)
 		}
+		// mark OLD service as migrated to skip it from cleanup step below
+		migratedServices.Add(service.ObsoletedName)
+	}
+	// remove SUSE services which don't have migration available (bsc#1161891)
+	for _, s := range systemServices {
+		if isSUSEService(s) && !migratedServices.Contains(s.Name) {
+			msg := "Removing service " + s.Name + " (no migration available)"
+			VerboseOut.Println(msg)
+			err := connect.MigrationRemoveService(s.Name)
+			if err != nil {
+				return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
+			}
+		}
 	}
 	return baseProductVersion, nil
 }
@@ -599,9 +628,25 @@ func containsProduct(products []connect.Product, name string) bool {
 	return false
 }
 
+func isFatalZypperError(code int) bool {
+	// In zypper any return code == 0 or >= 100 is considered success.
+	// Any return code different from 0 and < 100 is treated as an
+	// error we care for. Return codes >= 100 indicates an issue
+	// like 'new kernel needs reboot of the system' or similar which
+	// cam be ignored in the scope of migrating
+	if code == 0 || code >= 100 {
+		// Treat the following exit codes as error
+		// 104 - ZYPPER_EXIT_INF_CAP_NOT_FOUND
+		// 105 - ZYPPER_EXIT_ON_SIGNAL
+		// 106 - ZYPPER_EXIT_INF_REPOS_SKIPPED
+		return code == 104 || code == 105 || code == 106
+	}
+	return true
+}
+
 // returns fs_inconsistent flag
 func applyMigration(migration connect.MigrationPath, systemProducts []connect.Product,
-	quiet, verbose, nonInteractive, forceDisableRepos bool,
+	quiet, verbose, nonInteractive, forceDisableRepos, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
 	fsInconsistent := false
@@ -635,7 +680,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 	}
 
 	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false); err != nil {
+	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false, false); err != nil {
 		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
 	}
 	if interrupted {
@@ -644,9 +689,16 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 
 	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, nonInteractive, dupArgs)
 	connect.SetSystemEcho(echo)
-	// TODO: export connect.zypperErrCommit (8)?
-	if err != nil && err.(connect.ZypperError).ExitCode == 8 {
-		fsInconsistent = true
+	if err != nil {
+		ze := err.(connect.ZypperError)
+		// TODO: export connect.zypperErrCommit (8)?
+		if ze.ExitCode == 8 {
+			fsInconsistent = true
+		}
+		// ignore some non-fatal errors
+		if failDupOnlyOnFatalErrors && !isFatalZypperError(ze.ExitCode) {
+			err = nil
+		}
 	}
 	if interrupted {
 		return fsInconsistent, ErrInterrupted
@@ -682,7 +734,7 @@ func zypperDupArgs() []string {
 	wanted := connect.NewStringSet("auto-agree-with-licenses", "l",
 		"allow-vendor-change", "no-allow-vendor-change",
 		"debug-solver", "recommends", "no-recommends",
-		"replacefiles:", "details", "download",
+		"replacefiles", "details", "download",
 		"download-only", "from", "repo")
 
 	args := []string{}
