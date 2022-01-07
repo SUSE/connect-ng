@@ -1,6 +1,6 @@
 require 'logger'
 require 'singleton'
-require 'ffi'
+require 'fiddle'
 
 module SUSE
   module Connect
@@ -28,23 +28,26 @@ module SUSE
         GoConnect.set_log_callback(LogLine)
       end
 
-      LogLine = ::FFI::Function.new(:void, [:int, :string]) do |level, message|
-        log = GlobalLogger.instance.log
-        case level
-        when LL_DEBUG
-          log.debug(message)
-        when LL_INFO
-          log.info(message)
-        when LL_WARNING
-          log.warn(message)
-        when LL_ERROR
-          log.error(message)
-        when LL_FATAL
-          log.fatal(message)
-        else
-          raise 'unknown log level, msg=#{message}'
+      LogLine = Class.new(Fiddle::Closure) {
+        def call(level, message)
+          log = GlobalLogger.instance.log
+          message = message.to_s
+          case level
+          when LL_DEBUG
+            log.debug(message)
+          when LL_INFO
+            log.info(message)
+          when LL_WARNING
+            log.warn(message)
+          when LL_ERROR
+            log.error(message)
+          when LL_FATAL
+            log.fatal(message)
+          else
+            raise 'unknown log level, msg=#{message}'
+          end
         end
-      end
+      }.new(Fiddle::TYPE_VOID, [Fiddle::TYPE_INT, Fiddle::TYPE_VOIDP])
     end
     # Module provides access to specific logging. To set logging see GlobalLogger.
     #
