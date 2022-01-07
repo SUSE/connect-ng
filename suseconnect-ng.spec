@@ -97,7 +97,6 @@ suseconnect-ng functions.
 Summary:        Ruby bindings for libsuseconnect library.
 Group:          System/Management
 Requires:       libsuseconnect
-Requires:       rubygem(ffi)
 %description -n suseconnect-ruby-bindings
 This package provides bindings needed to use libsuseconnect from Ruby scripts.
 

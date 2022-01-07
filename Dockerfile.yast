@@ -1,7 +1,5 @@
 FROM registry.opensuse.org/yast/head/containers/yast-ruby:latest
 
-RUN zypper --no-gpg-checks --non-interactive install 'rubygem(ffi)'
-
 RUN rm -r /usr/lib64/ruby/gems/*/gems/suse-connect-*
 
 # invalidate github cache

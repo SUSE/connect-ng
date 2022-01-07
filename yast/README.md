@@ -32,7 +32,7 @@ Northbound the shim provides the same interface to Yast as the Ruby SUSEConnect.
 
 YaST passes strings and hashes as parameters. The hashes will be converted to JSON and passed on to libsuseconnect as strings.
 
-Southbound the shim uses the Ruby [FFI](https://github.com/ffi/ffi) (Foreign Function Interface) gem to interface with the C library provided by libsuseconnect. Libsuseconnect will return JSON with the results or error details if there was a problem. The shim will raise an exception if there was an error. Otherwise the results will be returned in whatever form YaST is expecting.
+Southbound the shim uses the Ruby [Fiddle](https://github.com/ruby/fiddle) FFI (Foreign Function Interface) extension to interface with the C library provided by libsuseconnect. Libsuseconnect will return JSON with the results or error details if there was a problem. The shim will raise an exception if there was an error. Otherwise the results will be returned in whatever form YaST is expecting.
 
 Note that generic OpenStruct is used for most structures instead of specific classes like in Ruby SUSEConnect. This should not be a problem because most SUSEConnect structures are anyway based on OpenStruct.
 

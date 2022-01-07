@@ -1,38 +1,39 @@
 require 'json'
-require 'ffi'
+require 'fiddle/import'
 require 'suse/toolkit/shim_utils'
 
 module Stdio
-  extend FFI::Library
-  ffi_lib FFI::Platform::LIBC
-  attach_function :free, [ :pointer ], :void
+  extend Fiddle::Importer
+  dlload 'libc.so.6'
+  typealias 'pointer', 'void*'
+  extern 'void free(pointer)'
 end
 
 module GoConnect
-  extend FFI::Library
-  ffi_lib 'suseconnect'
+  extend Fiddle::Importer
+  dlload 'libsuseconnect.so'
+  typealias 'string', 'char*'
 
-  callback :log_line, [:int, :string], :void
-  attach_function :set_log_callback, [:log_line], :void
-
-  attach_function :announce_system, [:string, :string], :pointer
-  attach_function :update_system, [:string, :string], :pointer
-  attach_function :credentials, [:string], :pointer
-  attach_function :create_credentials_file, [:string, :string, :string], :pointer
-  attach_function :curlrc_credentials, [], :pointer
-  attach_function :show_product, [:string, :string], :pointer
-  attach_function :activated_products, [:string], :pointer
-  attach_function :activate_product, [:string, :string, :string], :pointer
-  attach_function :get_config, [:string], :pointer
-  attach_function :write_config, [:string], :pointer
-  attach_function :update_certificates, [], :pointer
-  attach_function :list_installer_updates, [:string, :string], :pointer
-  attach_function :system_migrations, [:string, :string], :pointer
-  attach_function :offline_system_migrations, [:string, :string, :string], :pointer
-  attach_function :upgrade_product, [:string, :string], :pointer
-  attach_function :synchronize, [:string, :string], :pointer
-  attach_function :system_activations, [:string], :pointer
-  attach_function :search_package, [:string, :string, :string], :pointer
+  #callback type: void log_line(int, string)
+  extern 'void set_log_callback(void*)'
+  extern 'string announce_system(string, string)'
+  extern 'string update_system(string, string)'
+  extern 'string credentials(string)'
+  extern 'string create_credentials_file(string, string, string)'
+  extern 'string curlrc_credentials()'
+  extern 'string show_product(string, string)'
+  extern 'string activated_products(string)'
+  extern 'string activate_product(string, string, string)'
+  extern 'string get_config(string)'
+  extern 'string write_config(string)'
+  extern 'string update_certificates()'
+  extern 'string list_installer_updates(string, string)'
+  extern 'string system_migrations(string, string)'
+  extern 'string offline_system_migrations(string, string, string)'
+  extern 'string upgrade_product(string, string)'
+  extern 'string synchronize(string, string)'
+  extern 'string system_activations(string)'
+  extern 'string search_package(string, string, string)'
 end
 
 module SUSE

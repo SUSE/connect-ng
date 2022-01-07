@@ -18,8 +18,8 @@ module SUSE
       end
 
       def _consume_str(ptr)
-        s = ptr.get_string(0)
-        Stdio.free(ptr)
+        s = ptr.to_s()
+        Stdio.free(ptr.to_i)
         return s
       end
 
