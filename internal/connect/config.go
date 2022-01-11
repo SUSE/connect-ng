@@ -34,7 +34,9 @@ type Config struct {
 	Product          Product
 	InstanceDataFile string
 	Email            string `json:"email"`
-	NoZypperRefresh  bool
+
+	NoZypperRefresh    bool
+	AutoImportRepoKeys bool
 }
 
 // NewConfig returns a Config with defaults

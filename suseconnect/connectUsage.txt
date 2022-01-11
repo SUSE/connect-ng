@@ -47,5 +47,8 @@ Manage subscriptions at https://scc.suse.com
 Common options:
         --root [PATH]        Path to the root folder, uses the same parameter
                              for zypper.
+        --gpg-auto-import-keys
+                             Automatically trust and import new repository
+                             signing keys.
         --debug              Provide debug output.
     -h, --help               Show this message.
