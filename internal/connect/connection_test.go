@@ -9,6 +9,7 @@ import (
 
 func TestCallHTTPSecure(t *testing.T) {
 	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	ts.Config.ErrorLog = Debug
 	ts.StartTLS()
 	defer ts.Close()
 
