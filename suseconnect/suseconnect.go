@@ -34,23 +34,24 @@ func main() {
 
 func connectMain() {
 	var (
-		status           bool
-		keepAlive        bool
-		statusText       bool
-		debug            bool
-		writeConfig      bool
-		deRegister       bool
-		cleanup          bool
-		rollback         bool
-		baseURL          string
-		fsRoot           string
-		namespace        string
-		token            string
-		product          string
-		instanceDataFile string
-		listExtensions   bool
-		email            string
-		version          bool
+		status                bool
+		keepAlive             bool
+		statusText            bool
+		debug                 bool
+		writeConfig           bool
+		deRegister            bool
+		cleanup               bool
+		rollback              bool
+		baseURL               string
+		fsRoot                string
+		namespace             string
+		token                 string
+		product               string
+		instanceDataFile      string
+		listExtensions        bool
+		autoAgreeWithLicenses bool
+		email                 string
+		version               bool
 	)
 
 	// display help like the ruby SUSEConnect
@@ -73,6 +74,7 @@ func connectMain() {
 	flag.BoolVar(&rollback, "rollback", false, "")
 	flag.BoolVar(&version, "version", false, "")
 	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&autoAgreeWithLicenses, "auto-agree-with-licenses", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
@@ -177,7 +179,10 @@ func connectMain() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
-			err := connect.Register()
+			// this is a no-op for base system and extensions without EULAs
+			err := connect.AcceptEULA(autoAgreeWithLicenses)
+			exitOnError(err)
+			err = connect.Register()
 			exitOnError(err)
 		}
 	}

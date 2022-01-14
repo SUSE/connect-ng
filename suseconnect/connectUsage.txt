@@ -20,6 +20,9 @@ Manage subscriptions at https://scc.suse.com
                              removes all its services installed by SUSEConnect.
                              After de-registration the system no longer consumes
                              a subscription slot in SCC.
+        --auto-agree-with-licenses
+                             Automatically say 'yes' to extension and module
+                             license confirmation prompts.
         --instance-data  [path to file]
                              Path to the XML file holding the public key and
                              instance data for cloud registration with SMT.
