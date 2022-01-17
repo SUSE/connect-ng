@@ -215,6 +215,10 @@ func InstallReleasePackage(identifier string) error {
 	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
 		"--auto-agree-with-product-licenses", "-t", "product", identifier}
 
+	if CFG.AutoImportRepoKeys {
+		args = append([]string{"--gpg-auto-import-keys"}, args...)
+	}
+
 	_, err := zypperRun(args, validExitCodes)
 	return err
 }
@@ -256,13 +260,13 @@ func zypperFlags(version string, quiet bool, verbose bool,
 }
 
 // RefreshRepos runs zypper to refresh all repositories
-func RefreshRepos(version string, force, quiet, verbose, nonInteractive, importKeys bool) error {
+func RefreshRepos(version string, force, quiet, verbose, nonInteractive bool) error {
 	args := []string{"ref"}
 	flags := zypperFlags(version, quiet, verbose, nonInteractive, false)
 	if force {
 		args = append(args, "-f")
 	}
-	if importKeys {
+	if CFG.AutoImportRepoKeys {
 		args = append(args, "--gpg-auto-import-keys")
 	}
 	args = append(flags, args...)
