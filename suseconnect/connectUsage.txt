@@ -35,7 +35,7 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --status-text        Get current system registration status in text
                              format.
-        --list-extensions    List all extensions and modules available for
+    -l, --list-extensions    List all extensions and modules available for
                              installation on this system.
         --write-config       Write options to config file at /etc/SUSEConnect.
         --cleanup            Remove old system credentials and all zypper
