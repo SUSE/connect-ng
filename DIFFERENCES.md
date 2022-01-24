@@ -56,3 +56,4 @@
 - In some cases (e.g. when some of intermediate certs in chain is invalid)
   the SSL cert presented to the user will be different than in Ruby version.
 - SUSEConnect has new option --gpg-auto-import-keys (fixes bsc#1174657).
+- The Go CLIs do not accept abbreviated flags.
