@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 )
@@ -197,6 +199,10 @@ func exitOnError(err error) {
 	if ze, ok := err.(connect.ZypperError); ok {
 		fmt.Println(ze)
 		os.Exit(ze.ExitCode)
+	}
+	if ue, ok := err.(*url.Error); ok && errors.Is(ue, syscall.ECONNREFUSED) {
+		fmt.Println("Error:", err)
+		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
 		if err := maybeBrokenSMTError(); err != nil {
