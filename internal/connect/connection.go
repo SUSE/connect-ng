@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -85,7 +86,7 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 	return proxyURL, nil
 }
 
-func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
+func setupHTTPClient() {
 	if httpclient == nil {
 		// use defaults from DefaultTransport
 		tr := http.DefaultTransport.(*http.Transport).Clone()
@@ -93,6 +94,11 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 		tr.Proxy = proxyWithAuth
 		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
 	}
+}
+
+func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
+	setupHTTPClient()
+
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -133,6 +139,25 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	return resBody, nil
+}
+
+func downloadFile(url string) ([]byte, error) {
+	setupHTTPClient()
+
+	resp, err := httpclient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	resBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if !successCode(resp.StatusCode) {
+		return nil, fmt.Errorf("Downloading %s failed (code: %d): %s", url, resp.StatusCode, resBody)
 	}
 	return resBody, nil
 }
