@@ -85,7 +85,18 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 	return proxyURL, nil
 }
 
+func setupHTTPClient() {
+	if httpclient == nil {
+		// use defaults from DefaultTransport
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: CFG.Insecure, RootCAs: systemRootsPool()}
+		tr.Proxy = proxyWithAuth
+		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
+	}
+}
+
 func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
+	setupHTTPClient()
 	if httpclient == nil {
 		// use defaults from DefaultTransport
 		tr := http.DefaultTransport.(*http.Transport).Clone()
@@ -135,4 +146,11 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 		return nil, err
 	}
 	return resBody, nil
+}
+
+func reloadCertPool() error {
+	// TODO: update when https://github.com/golang/go/issues/41888 is fixed
+	httpclient = nil
+	setupHTTPClient()
+	return nil
 }
