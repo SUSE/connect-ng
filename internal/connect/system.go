@@ -118,5 +118,9 @@ func Cleanup() error {
 func UpdateCertificates() error {
 	cmd := []string{"/usr/sbin/update-ca-certificates"}
 	_, err := execute(cmd, []int{0})
-	return err
+	if err != nil {
+		return err
+	}
+	// reload CA certs in Go
+	return reloadCertPool()
 }
