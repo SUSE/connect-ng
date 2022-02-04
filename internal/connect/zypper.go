@@ -3,6 +3,7 @@ package connect
 import (
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,6 +147,18 @@ func addService(serviceURL, serviceName string, refresh bool) error {
 	// Remove old service which could be modified by a customer
 	if err := removeService(serviceName); err != nil {
 		return err
+	}
+	// pass "insecure" setting to zypper via URL
+	// https://en.opensuse.org/openSUSE:Libzypp_URIs
+	if CFG.Insecure {
+		u, err := url.Parse(serviceURL)
+		if err != nil {
+			return err
+		}
+		q := u.Query()
+		q.Set("ssl_verify", "no")
+		u.RawQuery = q.Encode()
+		serviceURL = u.String()
 	}
 	args := []string{"--non-interactive", "addservice", "-t", "ris", serviceURL, serviceName}
 	_, err := zypperRun(args, []int{zypperOK})
