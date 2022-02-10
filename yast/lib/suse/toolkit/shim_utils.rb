@@ -19,7 +19,7 @@ module SUSE
 
       def _consume_str(ptr)
         s = ptr.to_s()
-        Stdio.free(ptr.to_i)
+        GoConnect.free_string(ptr.to_i)
         return s
       end
 

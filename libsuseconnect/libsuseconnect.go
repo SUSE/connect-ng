@@ -51,6 +51,11 @@ func set_log_callback(logCallback C.logLineFunc) {
 	// TODO: add other levels?
 }
 
+//export free_string
+func free_string(str *C.char) {
+	C.free(unsafe.Pointer(str))
+}
+
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {
 	loadConfig(C.GoString(clientParams))
