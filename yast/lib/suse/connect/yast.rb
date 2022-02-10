@@ -2,13 +2,6 @@ require 'json'
 require 'fiddle/import'
 require 'suse/toolkit/shim_utils'
 
-module Stdio
-  extend Fiddle::Importer
-  dlload 'libc.so.6'
-  typealias 'pointer', 'void*'
-  extern 'void free(pointer)'
-end
-
 module GoConnect
   extend Fiddle::Importer
   dlload 'libsuseconnect.so'
@@ -16,6 +9,7 @@ module GoConnect
 
   #callback type: void log_line(int, string)
   extern 'void set_log_callback(void*)'
+  extern 'void free_string(string)'
   extern 'string announce_system(string, string)'
   extern 'string update_system(string, string)'
   extern 'string credentials(string)'
