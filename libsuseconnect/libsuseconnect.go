@@ -12,9 +12,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
-	"os"
 	"strconv"
-	"strings"
 	"unsafe"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -442,25 +440,4 @@ func search_package(clientParams, product, query *C.char) *C.char {
 	return C.CString(string(jsn))
 }
 
-func init() {
-	// parse LD_PRELOAD value and remove libsuseconnect if found
-	// to avoid preloading libsuseconnect by child processes
-	// (bsc#1196326 caused by workaround for bsc#1194996)
-	preload := os.Getenv("LD_PRELOAD")
-	if strings.Contains(preload, "libsuseconnect") {
-		libs := strings.FieldsFunc(preload,
-			func(c rune) bool { return c == ' ' || c == ':' })
-		newPreload := make([]string, 0)
-		for _, l := range libs {
-			if !strings.Contains(l, "libsuseconnect") {
-				newPreload = append(newPreload, l)
-			}
-		}
-		if len(newPreload) == 0 {
-			os.Unsetenv("LD_PRELOAD")
-		} else {
-			os.Setenv("LD_PRELOAD", strings.Join(newPreload, ":"))
-		}
-	}
-}
 func main() {}
