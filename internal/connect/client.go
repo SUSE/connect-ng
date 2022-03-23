@@ -70,7 +70,9 @@ func registerProductTree(product Product) error {
 			if err := registerProduct(extension, true); err != nil {
 				return err
 			}
-			return registerProductTree(extension)
+			if err := registerProductTree(extension); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
