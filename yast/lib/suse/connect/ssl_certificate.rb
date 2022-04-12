@@ -33,6 +33,12 @@ module SUSE
         _process_result(GoConnect.update_certificates())
       end
 
+      # reload internal CA cert pool
+      def self.reload
+        log.debug "Reloading Golang CA cert pool..."
+        _process_result(GoConnect.reload_certificates())
+      end
+
       # @param digest_class [Class] target digest class (e.g. OpenSSL::Digest::SHA1)
       # @param cert [OpenSSL::X509::Certificate] the certificate
       # @return [String] digest in "AB:CD:EF:..." format

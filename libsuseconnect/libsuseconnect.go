@@ -296,6 +296,15 @@ func update_certificates() *C.char {
 	return C.CString("{}")
 }
 
+//export reload_certificates
+func reload_certificates() *C.char {
+	err := connect.ReloadCertPool()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString("{}")
+}
+
 //export list_installer_updates
 func list_installer_updates(clientParams, product *C.char) *C.char {
 	loadConfig(C.GoString(clientParams))
