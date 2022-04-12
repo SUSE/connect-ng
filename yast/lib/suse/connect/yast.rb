@@ -21,6 +21,7 @@ module GoConnect
   extern 'string get_config(string)'
   extern 'string write_config(string)'
   extern 'string update_certificates()'
+  extern 'string reload_certificates()'
   extern 'string list_installer_updates(string, string)'
   extern 'string system_migrations(string, string)'
   extern 'string offline_system_migrations(string, string, string)'

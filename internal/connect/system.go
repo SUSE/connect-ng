@@ -122,5 +122,5 @@ func UpdateCertificates() error {
 		return err
 	}
 	// reload CA certs in Go
-	return reloadCertPool()
+	return ReloadCertPool()
 }

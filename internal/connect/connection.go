@@ -148,7 +148,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	return resBody, nil
 }
 
-func reloadCertPool() error {
+func ReloadCertPool() error {
 	// TODO: update when https://github.com/golang/go/issues/41888 is fixed
 	httpclient = nil
 	setupHTTPClient()
