@@ -30,6 +30,7 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
+BuildRequires:  git
 BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
