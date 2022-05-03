@@ -129,3 +129,45 @@ func TestSplitTriplet(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 }
+
+func TestFindIDInt(t *testing.T) {
+	jsn := `{"id": 101361}`
+	var p Product
+	err := json.Unmarshal([]byte(jsn), &p)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+	if p.ID != 101361 {
+		t.Errorf("Expected: %d, got: %d", 101361, p.ID)
+	}
+}
+
+func TestFindIDString(t *testing.T) {
+	jsn := `{"id": "101361"}`
+	var p Product
+	err := json.Unmarshal([]byte(jsn), &p)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+	if p.ID != 101361 {
+		t.Errorf("Expected: %d, got: %d", 101361, p.ID)
+	}
+}
+
+func TestMarshallProductIntID(t *testing.T) {
+	p1 := Product{ID: 42}
+	jsn, err := json.Marshal(&p1)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+
+	p2 := Product{}
+	err = json.Unmarshal([]byte(jsn), &p2)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+
+	if p1.ID != p2.ID {
+		t.Errorf("Expected: %d, got: %d", p1.ID, p2.ID)
+	}
+}

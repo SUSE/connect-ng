@@ -1,0 +1,23 @@
+[
+  [
+    {
+      "product_type": "base",
+      "identifier": "suse-microos",
+      "release_stage": "released",
+      "free": true,
+      "productdataid": "2401",
+      "available": true,
+      "friendly_name": "SUSE Linux Enterprise Micro 5.2 x86_64",
+      "product_class": "MICROOS-X86",
+      "base": true,
+      "description": "SUSE Linux Enterprise Micro 5.2",
+      "shortname": "SUSE Linux Enterprise Micro",
+      "id": "101361",
+      "product_orig": "SUSE-MicroOS",
+      "release_type": null,
+      "cpe": "cpe:/o:suse:suse-microos:5.2",
+      "arch": "x86_64",
+      "version": "5.2"
+    }
+  ]
+]

@@ -26,7 +26,7 @@ type Product struct {
 	Extensions []Product `json:"extensions,omitempty"`
 
 	// these are used by YaST
-	ID           int    `json:"id"`
+	ID           int    `json:"-"` // handled by custom unmarshaller/marshaller
 	Description  string `xml:"description" json:"description,omitempty"`
 	EULAURL      string `json:"eula_url,omitempty"`
 	FormerName   string `json:"former_identifier,omitempty"`
@@ -38,10 +38,11 @@ type Product struct {
 }
 
 // UnmarshalJSON custom unmarshaller for Product.
-// Only SMT/RMT send the "available" field in their JSON responses.
-// SCC does not, and the default Unmarshal() sets Available to the
-// boolean zero-value which is false. This sets it to true instead.
+// Special decoding is needed for the Available, IsBase and ID fields.
 func (p *Product) UnmarshalJSON(data []byte) error {
+	// Only SMT/RMT send the "available" field in their JSON responses.
+	// SCC does not, and the default Unmarshal() sets Available to the
+	// boolean zero-value which is false. This sets it to true instead.
 	type product Product
 	prod := product{
 		Available: true,
@@ -49,6 +50,7 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &prod); err != nil {
 		return err
 	}
+
 	// migration paths contain is-base information as "base" attribute
 	// while we default to "isbase" for YaST integration.
 	// the rest of the SCC API uses `product_type="base"` instead.
@@ -59,8 +61,48 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	prod.IsBase = prod.IsBase || mProd.Base || prod.ProductType == "base"
+
+	// SCC and RMT servers send the ID field as an int. But SMT sends it
+	// as a string in the POST migrations call. This helper tries both.
+	prod.ID = findID(data)
+
 	*p = Product(prod)
 	return nil
+}
+
+// findID decodes the "id" field from data
+func findID(data []byte) int {
+	// Try to decode as an int first. SCC/RMT case.
+	idInt := struct {
+		ID int `json:"id"`
+	}{}
+	if err := json.Unmarshal(data, &idInt); err == nil {
+		return idInt.ID
+	}
+
+	// Decoding id as an int failed. Try to decode as a string. SMT case.
+	idStr := struct {
+		ID int `json:"id,string"`
+	}{}
+	if err := json.Unmarshal(data, &idStr); err == nil {
+		return idStr.ID
+	}
+
+	return 0
+}
+
+// MarshalJSON is a custom JSON marshaller that includes the "id" field.
+// This method is needed because the `json:"id"` tag can not be used
+// on Product.ID because the that field requires a custom unmarshaller.
+func (p *Product) MarshalJSON() ([]byte, error) {
+	type prodAlias Product
+	return json.Marshal(&struct {
+		ID int `json:"id"`
+		*prodAlias
+	}{
+		ID:        p.ID,
+		prodAlias: (*prodAlias)(p),
+	})
 }
 
 // Edition returns VERSION[-RELEASE] for product
