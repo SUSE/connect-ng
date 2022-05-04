@@ -1,3 +1,5 @@
+require 'openssl'
+
 module SUSE
   module Toolkit
     # This module implements common boilerplate for wrapping libsuseconnect
