@@ -15,6 +15,8 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
+# TEST CHANGE
+
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
