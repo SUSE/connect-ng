@@ -30,7 +30,6 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
-BuildRequires:  git
 BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
@@ -103,6 +102,8 @@ This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
 %prep
 %setup -q -n connect-ng-%{version}
+# keep git metadata but don't use it for "VCS stamping"
+mv .git .git.bak
 
 %build
 find %_builddir/..
