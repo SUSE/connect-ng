@@ -20,8 +20,8 @@ RUN zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Basesystem/15
       vim osc hwinfo libx86emu3 zypper-migration-plugin sudo awk curl \
       obs-service-tar_scm obs-service-recompress obs-service-extract_file obs-service-set_version obs-service-format_spec_file
 
-RUN wget http://username:password@gaffer.suse.de:9999/files/.regcode -O ~/.regcode
-RUN wget http://username:password@gaffer.suse.de:9999/files/.oscrc -O ~/.oscrc
+RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/lastBuild/artifact/.regcodes -O ~/.regcodes
+RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/lastBuild/artifact/.oscrc -O ~/.oscrc
 
 RUN echo 'gem: --no-ri --no-rdoc' > /etc/gemrc && \
     gem install bundler --no-document
