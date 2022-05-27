@@ -20,6 +20,13 @@ test: internal/connect/version.txt
 test-yast: build-so
 	docker build -t go-connect-test-yast -f Dockerfile.yast . && docker run -t go-connect-test-yast
 
+test-scc: connect-ruby
+	docker build -t connect.ng-sle15sp3 -f integration/Dockerfile.ng-sle15sp3 .
+	docker run --privileged --rm -t connect.ng-sle15sp3 ./integration/run.sh
+
+connect-ruby:
+	git clone https://github.com/SUSE/connect connect-ruby
+
 gofmt:
 	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
 
