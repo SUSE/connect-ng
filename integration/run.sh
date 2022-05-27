@@ -13,7 +13,7 @@ remote=$(pwd)
 head=$(git rev-list -n1 HEAD)
 mkdir osc-package
 cd osc-package
-osc co -o . 'systemsmanagement:SCC/suseconnect-ng'
+osc -A https://api.opensuse.org co -o . 'systemsmanagement:SCC/suseconnect-ng'
 cp ../_service ./
 sed -i "s|https://github.com/SUSE/connect-ng.git|file://$remote|g" _service
 sed -i "s|main|$head|g" _service
@@ -37,4 +37,8 @@ cd /tmp/connect
 rm bin/SUSEConnect
 # the tests match the exact version defined in the ruby code, replace it with ours
 sed -i "s|VERSION = '[^']*'|VERSION = '$shortversion'|g" lib/suse/connect/version.rb
+# load test regcodes into env vars
+set -a
+. ~/.regcodes
+set +a
 cucumber
