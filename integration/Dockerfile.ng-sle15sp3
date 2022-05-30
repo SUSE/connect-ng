@@ -3,8 +3,6 @@ FROM registry.suse.de/suse/sle-15-sp3/update/standard/suse/sle15:15.3
 ENV PRODUCT SLE_15_SP3
 ENV BUILT_AT "Tue Jul 13 15:32 CET 2021"
 
-RUN useradd --no-log-init --create-home scc
-
 # Remember to drop docker caches if any of these change
 RUN zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Basesystem/15-SP3/x86_64/product base &&\
     zypper ar http://download.suse.de/ibs/SUSE/Updates/SLE-Module-Basesystem/15-SP3/x86_64/update base-updates &&\
@@ -35,10 +33,8 @@ ADD connect-ruby/lib/suse/connect/version.rb ./lib/suse/connect/
 RUN bundle config jobs $(nproc) && \
     bundle install
 ADD connect-ruby/. /tmp/connect
-RUN chown -R scc /tmp/connect
 
 
 RUN mkdir /tmp/connect-ng
 WORKDIR /tmp/connect-ng
 ADD . /tmp/connect-ng
-RUN chown -R scc /tmp/connect-ng
