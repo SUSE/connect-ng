@@ -35,6 +35,7 @@ Manage subscriptions at https://scc.suse.com
                              format.
         --status-text        Get current system registration status in text
                              format.
+        --keepalive          Sends data to SCC to update the system information.
     -l, --list-extensions    List all extensions and modules available for
                              installation on this system.
         --write-config       Write options to config file at /etc/SUSEConnect.
