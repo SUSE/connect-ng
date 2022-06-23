@@ -36,11 +36,12 @@ type ZypperError struct {
 	Commmand []string
 	ExitCode int
 	Output   []byte
+	Err      error
 }
 
 func (ze ZypperError) Error() string {
-	return fmt.Sprintf("command '%s' failed\nError: zypper returned %d with '%s'",
-		strings.Join(ze.Commmand, " "), ze.ExitCode, ze.Output)
+	return fmt.Sprintf("command '%s' failed\nError: zypper returned %d with '%s' (%s)",
+		strings.Join(ze.Commmand, " "), ze.ExitCode, ze.Output, ze.Err)
 }
 
 // APIError is returned on failed HTTP requests
