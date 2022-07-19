@@ -35,6 +35,7 @@ func main() {
 func connectMain() {
 	var (
 		status           bool
+		keepAlive        bool
 		statusText       bool
 		debug            bool
 		writeConfig      bool
@@ -60,6 +61,7 @@ func connectMain() {
 	flag.BoolVar(&status, "status", false, "")
 	flag.BoolVar(&status, "s", false, "")
 	flag.BoolVar(&statusText, "status-text", false, "")
+	flag.BoolVar(&keepAlive, "keepalive", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")
 	flag.BoolVar(&deRegister, "de-register", false, "")
@@ -140,6 +142,9 @@ func connectMain() {
 		output, err := connect.GetProductStatuses("json")
 		exitOnError(err)
 		fmt.Println(output)
+	} else if keepAlive {
+		err := connect.SendKeepAlivePing()
+		exitOnError(err)
 	} else if statusText {
 		output, err := connect.GetProductStatuses("text")
 		exitOnError(err)
@@ -240,6 +245,10 @@ func exitOnError(err error) {
 		fmt.Print("Can not deregister base product. Use SUSEConnect -d to deactivate ")
 		fmt.Print("the whole system.\n")
 		os.Exit(70)
+	case connect.ErrPingFromUnregistered:
+		fmt.Print("Error sending keepalive: ")
+		fmt.Print("System is not registered. Use the --regcode parameter to register it.\n")
+		os.Exit(71)
 	default:
 		fmt.Printf("SUSEConnect error: %s\n", err)
 		os.Exit(1)

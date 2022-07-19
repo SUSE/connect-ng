@@ -11,6 +11,7 @@ var (
 	ErrMalformedSccCredFile       = errors.New("Cannot parse credentials file")
 	ErrMissingCredentialsFile     = errors.New("Credentials file is missing")
 	ErrSystemNotRegistered        = errors.New("System not registered")
+	ErrPingFromUnregistered       = errors.New("Keepalive ping not allowed from unregistered system.")
 	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
 	ErrCannotDetectBaseProduct    = errors.New("Unable to detect base product")
 	ErrListExtensionsUnregistered = errors.New("System not registered")
