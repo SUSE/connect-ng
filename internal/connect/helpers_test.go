@@ -24,7 +24,7 @@ func createTestCredentials(username, password string, t *testing.T) {
 		password = "test"
 	}
 	CFG.FsRoot = t.TempDir()
-	err := writeSystemCredentials(username, password)
+	err := writeSystemCredentials(username, password, "")
 	if err != nil {
 		t.Fatal(err)
 	}

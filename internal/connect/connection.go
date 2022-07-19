@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -52,6 +53,14 @@ func addHeaders(req *http.Request) {
 	}
 	// REVISIT "Accept-Encoding" - disable gzip commpression on debug?
 	req.Header.Add("User-Agent", appName+"/"+GetShortenedVersion())
+
+	// Pass the current system token.
+	creds, err := getCredentials()
+	token := ""
+	if err == nil {
+		token = creds.SystemToken
+	}
+	req.Header.Add("System-Token", token)
 }
 
 func addAuthHeader(req *http.Request, auth authType) error {
@@ -125,6 +134,13 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 	defer resp.Body.Close()
 
+	// For each request SCC might update the System token for a given system.
+	// This will be given through the `System-Token` header, so we have to grab
+	// this here and store it for the next request.
+	if err := handleSystemToken(resp.Header.Get("System-Token")); err != nil {
+		Debug.Printf("system-token: %s\n", err)
+	}
+
 	if isLoggerEnabled(Debug) {
 		respBlob, _ := httputil.DumpResponse(resp, true)
 		Debug.Printf("%s\n", respBlob)
@@ -139,6 +155,23 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 		return nil, err
 	}
 	return resBody, nil
+}
+
+// handleSystemToken stores the given token into the system credentials file
+// unless it's blank.
+func handleSystemToken(token string) error {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil
+	}
+
+	creds, err := getCredentials()
+	if err != nil {
+		return err
+	}
+
+	creds.SystemToken = token
+	return creds.write()
 }
 
 // ReloadCertPool triggers reload of internals CA cert pool

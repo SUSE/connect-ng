@@ -12,9 +12,9 @@ func TestParseCredentials(t *testing.T) {
 		expectCreds Credentials
 		expectErr   error
 	}{
-		{"username=user1\npassword=pass1", Credentials{"", "user1", "pass1"}, nil},
-		{" \n username = user1 \n password = pass1 \n", Credentials{"", "user1", "pass1"}, nil},
-		{"username = user1 \n junk \n password = pass1 \n", Credentials{"", "user1", "pass1"}, nil},
+		{"username=user1\npassword=pass1", Credentials{"", "user1", "pass1", ""}, nil},
+		{" \n username = user1 \n password = pass1 \nsystem_token=\n", Credentials{"", "user1", "pass1", ""}, nil},
+		{"username = user1 \n junk \n password = pass1 \nsystem_token=1234", Credentials{"", "user1", "pass1", "1234"}, nil},
 		{"USERNAME = user1 \n passed = pass1", Credentials{}, ErrMalformedSccCredFile},
 		{"username= \n password = \n", Credentials{}, ErrMalformedSccCredFile},
 	}
@@ -33,14 +33,14 @@ func TestWriteReadDeleteSystem(t *testing.T) {
 	if err != ErrMissingCredentialsFile {
 		t.Fatalf("Expected [%s], got [%s]", ErrMissingCredentialsFile, err)
 	}
-	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	c, err := getCredentials()
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	if c.Username != "user1" || c.Password != "pass1" {
+	if c.Username != "user1" || c.Password != "pass1" || c.SystemToken != "1234" {
 		t.Errorf("Unexpected user1 and pass1. Got: %s and %s",
 			c.Username, c.Password)
 	}
@@ -55,10 +55,10 @@ func TestWriteReadDeleteSystem(t *testing.T) {
 
 func TestWriteCredentials(t *testing.T) {
 	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	expected := "username=user1\npassword=pass1\n"
+	expected := "username=user1\npassword=pass1\nsystem_token=1234\n"
 	contents, _ := os.ReadFile(systemCredentialsFile())
 	got := string(contents)
 	if got != expected {
@@ -68,7 +68,7 @@ func TestWriteCredentials(t *testing.T) {
 
 func TestWriteReadDeleteService(t *testing.T) {
 	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1"); err != nil {
+	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	if err := writeServiceCredentials("service1"); err != nil {
@@ -79,7 +79,7 @@ func TestWriteReadDeleteService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	if rc.Username != "user1" || rc.Password != "pass1" {
+	if rc.Username != "user1" || rc.Password != "pass1" || rc.SystemToken != "1234" {
 		t.Errorf("Got: %s and %s, expected user1 and pass1", rc.Username, rc.Password)
 	}
 	if err := removeServiceCredentials("service1"); err != nil {
@@ -96,10 +96,10 @@ func TestParseCurlrcCredentials(t *testing.T) {
 		expectCreds Credentials
 		expectErr   error
 	}{
-		{"--proxy-user \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
-		{"--proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
-		{"proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
-		{"proxy-user=\"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%"}, nil},
+		{"--proxy-user \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%", ""}, nil},
+		{"--proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%", ""}, nil},
+		{"proxy-user = \"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%", ""}, nil},
+		{"proxy-user=\"meuser1$:mepassord2%\"", Credentials{"", "meuser1$", "mepassord2%", ""}, nil},
 		{"", Credentials{}, ErrNoProxyCredentials},
 	}
 

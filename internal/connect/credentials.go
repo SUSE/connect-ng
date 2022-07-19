@@ -17,21 +17,23 @@ const (
 )
 
 var (
-	userMatch   = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
-	passMatch   = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
-	curlrcMatch = regexp.MustCompile(`^\s*-*proxy-user[ =]*"(.+):(.+)"\s*$`)
+	userMatch        = regexp.MustCompile(`(?m)^\s*username\s*=\s*(\S+)\s*$`)
+	passMatch        = regexp.MustCompile(`(?m)^\s*password\s*=\s*(\S+)\s*$`)
+	systemTokenMatch = regexp.MustCompile(`(?m)^\s*system_token\s*=\s*(\S+)\s*$`)
+	curlrcMatch      = regexp.MustCompile(`^\s*-*proxy-user[ =]*"(.+):(.+)"\s*$`)
 )
 
 // Credentials stores the SCC or service credentials
 type Credentials struct {
-	Filename string `json:"file"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Filename    string `json:"file"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	SystemToken string `json:"system_token"`
 }
 
 func (c Credentials) String() string {
-	return fmt.Sprintf("file: %s, username: %s, password: REDACTED",
-		c.Filename, c.Username)
+	return fmt.Sprintf("file: %s, username: %s, password: REDACTED, system_token: %s",
+		c.Filename, c.Username, c.SystemToken)
 }
 
 func systemCredentialsFile() string {
@@ -83,10 +85,16 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 	}
 	uMatch := userMatch.FindStringSubmatch(string(content))
 	pMatch := passMatch.FindStringSubmatch(string(content))
+	tMatch := systemTokenMatch.FindStringSubmatch(string(content))
 	if len(uMatch) != 2 || len(pMatch) != 2 {
 		return Credentials{}, ErrMalformedSccCredFile
 	}
-	return Credentials{Username: uMatch[1], Password: pMatch[1]}, nil
+	token := ""
+	if len(tMatch) == 2 {
+		token = tMatch[1]
+	}
+
+	return Credentials{Username: uMatch[1], Password: pMatch[1], SystemToken: token}, nil
 }
 
 func (c Credentials) write() error {
@@ -103,23 +111,24 @@ func (c Credentials) write() error {
 		}
 	}
 	buf := bytes.Buffer{}
-	fmt.Fprintf(&buf, "username=%s\npassword=%s\n", c.Username, c.Password)
+	fmt.Fprintf(&buf, "username=%s\npassword=%s\nsystem_token=%s\n", c.Username, c.Password, c.SystemToken)
 	return os.WriteFile(path, buf.Bytes(), 0600)
 }
 
 // CreateCredentials writes credentials to path
-func CreateCredentials(login, password, path string) error {
+func CreateCredentials(login, password, systemToken, path string) error {
 	c := Credentials{
-		Filename: path,
-		Username: login,
-		Password: password,
+		Filename:    path,
+		Username:    login,
+		Password:    password,
+		SystemToken: systemToken,
 	}
 	return c.write()
 }
 
-func writeSystemCredentials(login, password string) error {
+func writeSystemCredentials(login, password, systemToken string) error {
 	path := systemCredentialsFile()
-	return CreateCredentials(login, password, path)
+	return CreateCredentials(login, password, systemToken, path)
 }
 
 func writeServiceCredentials(serviceName string) error {
@@ -128,7 +137,7 @@ func writeServiceCredentials(serviceName string) error {
 		return err
 	}
 	path := serviceCredentialsFile(serviceName)
-	return CreateCredentials(c.Username, c.Password, path)
+	return CreateCredentials(c.Username, c.Password, c.SystemToken, path)
 }
 
 func removeSystemCredentials() error {

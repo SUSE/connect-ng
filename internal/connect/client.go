@@ -227,7 +227,7 @@ func announceOrUpdate() error {
 	if err != nil {
 		return err
 	}
-	return writeSystemCredentials(login, password)
+	return writeSystemCredentials(login, password, "")
 }
 
 // IsRegistered returns true if there is a valid credentials file
