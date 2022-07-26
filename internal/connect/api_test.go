@@ -8,8 +8,11 @@ import (
 )
 
 func TestAnnounceSystem(t *testing.T) {
+	createTestCredentials("", "", t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("System-Token", "token")
 		io.WriteString(w, `{"login":"test-user","password":"test-password"}`)
 	}))
 	defer ts.Close()
@@ -24,6 +27,15 @@ func TestAnnounceSystem(t *testing.T) {
 	}
 	if password != "test-password" {
 		t.Errorf("Expected password: \"test-password\", got: \"%s\"", password)
+	}
+
+	// System token should have been updated.
+	creds, err := getCredentials()
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	if creds.SystemToken != "token" {
+		t.Fatalf("Unexpected token '%v', should have been 'token'", creds.SystemToken)
 	}
 }
 

@@ -68,7 +68,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 	var res struct {
 		Credentials []string `json:"credentials"`
 	}
-	res.Credentials = []string{login, password}
+	res.Credentials = []string{login, password, ""}
 	jsn, _ := json.Marshal(&res)
 	return C.CString(string(jsn))
 }
@@ -95,9 +95,9 @@ func credentials(path *C.char) *C.char {
 }
 
 //export create_credentials_file
-func create_credentials_file(login, password, path *C.char) *C.char {
+func create_credentials_file(login, password, token, path *C.char) *C.char {
 	err := connect.CreateCredentials(
-		C.GoString(login), C.GoString(password), C.GoString(path))
+		C.GoString(login), C.GoString(password), C.GoString(token), C.GoString(path))
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

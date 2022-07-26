@@ -14,13 +14,13 @@ func announceSystem(body []byte) (string, string, error) {
 		return "", "", err
 	}
 	var creds struct {
-		Login     string `json:"login"`
-		Passoword string `json:"password"`
+		Login    string `json:"login"`
+		Password string `json:"password"`
 	}
 	if err = json.Unmarshal(resp, &creds); err != nil {
 		return "", "", JSONError{err}
 	}
-	return creds.Login, creds.Passoword, nil
+	return creds.Login, creds.Password, nil
 }
 
 func upToDate() bool {
