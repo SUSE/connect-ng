@@ -131,9 +131,26 @@ install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.8 %buildroot/%_
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-migration.8 %buildroot/%_mandir/man8/zypper-migration.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-search-packages.8 %buildroot/%_mandir/man8/zypper-search-packages.8
 
+# Install the SUSEConnect --keepalive timer and service.
+install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.timer %buildroot/%_unitdir/suseconnect-keepalive.timer
+install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.service %buildroot/%_unitdir/suseconnect-keepalive.service
+ln -sf service %buildroot/%_sbindir/rcsuseconnect-keepalive
+
 find %_builddir/..
 # we currently do not ship the source for any go module
 rm -rf %buildroot/usr/share/go
+
+%pre
+%service_add_pre suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%post
+%service_add_post suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%preun
+%service_del_preun suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%postun
+%service_del_postun suseconnect-keepalive.service suseconnect-keepalive.timer
 
 %check
 %gotest -v %import_path/internal/connect %{?test_hwinfo_args}
@@ -146,9 +163,12 @@ make -C %_builddir/go/src/%import_path gofmt
 %_bindir/suseconnect
 %_bindir/SUSEConnect
 %_sbindir/SUSEConnect
+%_sbindir/rcsuseconnect-keepalive
 /usr/lib/zypper/commands
 %_mandir/man8/*
 %_mandir/man5/*
+%_unitdir/suseconnect-keepalive.service
+%_unitdir/suseconnect-keepalive.timer
 
 %files -n libsuseconnect
 %license LICENSE LICENSE.LGPL
