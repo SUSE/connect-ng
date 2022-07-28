@@ -131,9 +131,61 @@ install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.8 %buildroot/%_
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-migration.8 %buildroot/%_mandir/man8/zypper-migration.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-search-packages.8 %buildroot/%_mandir/man8/zypper-search-packages.8
 
+# Install the SUSEConnect --keepalive timer and service.
+install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.timer %buildroot/%_unitdir/suseconnect-keepalive.timer
+install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.service %buildroot/%_unitdir/suseconnect-keepalive.service
+ln -sf service %buildroot/%_sbindir/rcsuseconnect-keepalive
+
 find %_builddir/..
 # we currently do not ship the source for any go module
 rm -rf %buildroot/usr/share/go
+
+%pre
+%service_add_pre suseconnect-keepalive.service suseconnect-keepalive.timer
+
+# in pre blocks the old version is still installed. This way we can detect
+# if --keepalive was already present before
+kainfo=0
+helptext=$(SUSEConnect --help)
+if [ $? -eq 0 ]; then
+    echo "$helptext" | grep -q keepalive
+    kainfo=$?
+fi
+
+if [ $kainfo -ne 0 ]; then
+  cat << EOF
+Empowering you with enriched system visibility in the SUSE Customer Center
+
+SUSE is committed to helping provide better insights into the consumption of
+SUSE subscriptions regardless of where they are running; physical or virtual,
+on-prem or in the cloud.
+
+SUSE has been working on several improvements to the SUSE Customer Center (SCC),
+RMT, and SUSE Manager to provide a clearer picture of your system landscape:
+
+- SUSE Manager v4.1+ now sends system information to SCC.
+- SCC now captures which products are activated on systems that sit behind RMT
+  or SMT.
+- This update will enable your system to "ping" SCC/RMT daily to
+  confirm the system's active status. This will help you identify or filter out
+  systems in SCC that are no longer running or decommissioned. As always, the
+  choice is yours, you can disable the daily ping by disabling the
+  suseconnect-keepalive systemd timer.
+
+We will continue improving our products to make it easier for you to view and
+manage your subscription consumption. As always, we'd love to hear your feedback
+about these improvements and any ideas you might have.
+EOF
+fi
+
+%post
+%service_add_post suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%preun
+%service_del_preun suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%postun
+%service_del_postun suseconnect-keepalive.service suseconnect-keepalive.timer
 
 %check
 %gotest -v %import_path/internal/connect %{?test_hwinfo_args}
@@ -146,9 +198,12 @@ make -C %_builddir/go/src/%import_path gofmt
 %_bindir/suseconnect
 %_bindir/SUSEConnect
 %_sbindir/SUSEConnect
+%_sbindir/rcsuseconnect-keepalive
 /usr/lib/zypper/commands
 %_mandir/man8/*
 %_mandir/man5/*
+%_unitdir/suseconnect-keepalive.service
+%_unitdir/suseconnect-keepalive.timer
 
 %files -n libsuseconnect
 %license LICENSE LICENSE.LGPL
