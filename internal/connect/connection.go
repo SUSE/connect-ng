@@ -100,6 +100,7 @@ func setupHTTPClient() {
 		tr := http.DefaultTransport.(*http.Transport).Clone()
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: CFG.Insecure, RootCAs: systemRootsPool()}
 		tr.Proxy = proxyWithAuth
+		tr.ForceAttemptHTTP2 = false
 		httpclient = &http.Client{Transport: tr, Timeout: 60 * time.Second}
 	}
 }
