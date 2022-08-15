@@ -12,7 +12,7 @@ internal/connect/version.txt:
 	@echo
 
 build: out internal/connect/version.txt
-	go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	GOEXPERIMENT=boringcrypto go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
 test: internal/connect/version.txt
 	go test -v ./internal/connect ./suseconnect
@@ -31,13 +31,13 @@ gofmt:
 	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
 
 build-so: out internal/connect/version.txt
-	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
+	GOEXPERIMENT=boringcrypto go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
 
 build-arm: out internal/connect/version.txt
-	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	GOOS=linux GOARCH=arm64 GOARM=7 GOEXPERIMENT=boringcrypto go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
 build-s390: out internal/connect/version.txt
-	GOOS=linux GOARCH=s390x go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	GOOS=linux GOARCH=s390x GOEXPERIMENT=boringcrypto go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
 clean:
 	go clean

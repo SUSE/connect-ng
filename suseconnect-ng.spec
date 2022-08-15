@@ -31,7 +31,7 @@ Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
-BuildRequires:  go >= 1.16
+BuildRequires:  go >= 1.19
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
 %if 0%{?test_hwinfo}
@@ -111,6 +111,7 @@ echo %{version} > internal/connect/version.txt
 %goprep %{import_path}
 find %_builddir/..
 go list all
+export GOEXPERIMENT=boringcrypto
 %gobuild suseconnect
 mkdir -p %_builddir/go/lib
 go build -v -buildmode=c-shared -o %_builddir/go/lib/libsuseconnect.so %import_path/libsuseconnect
