@@ -81,7 +81,6 @@ suseconnect-ng reduces the size of its runtime dependencies compared to the
 replaced SUSEConnect.
 
 
-%{go_nostrip}
 %{go_provides}
 
 %package -n libsuseconnect
