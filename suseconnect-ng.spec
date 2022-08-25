@@ -18,8 +18,8 @@
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
-# set this to 1 to enable hwinfo test in %check
-%global test_hwinfo 0
+# set this to enable hwinfo test in %check
+%bcond_with hwinfo
 
 Name:           suseconnect-ng
 Version:        0.0.3~git112.d4980ea
@@ -34,7 +34,7 @@ BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
-%if 0%{?test_hwinfo}
+%if %{with hwinfo}
 %global test_hwinfo_args -test-hwinfo
 # packages required only for hwinfo tests
 %ifarch %ix86 ia64 x86_64 %arm aarch64
@@ -44,7 +44,7 @@ BuildRequires:  dmidecode
 BuildRequires:  s390-tools
 %endif
 BuildRequires:  systemd
-%endif # test_hwinfo
+%endif
 
 Obsoletes:      SUSEConnect < 0.3.99
 Provides:       SUSEConnect = 0.3.99
@@ -81,7 +81,6 @@ suseconnect-ng reduces the size of its runtime dependencies compared to the
 replaced SUSEConnect.
 
 
-%{go_nostrip}
 %{go_provides}
 
 %package -n libsuseconnect
