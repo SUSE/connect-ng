@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -81,7 +82,23 @@ func successCode(code int) bool {
 	return code >= 200 && code < 300
 }
 
+// Returns true if proxy setup is enabled at the system level. This is specific
+// to SUSE.
+func proxyEnabled() bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv("PROXY_ENABLED")))
+
+	// NOTE: if the value is not set, we return true so Go figures this out.
+	return value == "" || value == "y" || value == "yes" || value == "t" || value == "true"
+}
+
 func proxyWithAuth(req *http.Request) (*url.URL, error) {
+	// Check for the special "PROXY_ENABLED" environment variable which might be
+	// set in a SUSE system. If it is set to a falsey value, then we skip proxy
+	// detection regardless of other environment variables.
+	if !proxyEnabled() {
+		return nil, nil
+	}
+
 	proxyURL, err := http.ProxyFromEnvironment(req)
 	// nil proxyUrl indicates no proxy configured
 	if proxyURL == nil || err != nil {
