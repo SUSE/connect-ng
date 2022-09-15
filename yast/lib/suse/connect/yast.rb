@@ -13,7 +13,7 @@ module GoConnect
   extern 'string announce_system(string, string)'
   extern 'string update_system(string, string)'
   extern 'string credentials(string)'
-  extern 'string create_credentials_file(string, string, string)'
+  extern 'string create_credentials_file(string, string, string, string)'
   extern 'string curlrc_credentials()'
   extern 'string show_product(string, string)'
   extern 'string activated_products(string)'
@@ -141,7 +141,7 @@ module SUSE
         # @param [String] system password - return value of announce_system method
         # @param [String] credentials_file - defaults to /etc/zypp/credentials.d/SCCcredentials
         def create_credentials_file(login, password, credentials_file = GLOBAL_CREDENTIALS_FILE)
-          GoConnect.create_credentials_file(login, password, credentials_file)
+          GoConnect.create_credentials_file(login, password, "", credentials_file)
         end
 
         # Lists all available products for a system.
