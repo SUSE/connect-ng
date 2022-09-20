@@ -69,6 +69,7 @@ func connectMain() {
 	flag.BoolVar(&cleanup, "cleanup", false, "")
 	flag.BoolVar(&cleanup, "clean", false, "")
 	flag.BoolVar(&listExtensions, "list-extensions", false, "")
+	flag.BoolVar(&listExtensions, "list-ext", false, "")
 	flag.BoolVar(&listExtensions, "l", false, "")
 	flag.BoolVar(&rollback, "rollback", false, "")
 	flag.BoolVar(&version, "version", false, "")
