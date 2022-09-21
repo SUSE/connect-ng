@@ -338,6 +338,17 @@ func SystemActivations() (map[string]Activation, error) {
 	return systemActivations()
 }
 
+// DeactivateProduct deactivates given product in SMT/SCC
+// returns Service to be removed from zypper
+func DeactivateProduct(product Product) (Service, error) {
+	return deactivateProduct(product)
+}
+
+// DeregisterSystem deletes current system in SMT/SCC
+func DeregisterSystem() error {
+	return deregisterSystem()
+}
+
 // InstallerUpdates returns an array of Installer-Updates repositories for the given product
 func InstallerUpdates(product Product) ([]Repo, error) {
 	return installerUpdates(product)

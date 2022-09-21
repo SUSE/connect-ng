@@ -12,12 +12,14 @@ module GoConnect
   extern 'void free_string(string)'
   extern 'string announce_system(string, string)'
   extern 'string update_system(string, string)'
+  extern 'string deactivate_system(string)'
   extern 'string credentials(string)'
   extern 'string create_credentials_file(string, string, string, string)'
   extern 'string curlrc_credentials()'
   extern 'string show_product(string, string)'
   extern 'string activated_products(string)'
   extern 'string activate_product(string, string, string)'
+  extern 'string deactivate_product(string, string)'
   extern 'string get_config(string)'
   extern 'string write_config(string)'
   extern 'string update_certificates()'
@@ -68,6 +70,14 @@ module SUSE
           _process_result(GoConnect.update_system(jsn_params, distro_target))
         end
 
+        # Deactivates the system in SCC / the registration server.
+        # @param [Hash] client_params parameters to override SUSEConnect config
+        def deactivate_system(client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          _process_result(GoConnect.deactivate_system(jsn_params))
+        end
+
         # Activates a product on SCC / the registration server.
         # Expects product parameter to identify the product.
         # Requires a token / regcode except for free products/extensions.
@@ -83,6 +93,21 @@ module SUSE
           jsn_params = JSON.generate(client_params)
           jsn_product = JSON.generate(product.to_h)
           _process_result(GoConnect.activate_product(jsn_params, jsn_product, email))
+        end
+
+        # Deactivates a product on SCC / the registration server.
+        # Expects product parameter to identify the product.
+        # Returns a service object for the deactivated product.
+        #
+        # @param [OpenStruct] product with identifier, arch and version defined
+        # @param [Hash] client_params parameters to override SUSEConnect config
+        #
+        # @return [OpenStruct] Service object as openstruct
+        def deactivate_product(product, client_params = {})
+          _set_verify_callback(client_params[:verify_callback])
+          jsn_params = JSON.generate(client_params)
+          jsn_product = JSON.generate(product.to_h)
+          _process_result(GoConnect.deactivate_product(jsn_params, jsn_product))
         end
 
         # Upgrades a product on SCC / the registration server.
