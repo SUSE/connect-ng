@@ -101,8 +101,6 @@ This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
 %prep
 %setup -q -n connect-ng-%{version}
-# keep git metadata but don't use it for "VCS stamping"
-mv .git .git.bak
 
 %build
 find %_builddir/..
