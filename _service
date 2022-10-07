@@ -11,7 +11,7 @@
     <param name="versionrewrite-pattern">v(\d+\.\d+\.\d+)</param>
     <param name="versionrewrite-replacement">\1</param>
     <param name="changesgenerate">enable</param>
-    <param name="package-meta">yes</param>
+    <param name="package-meta">no</param>
     <param name="exclude">vendor</param>
   </service>
   <service name="recompress" mode="manual">
