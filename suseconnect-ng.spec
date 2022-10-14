@@ -31,7 +31,13 @@ Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
 BuildRequires:  golang-packaging
+# use FIPS compliant go version for SLE targets and Leap 15.5+ targets
+%if ( 0%{?is_opensuse} == 0 && 0%{?sle_version} ) || ( 0%{?is_opensuse} == 1 && 0%{?sle_version} >= 150500 )
+# temporary until BuildRequires: go-openssl >= 1.16 works
+BuildRequires:  go1.18-openssl
+%else
 BuildRequires:  go >= 1.16
+%endif
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
 %if %{with hwinfo}
