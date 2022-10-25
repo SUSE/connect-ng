@@ -84,7 +84,7 @@ replaced SUSEConnect.
 %{go_provides}
 
 %package -n libsuseconnect
-Summary:        C interface to suseconnect-ng.
+Summary:        C interface to suseconnect-ng
 Group:          System/Management
 # the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
 Requires:       suseconnect-ng
@@ -93,7 +93,7 @@ This package contains library which provides C interface to selected
 suseconnect-ng functions.
 
 %package -n suseconnect-ruby-bindings
-Summary:        Ruby bindings for libsuseconnect library.
+Summary:        Ruby bindings for libsuseconnect library
 Group:          System/Management
 Requires:       libsuseconnect
 %description -n suseconnect-ruby-bindings
