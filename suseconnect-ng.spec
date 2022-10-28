@@ -46,8 +46,8 @@ BuildRequires:  s390-tools
 BuildRequires:  systemd
 %endif
 
-Obsoletes:      SUSEConnect < 0.3.99
-Provides:       SUSEConnect = 0.3.99
+Obsoletes:      SUSEConnect < 1.0.0
+Provides:       SUSEConnect = 1.0.0
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
@@ -84,7 +84,7 @@ replaced SUSEConnect.
 %{go_provides}
 
 %package -n libsuseconnect
-Summary:        C interface to suseconnect-ng.
+Summary:        C interface to suseconnect-ng
 Group:          System/Management
 # the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
 Requires:       suseconnect-ng
@@ -93,7 +93,7 @@ This package contains library which provides C interface to selected
 suseconnect-ng functions.
 
 %package -n suseconnect-ruby-bindings
-Summary:        Ruby bindings for libsuseconnect library.
+Summary:        Ruby bindings for libsuseconnect library
 Group:          System/Management
 Requires:       libsuseconnect
 %description -n suseconnect-ruby-bindings
