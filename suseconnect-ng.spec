@@ -46,8 +46,8 @@ BuildRequires:  s390-tools
 BuildRequires:  systemd
 %endif
 
-Obsoletes:      SUSEConnect < 1.0
-Provides:       SUSEConnect = 1.0
+Obsoletes:      SUSEConnect < 1.0.0
+Provides:       SUSEConnect = 1.0.0
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
