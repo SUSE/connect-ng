@@ -140,6 +140,17 @@ func connectMain() {
 			connect.CFG.Language = lang
 		}
 	}
+	if autoAgreeWithLicenses {
+		connect.CFG.AutoAgreeEULA = true
+	} else {
+		// check for "SUSEConnect --auto-agree-with-licenses=false ..."
+		// which should take precedence over setting in /etc/SUSEConnect
+		flag.Visit(func(f *flag.Flag) {
+			if f.Name == "auto-agree-with-licenses" {
+				connect.CFG.AutoAgreeEULA = false
+			}
+		})
+	}
 	if status {
 		output, err := connect.GetProductStatuses("json")
 		exitOnError(err)
@@ -180,7 +191,7 @@ func connectMain() {
 			os.Exit(1)
 		} else {
 			// this is a no-op for base system and extensions without EULAs
-			err := connect.AcceptEULA(autoAgreeWithLicenses)
+			err := connect.AcceptEULA()
 			exitOnError(err)
 			err = connect.Register()
 			exitOnError(err)

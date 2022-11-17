@@ -116,7 +116,7 @@ func printEULA(text []byte) {
 }
 
 // AcceptEULA displays EULA and prompts for acceptance (or does nothing if there's no EULA)
-func AcceptEULA(autoAgree bool) error {
+func AcceptEULA() error {
 	// separate EULAs are only for addon products
 	if CFG.Product.isEmpty() {
 		return nil
@@ -159,7 +159,7 @@ func AcceptEULA(autoAgree bool) error {
 		"In order to install '%s', you must agree to terms of the following license agreement:\n\n",
 		extension.FriendlyName)
 	eula = append([]byte(header), eula...)
-	if autoAgree {
+	if CFG.AutoAgreeEULA {
 		printEULA(eula)
 		// TODO: maybe print some message e.g. "License accepted (auto confirmation)"
 		return nil
