@@ -143,7 +143,7 @@ rm -rf %buildroot/usr/share/go
 # in pre blocks the old version is still installed. This way we can detect
 # if --keepalive was already present before
 kainfo=0
-helptext=$(SUSEConnect --help)
+helptext=$(test -x "$(type -p SUSEConnect)" && SUSEConnect --help)
 if [ $? -eq 0 ]; then
     echo "$helptext" | grep -q keepalive
     kainfo=$?
