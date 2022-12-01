@@ -34,10 +34,13 @@ BuildRequires:  golang-packaging
 BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
+
 %if %{with hwinfo}
 %global test_hwinfo_args -test-hwinfo
+
+ExcludeArch: %ix86 s390 ppc64
 # packages required only for hwinfo tests
-%ifarch %ix86 ia64 x86_64 %arm aarch64
+%ifarch ia64 x86_64 %arm aarch64
 BuildRequires:  dmidecode
 %endif
 %ifarch s390x
@@ -45,6 +48,7 @@ BuildRequires:  s390-tools
 %endif
 BuildRequires:  systemd
 %endif
+
 
 Obsoletes:      SUSEConnect < 1.0.0
 Provides:       SUSEConnect = 1.0.0
@@ -59,7 +63,7 @@ Requires:       ca-certificates-mozilla
 %endif
 Requires:       coreutils
 # ExclusiveArch from this package
-%ifarch %ix86 ia64 x86_64 %arm aarch64
+%ifarch ia64 x86_64 %arm aarch64
 Requires:       dmidecode
 %endif
 # ExclusiveArch from this package
@@ -68,7 +72,7 @@ Requires:       s390-tools
 %endif
 Requires:       zypper
 # lscpu is only used on those
-%ifarch x86_64 aarch64
+%ifarch aarch64
 Requires:       util-linux
 %endif
 Recommends:     systemd
