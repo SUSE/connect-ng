@@ -66,6 +66,19 @@ func TestWriteCredentials(t *testing.T) {
 	}
 }
 
+func TestWriteCredentialsEmptyToken(t *testing.T) {
+	CFG.FsRoot = t.TempDir()
+	if err := writeSystemCredentials("user1", "pass1", ""); err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	expected := "username=user1\npassword=pass1\n"
+	contents, _ := os.ReadFile(systemCredentialsFile())
+	got := string(contents)
+	if got != expected {
+		t.Errorf("Expected %#v, got %#v", expected, got)
+	}
+}
+
 func TestWriteReadDeleteService(t *testing.T) {
 	CFG.FsRoot = t.TempDir()
 	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
@@ -79,8 +92,8 @@ func TestWriteReadDeleteService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	if rc.Username != "user1" || rc.Password != "pass1" || rc.SystemToken != "1234" {
-		t.Errorf("Got: %s and %s, expected user1 and pass1", rc.Username, rc.Password)
+	if rc.Username != "user1" || rc.Password != "pass1" || rc.SystemToken != "" {
+		t.Errorf("Got: %s, %s, %s. Expected user1, pass1, \"\"", rc.Username, rc.Password, rc.SystemToken)
 	}
 	if err := removeServiceCredentials("service1"); err != nil {
 		t.Errorf("Unexpected error: %s", err)

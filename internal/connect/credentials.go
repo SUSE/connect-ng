@@ -111,7 +111,10 @@ func (c Credentials) write() error {
 		}
 	}
 	buf := bytes.Buffer{}
-	fmt.Fprintf(&buf, "username=%s\npassword=%s\nsystem_token=%s\n", c.Username, c.Password, c.SystemToken)
+	fmt.Fprintf(&buf, "username=%s\npassword=%s\n", c.Username, c.Password)
+	if c.SystemToken != "" {
+		fmt.Fprintf(&buf, "system_token=%s\n", c.SystemToken)
+	}
 	return os.WriteFile(path, buf.Bytes(), 0600)
 }
 
@@ -137,7 +140,8 @@ func writeServiceCredentials(serviceName string) error {
 		return err
 	}
 	path := serviceCredentialsFile(serviceName)
-	return CreateCredentials(c.Username, c.Password, c.SystemToken, path)
+	// the SystemToken is not written to service credential files
+	return CreateCredentials(c.Username, c.Password, "", path)
 }
 
 func removeSystemCredentials() error {
