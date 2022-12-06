@@ -85,6 +85,10 @@ func connectMain() {
 	flag.StringVar(&email, "e", "", "")
 
 	flag.Parse()
+	if version {
+		fmt.Println(connect.GetShortenedVersion())
+		os.Exit(0)
+	}
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
@@ -162,9 +166,6 @@ func connectMain() {
 	} else if rollback {
 		err := connect.Rollback()
 		exitOnError(err)
-	} else if version {
-		fmt.Println(connect.GetShortenedVersion())
-		os.Exit(0)
 	} else {
 		if instanceDataFile != "" && connect.URLDefault() {
 			fmt.Print("Please use --instance-data only in combination ")
