@@ -62,10 +62,10 @@ Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
 Provides:       zypper-search-packages-plugin = 0.99
-%if 0%{?fedora} || 0%{?rhel} || 0%{?centos_version}
-Requires:       ca-certificates
-%else
+%if 0%{?suse_version}
 Requires:       ca-certificates-mozilla
+%else
+Requires:       ca-certificates
 %endif
 Requires:       coreutils
 # ExclusiveArch from this package
