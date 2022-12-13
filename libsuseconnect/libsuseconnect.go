@@ -84,6 +84,18 @@ func update_system(clientParams, distroTarget *C.char) *C.char {
 	return C.CString("{}")
 }
 
+//export deactivate_system
+func deactivate_system(clientParams *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	err := connect.DeregisterSystem()
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+
+	return C.CString("{}")
+}
+
 //export credentials
 func credentials(path *C.char) *C.char {
 	creds, err := connect.ReadCredentials(C.GoString(path))
@@ -161,6 +173,26 @@ func activated_products(clientParams *C.char) *C.char {
 		return C.CString(errorToJSON(err))
 	}
 	jsn, err := json.Marshal(products)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	return C.CString(string(jsn))
+}
+
+//export deactivate_product
+func deactivate_product(clientParams, product *C.char) *C.char {
+	loadConfig(C.GoString(clientParams))
+
+	var p connect.Product
+	err := json.Unmarshal([]byte(C.GoString(product)), &p)
+	if err != nil {
+		return C.CString(errorToJSON(connect.JSONError{Err: err}))
+	}
+	service, err := connect.DeactivateProduct(p)
+	if err != nil {
+		return C.CString(errorToJSON(err))
+	}
+	jsn, err := json.Marshal(service)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
