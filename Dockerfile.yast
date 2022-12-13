@@ -1,6 +1,6 @@
 FROM registry.opensuse.org/yast/head/containers/yast-ruby:latest
 
-RUN rm -r /usr/lib64/ruby/gems/*/gems/suse-connect-*
+RUN zypper rm -y suseconnect-ng libsuseconnect suseconnect-ruby-bindings
 
 # invalidate github cache
 ADD https://api.github.com/repos/yast/yast-registration/git/refs/heads/master version.json
@@ -10,6 +10,6 @@ WORKDIR /yast-registration
 RUN git clone --depth 1 https://github.com/yast/yast-registration.git /yast-registration
 
 COPY out/libsuseconnect.so /usr/lib64
-COPY yast/lib /usr/lib64/ruby/vendor_ruby/2.7.0
+COPY yast/lib /usr/lib64/ruby/vendor_ruby/3.1.0
 CMD ["rake", "test:unit"]
 
