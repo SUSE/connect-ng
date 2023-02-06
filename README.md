@@ -1,5 +1,8 @@
 # SUSEConnect-ng
 
+[![build result](https://build.opensuse.org/projects/systemsmanagement:SCC/packages/suseconnect-ng/badge.svg?type=default)](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+
+
 SUSEConnect-ng is a work-in-progress project to rewrite [SUSEConnect](https://github.com/SUSE/connect) in Golang.
 
 SUSEConnect is a command line tool for connecting a client system to the SUSE Customer Center.
