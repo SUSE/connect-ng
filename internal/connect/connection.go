@@ -20,6 +20,11 @@ const (
 
 type authType int
 
+type ErrorResponse struct {
+	Error          string `json:"error"`
+	LocalizedError string `json:"localized_error"`
+}
+
 const (
 	authNone authType = iota
 	authSystem
@@ -32,10 +37,7 @@ var (
 
 // parseError returns the error message from a SCC error response
 func parseError(body io.Reader) string {
-	var errResp struct {
-		Error          string `json:"error"`
-		LocalizedError string `json:"localized_error"`
-	}
+	errResp := ErrorResponse{}
 	if err := json.NewDecoder(body).Decode(&errResp); err != nil {
 		return ""
 	}
