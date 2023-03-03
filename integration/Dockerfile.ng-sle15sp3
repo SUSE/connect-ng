@@ -22,7 +22,7 @@ RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/las
 RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/lastBuild/artifact/.oscrc -O ~/.oscrc
 
 RUN echo 'gem: --no-ri --no-rdoc' > /etc/gemrc && \
-    gem install bundler --no-document
+    gem install bundler --no-document -v 2.3.26
 
 RUN mkdir /tmp/connect && mkdir -p /tmp/connect/lib/suse/connect
 WORKDIR /tmp/connect
