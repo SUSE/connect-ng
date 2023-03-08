@@ -147,6 +147,9 @@ func connectMain() {
 		exitOnError(err)
 		fmt.Println(output)
 	} else if keepAlive {
+		if isSumaManaged() {
+			os.Exit(0)
+		}
 		err := connect.SendKeepAlivePing()
 		exitOnError(err)
 	} else if statusText {
@@ -174,7 +177,7 @@ func connectMain() {
 		} else if connect.URLDefault() && token == "" && product == "" {
 			flag.Usage()
 			os.Exit(1)
-		} else if fileExists("/etc/sysconfig/rhn/systemid") {
+		} else if isSumaManaged() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
@@ -272,4 +275,8 @@ func fileExists(path string) bool {
 		return false
 	}
 	return true
+}
+
+func isSumaManaged() bool {
+	return fileExists("/etc/sysconfig/rhn/systemid")
 }
