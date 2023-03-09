@@ -41,10 +41,10 @@ BuildRequires:  go >= 1.16
 BuildRequires:  zypper
 BuildRequires:  ruby-devel
 
+ExcludeArch: %ix86 s390 ppc64
 %if %{with hwinfo}
 %global test_hwinfo_args -test-hwinfo
 
-ExcludeArch: %ix86 s390 ppc64
 # packages required only for hwinfo tests
 %ifarch ia64 x86_64 %arm aarch64
 BuildRequires:  dmidecode
