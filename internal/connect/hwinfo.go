@@ -3,6 +3,7 @@ package connect
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"net"
 	"os"
 	"regexp"
@@ -31,6 +32,7 @@ type hwinfo struct {
 	Arch          string `json:"arch"`
 	UUID          string `json:"uuid"`
 	CloudProvider string `json:"cloud_provider"`
+	MemTotal      int    `json:"mem_total,omitempty"`
 }
 
 func getHwinfo() (hwinfo, error) {
@@ -41,6 +43,11 @@ func getHwinfo() (hwinfo, error) {
 	}
 	hw.Hostname = hostname()
 	hw.CloudProvider = cloudProvider()
+
+	// Include memory information if possible.
+	if mem := systemMemory(); mem > 0 {
+		hw.MemTotal = mem
+	}
 
 	var lscpuM map[string]string
 	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
@@ -268,4 +275,41 @@ func readValues2map(b []byte) map[string]string {
 		m[key] = val
 	}
 	return m
+}
+
+// Returns the parsed value for the given file. The implementation has been
+// split from `systemMemory` so testing it is easier, but bear in mind that
+// these two are coupled.
+func parseMeminfo(file io.Reader) int {
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 2 || fields[0] != "MemTotal:" {
+			continue
+		}
+
+		val, err := strconv.Atoi(fields[1])
+		if err != nil {
+			Debug.Printf("could not obtain memory information for this system: %v", err)
+			return 0
+		}
+		return val / 1024
+	}
+
+	Debug.Print("could not obtain memory information for this system")
+	return 0
+}
+
+// Returns an integer with the amount of megabytes of total memory (i.e.
+// `MemTotal` in /proc/meminfo). It will return 0 if this information could not
+// be extracted for whatever reason.
+func systemMemory() int {
+	file, err := os.Open("/proc/meminfo")
+	if err != nil {
+		Debug.Print("'/proc/meminfo' could not be read!")
+		return 0
+	}
+	defer file.Close()
+
+	return parseMeminfo(file)
 }

@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"bytes"
 	"flag"
 	"net"
 	"testing"
@@ -151,6 +152,29 @@ func TestGetHwinfo(t *testing.T) {
 			t.Log("Reading number of sockets failed on ARM cluster (DMI not accessible?). Check skipped.")
 		} else {
 			t.Error("Sockets==0, expected>0")
+		}
+	}
+}
+
+func TestParseMeminfo(t *testing.T) {
+	var tests = []struct {
+		file  string
+		value int
+	}{
+		{"MemTotal:       16297236 kB", 15915},
+		{"MemTotal:", 0},
+		{"MemSomething:       16297236 kB", 0},
+		{"Malformed  16297236 kB", 0},
+		{"MemTotal:       notanumber kB", 0},
+		{"wubalubadubdub", 0},
+		{"", 0},
+	}
+
+	for _, v := range tests {
+		buff := bytes.NewBufferString(v.file)
+		val := parseMeminfo(buff)
+		if val != v.value {
+			t.Errorf("Expecting '%v', got '%v'", v.value, val)
 		}
 	}
 }
