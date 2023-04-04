@@ -36,6 +36,9 @@ build-so: out internal/connect/version.txt
 build-arm: out internal/connect/version.txt
 	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
+build-ppc: out internal/connect/version.txt
+	GOOS=linux GOARCH=ppc64le go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+
 build-s390: out internal/connect/version.txt
 	GOOS=linux GOARCH=s390x go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
 
