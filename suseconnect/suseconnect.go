@@ -32,6 +32,26 @@ func main() {
 	}
 }
 
+// singleStringFlag cannot be set more than once.
+// e.g. `cmd -p abc -p def` will give a parse error.
+type singleStringFlag struct {
+	value string
+	isSet bool
+}
+
+func (p *singleStringFlag) String() string {
+	return p.value
+}
+
+func (p *singleStringFlag) Set(value string) error {
+	if p.isSet {
+		return fmt.Errorf("this flag can only be specified once\n")
+	}
+	p.value = value
+	p.isSet = true
+	return nil
+}
+
 func connectMain() {
 	var (
 		status           bool
@@ -46,7 +66,7 @@ func connectMain() {
 		fsRoot           string
 		namespace        string
 		token            string
-		product          string
+		product          singleStringFlag
 		instanceDataFile string
 		listExtensions   bool
 		email            string
@@ -78,11 +98,11 @@ func connectMain() {
 	flag.StringVar(&namespace, "namespace", "", "")
 	flag.StringVar(&token, "regcode", "", "")
 	flag.StringVar(&token, "r", "", "")
-	flag.StringVar(&product, "product", "", "")
-	flag.StringVar(&product, "p", "", "")
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
+	flag.Var(&product, "product", "")
+	flag.Var(&product, "p", "")
 
 	flag.Parse()
 	if version {
@@ -121,8 +141,8 @@ func connectMain() {
 	if token != "" {
 		connect.CFG.Token = token
 	}
-	if product != "" {
-		if p, err := connect.SplitTriplet(product); err != nil {
+	if product.isSet {
+		if p, err := connect.SplitTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
@@ -174,7 +194,7 @@ func connectMain() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if connect.URLDefault() && token == "" && product == "" {
+		} else if connect.URLDefault() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
