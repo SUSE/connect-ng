@@ -1,20 +1,16 @@
+---
 Installed Products:
-------------------------------------------
-{{ range . }}
-  {{ .Summary }}
-  ({{ .Identifier }}/{{ .Version }}/{{ .Arch }})
-
-  {{ .Status }}
-  {{ if .RegCode }}
+{{- range . }}
+  - Identifier: {{ .Identifier }}/{{ .Version }}/{{ .Arch }}
+    Summary: {{ .Summary }}
+    Status: {{ .Status }}
+    {{- if .RegCode }}
     Subscription:
-
-    Name: {{ .Name }}
-    Regcode: {{ .RegCode }}
-    Starts at: {{ .StartsAt }}
-    Expires at: {{ .ExpiresAt }}
-    Status: {{ .SubStatus }}
-    Type: {{ .Type }}
-  {{ end }}
-
-------------------------------------------
-{{ end }}
+      Name: {{ .Name }}
+      Regcode: {{ .RegCode }}
+      Starts at: {{ .StartsAt }}
+      Expires at: {{ .ExpiresAt }}
+      Status: {{ .SubStatus }}
+      Type: {{ .Type }}
+    {{- end -}}
+{{ end -}}

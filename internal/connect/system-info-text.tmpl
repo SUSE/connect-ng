@@ -1,0 +1,39 @@
+---
+System Information:
+  {{ with .Hostname -}}
+  Hostname: {{ . }}
+  {{ end -}}
+  {{ with .InstanceData -}}
+  InstanceData: {{ . }}
+  {{ end -}}
+  {{ with .Namespace -}}
+  Namespace: {{ . }}
+  {{ end -}}
+  Hardware Information:
+    {{ with .Hwinfo.Cpus -}}
+    CPU Core Count: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.Sockets -}}
+    CPU Socket Count: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.Arch -}}
+    CPU Architecture: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.MemTotal -}}
+    Total Memory (MB): {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.Hypervisor -}}
+    Hypervisor: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.Clusters -}}
+    Clusters: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.UUID -}}
+    UUID: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.CloudProvider -}}
+    CloudProvider: {{ . }}
+    {{ end -}}
+    {{ with .Hwinfo.IsContainer -}}
+    Is Container: {{ . }}
+    {{ end -}}

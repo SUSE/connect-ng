@@ -35,6 +35,8 @@ func main() {
 func connectMain() {
 	var (
 		status           bool
+		systemInfo       bool
+		systemInfoText   bool
 		keepAlive        bool
 		statusText       bool
 		debug            bool
@@ -58,6 +60,9 @@ func connectMain() {
 		fmt.Print(connectUsageText)
 	}
 
+	// TODO(josegomezr): rewrite --status-text into --status & --output text.
+	flag.BoolVar(&systemInfo, "system-info", false, "")
+	flag.BoolVar(&systemInfoText, "system-info-text", false, "")
 	flag.BoolVar(&status, "status", false, "")
 	flag.BoolVar(&status, "s", false, "")
 	flag.BoolVar(&statusText, "status-text", false, "")
@@ -85,10 +90,14 @@ func connectMain() {
 	flag.StringVar(&email, "e", "", "")
 
 	flag.Parse()
+
+	// TODO(josegomezr): Improve logic for flag handling below, prioritize early exits
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
 	}
+
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to register products and change software repositories.")
 		os.Exit(1)
@@ -121,6 +130,21 @@ func connectMain() {
 	if token != "" {
 		connect.CFG.Token = token
 	}
+
+	if systemInfo {
+		output, err := connect.GetSystemInformation("json")
+		fmt.Println(output)
+		exitOnError(err)
+		os.Exit(0)
+	}
+
+	if systemInfoText {
+		output, err := connect.GetSystemInformation("text")
+		fmt.Print(output)
+		exitOnError(err)
+		os.Exit(0)
+	}
+
 	if product != "" {
 		if p, err := connect.SplitTriplet(product); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")

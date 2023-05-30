@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+type SystemInformation struct {
+	Hostname     string `json:"hostname"`
+	DistroTarget string `json:"distro_target"`
+	InstanceData string `json:"instance_data,omitempty"`
+	Namespace    string `json:"namespace,omitempty"`
+	Hwinfo       Hwinfo `json:"hwinfo"`
+}
+
 // announceSystem announces a system to SCC
 // https://scc.suse.com/connect/v4/documentation#/subscriptions/post_subscriptions_systems
 // The body parameter is produced by makeSysInfoBody()
@@ -174,34 +182,28 @@ func updateSystem(body []byte) error {
 	return err
 }
 
-// makeSysInfoBody returns the JSON payload needed for the announce/update system calls
-func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byte, error) {
-	var payload struct {
-		Hostname     string `json:"hostname"`
-		DistroTarget string `json:"distro_target"`
-		InstanceData string `json:"instance_data,omitempty"`
-		Namespace    string `json:"namespace,omitempty"`
-		Hwinfo       hwinfo `json:"hwinfo"`
-	}
-	if distroTarget != "" {
-		payload.DistroTarget = distroTarget
-	} else {
-		var err error
-		payload.DistroTarget, err = zypperDistroTarget()
-		if err != nil {
-			return nil, err
-		}
-	}
+// makeSysInfoBody returns SystemInformation struct for makeSysInfoBody
+func MakeSystemInformation(distroTarget, namespace string, instanceData []byte) (SystemInformation, error) {
+	// TODO(josegomezr): Remove DistroTarget. is not used by SCC
+	payload := SystemInformation{}
+	payload.DistroTarget = ""
 	payload.InstanceData = string(instanceData)
 	payload.Namespace = namespace
 
+	// TODO(josegomezr): allow partial hwinfos, is better to have half filled data
+	//                   than no data at all.
 	hw, err := getHwinfo()
+	payload.Hostname = hw.Hostname
+	payload.Hwinfo = hw
+	return payload, err
+}
+
+// makeSysInfoBody returns the JSON payload needed for the announce/update system calls
+func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byte, error) {
+	payload, err := MakeSystemInformation(distroTarget, namespace, instanceData)
 	if err != nil {
 		return nil, err
 	}
-	payload.Hostname = hw.Hostname
-	payload.Hwinfo = hw
-
 	return json.Marshal(payload)
 }
 

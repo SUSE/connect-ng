@@ -23,36 +23,42 @@ const (
 	archPPC  = "ppc64le"
 )
 
-type hwinfo struct {
+type Hwinfo struct {
 	Hostname      string `json:"hostname"`
 	Cpus          int    `json:"cpus"`
 	Sockets       int    `json:"sockets"`
-	Clusters      int    `json:"-"`
+	Clusters      int    `json:"clusters"`
 	Hypervisor    string `json:"hypervisor"`
 	Arch          string `json:"arch"`
 	UUID          string `json:"uuid"`
 	CloudProvider string `json:"cloud_provider"`
-	MemTotal      int    `json:"mem_total,omitempty"`
+	MemTotal      int    `json:"mem_total"`
+	IsContainer   bool   `json:"is_container"`
 }
 
-func getHwinfo() (hwinfo, error) {
-	hw := hwinfo{}
+// TODO(josegomezr): refactor this to allow partial hwinfo
+//
+//	in case a command fails, partial info is better than no info.
+func getHwinfo() (Hwinfo, error) {
+	hw := Hwinfo{}
 	var err error
 	if hw.Arch, err = arch(); err != nil {
-		return hwinfo{}, err
+		return hw, err
 	}
 	hw.Hostname = hostname()
+	hw.IsContainer = checkIsContainer()
 	hw.CloudProvider = cloudProvider()
 
 	// Include memory information if possible.
 	if mem := systemMemory(); mem > 0 {
 		hw.MemTotal = mem
 	}
-
+	// TODO(josegomezr): refactor this into small functions to detect cpu & hypervisor
+	//                   in each architecture.
 	var lscpuM map[string]string
 	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
 		if lscpuM, err = lscpu(); err != nil {
-			return hwinfo{}, err
+			return hw, err
 		}
 		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
 		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
@@ -71,7 +77,7 @@ func getHwinfo() (hwinfo, error) {
 
 	if hw.Arch == archS390 {
 		if err := cpuinfoS390(&hw); err != nil {
-			return hwinfo{}, err
+			return hw, err
 		}
 		hw.UUID = uuidS390()
 	}
@@ -79,7 +85,26 @@ func getHwinfo() (hwinfo, error) {
 	return hw, nil
 }
 
-func cpuinfoS390(hw *hwinfo) error {
+func checkIsContainer() bool {
+	containerRuntimeRegExp := regexp.MustCompile("docker|runc|buildah|buildkit|nerdctl|libpod")
+	lookupFiles := []string{"/proc/self/attr/current", "/proc/self/cgroup"}
+
+	for _, file := range lookupFiles {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			continue // skip if failed to open
+		}
+
+		// if it matches, we're running inside of a container.
+		if containerRuntimeRegExp.Match(content) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func cpuinfoS390(hw *Hwinfo) error {
 	rvsOut, err := readValues("-s")
 	if err != nil {
 		return err
@@ -109,8 +134,9 @@ func cpuinfoS390(hw *hwinfo) error {
 	return nil
 }
 
+// TODO(josegomezr): uname is available in all *NIX environments.
 func arch() (string, error) {
-	output, err := execute([]string{"uname", "-i"}, nil)
+	output, err := execute([]string{"uname", "-m"}, nil)
 	if err != nil {
 		return "", err
 	}
