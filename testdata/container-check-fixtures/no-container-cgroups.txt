@@ -1,0 +1,14 @@
+13:pids:/user.slice/user-0.slice/session-68.scope
+12:hugetlb:/
+11:cpu,cpuacct:/user.slice
+10:blkio:/user.slice
+9:cpuset:/
+8:perf_event:/
+7:devices:/user.slice
+6:net_cls,net_prio:/
+5:misc:/
+4:freezer:/
+3:memory:/user.slice
+2:rdma:/
+1:name=systemd:/user.slice/user-0.slice/session-68.scope
+0::/user.slice/user-0.slice/session-68.scope

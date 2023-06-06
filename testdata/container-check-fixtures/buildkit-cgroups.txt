@@ -1,0 +1,14 @@
+13:pids:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+12:hugetlb:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+11:cpu,cpuacct:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+10:blkio:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+9:cpuset:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+8:perf_event:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+7:devices:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+6:net_cls,net_prio:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+5:misc:/
+4:freezer:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+3:memory:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+2:rdma:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+1:name=systemd:/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd
+0::/docker/buildkit/r9wplel5tyq4dzu3lwyknomjd

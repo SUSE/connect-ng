@@ -15,10 +15,16 @@ const (
 var (
 	//go:embed status-text.tmpl
 	statusTemplate string
+	//go:embed system-info-text.tmpl
+	systemInfoTemplate string
 )
 
 // Status is used to create the JSON for `SUSEConnect --status`.
 // And to render the template for `SUSEConnect --status-text`.
+//
+// TODO(josegomezr): Improve naming of this struct.
+//
+//	it reflects Product Status alongisde Subscription status.
 type Status struct {
 	Name       string `json:"name,omitempty"`
 	Summary    string `json:"-"`
@@ -31,6 +37,28 @@ type Status struct {
 	ExpiresAt  string `json:"expires_at,omitempty"`
 	SubStatus  string `json:"subscription_status,omitempty"`
 	Type       string `json:"type,omitempty"`
+}
+
+func GetSystemInformation(format string) (string, error) {
+	// we're going to explicitly ignore the error to see how much of the partial
+	// structure we got to fill.
+
+	// TODO(josegomezr): SendKeepAlivePing sets these two vars as empty. we need
+	//                   better design here.
+	sysinfo, _ := MakeSystemInformation("", "", nil)
+	if format == "json" {
+		jsn, err := json.Marshal(sysinfo)
+		if err != nil {
+			return "", err
+		}
+		return string(jsn), nil
+	}
+
+	text, err := renderSysInfoText(sysinfo)
+	if err != nil {
+		return "", err
+	}
+	return text, nil
 }
 
 // GetProductStatuses returns statuses of installed products
@@ -96,6 +124,15 @@ func buildStatuses(products []Product, activations map[string]Activation) []Stat
 		statuses = append(statuses, status)
 	}
 	return statuses
+}
+
+func renderSysInfoText(sysinfo SystemInformation) (string, error) {
+	var tpl = template.Must(template.New("system-info-text").Parse(systemInfoTemplate))
+	var output bytes.Buffer
+	if err := tpl.Execute(&output, sysinfo); err != nil {
+		return "", err
+	}
+	return output.String(), nil
 }
 
 func getStatusText(statuses []Status) (string, error) {
