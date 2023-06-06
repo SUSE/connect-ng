@@ -14,6 +14,8 @@ import (
 var (
 	cloudEx = `Version: .*(amazon)|Manufacturer: (Amazon)|Manufacturer: (Google)|Manufacturer: (Microsoft) Corporation`
 	cloudRe = regexp.MustCompile(cloudEx)
+	containerRuntimeEx = `docker|runc|buildah|buildkit|nerdctl|containers|libpod`
+	containerRuntimeRe = regexp.MustCompile(containerRuntimeEx)
 )
 
 const (
@@ -86,22 +88,34 @@ func getHwinfo() (Hwinfo, error) {
 }
 
 func checkIsContainer() bool {
-	containerRuntimeRegExp := regexp.MustCompile("docker|runc|buildah|buildkit|nerdctl|libpod")
+	
 	lookupFiles := []string{"/proc/self/attr/current", "/proc/self/cgroup"}
 
-	for _, file := range lookupFiles {
-		content, err := os.ReadFile(file)
+	for _, filename := range lookupFiles {
+		file, err := os.Open(filename)
+		defer file.Close()
+
 		if err != nil {
 			continue // skip if failed to open
 		}
 
-		// if it matches, we're running inside of a container.
-		if containerRuntimeRegExp.Match(content) {
+		if parseContainerProcFile(file)  {
 			return true
 		}
 	}
 
 	return false
+}
+
+func parseContainerProcFile(file io.Reader) bool {
+	reader := bufio.NewReader(file)
+	content, err := reader.ReadBytes(byte('\n'))
+
+	if err != nil && err != io.EOF {
+		return false
+	}
+
+	return containerRuntimeRe.Match(content)
 }
 
 func cpuinfoS390(hw *Hwinfo) error {

@@ -178,3 +178,47 @@ func TestParseMeminfo(t *testing.T) {
 		}
 	}
 }
+
+
+func TestCheckIsContainerProcSelfAttr(t *testing.T) {
+	var tests = []struct {
+		content  string
+		value bool
+	}{
+		{"docker-default (enforce)", true},
+		{"containers-default-0.50.1 (enforce)", true},
+		{"unconfined", false},
+		{"wubalubadubdub", false},
+	}
+
+	for _, v := range tests {
+		buff := bytes.NewBufferString(v.content)
+		val := parseContainerProcFile(buff)
+		if val != v.value {
+			t.Errorf("Expecting '%v', got '%v' for '%v'", v.value, val, v.content)
+		}
+	}
+}
+
+
+func TestCheckIsContainerProcCgroups(t *testing.T) {
+	var tests = []struct {
+		content []byte
+		value bool
+	}{
+		{readTestFile("container-check-fixtures/buildah-cgroups.txt", t), true},
+		{readTestFile("container-check-fixtures/buildkit-cgroups.txt", t), true},
+		{readTestFile("container-check-fixtures/docker-cgroups.txt", t), true},
+		{readTestFile("container-check-fixtures/no-container-cgroups.txt", t), false},
+		{readTestFile("container-check-fixtures/podman-cgroups.txt", t), true},
+	}
+
+	for _, v := range tests {
+		buff := bytes.NewBuffer(v.content)
+		val := parseContainerProcFile(buff)
+		if val != v.value {
+			t.Errorf("Expecting '%v', got '%v' for '%v'", v.value, val, v.content)
+		}
+	}
+}
+

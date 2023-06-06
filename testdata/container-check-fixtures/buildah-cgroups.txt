@@ -1,0 +1,14 @@
+13:pids:/system.slice/runc-buildah-buildah1998441540.scope
+12:hugetlb:/system.slice/runc-buildah-buildah1998441540.scope
+11:cpu,cpuacct:/system.slice/runc-buildah-buildah1998441540.scope
+10:blkio:/system.slice/runc-buildah-buildah1998441540.scope
+9:cpuset:/system.slice/runc-buildah-buildah1998441540.scope
+8:perf_event:/system.slice/runc-buildah-buildah1998441540.scope
+7:devices:/system.slice/runc-buildah-buildah1998441540.scope
+6:net_cls,net_prio:/system.slice/runc-buildah-buildah1998441540.scope
+5:misc:/
+4:freezer:/system.slice/runc-buildah-buildah1998441540.scope
+3:memory:/system.slice/runc-buildah-buildah1998441540.scope
+2:rdma:/system.slice/runc-buildah-buildah1998441540.scope
+1:name=systemd:/system.slice/runc-buildah-buildah1998441540.scope
+0::/system.slice/runc-buildah-buildah1998441540.scope
