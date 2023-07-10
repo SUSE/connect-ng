@@ -9,7 +9,7 @@ file from git and recreate the package with `osc service manualrun`).
 
 The version of `connect-ng` is a mix of a version specified in the `.spec` file
 and the git commit sha. The version is thus updated automatically on every git
-commit.
+commit. On a service run, the latest git tag gets copied as version to the .spec file.
 
 ## Step 2. The OBS package
 
@@ -26,10 +26,11 @@ $ osc build SLE_15_SP3 x86_64 --no-verify
 ### Testing the package locally
 
 First of all, you need to create an updated tar file. In order to do this, you
-need to checkout the package and run the service that fetches the code:
+need to checkout the package and run the service that fetches the code (change the
+`revision` parameter in `_service` to build the tar from another branch than `main`):
 
 ```bash
-$ osc co systemsmanagement:SCC suseconnect-ng
+$ mkdir obs; cd obs; osc co systemsmanagement:SCC suseconnect-ng -o .
 $ osc service manualrun
 ```
 
@@ -53,7 +54,7 @@ $ osc build openSUSE_Leap_15.4 x86_64 --no-verify
 
 This will give you an RPM you can install locally.
 
-## Step 3. Update package version
+## Step 3. Update package in OBS devel project
 
 The package is updated manually and it relies on the Git repository from
 `connect-ng` to contain the latest changes. Whenever you want to update the

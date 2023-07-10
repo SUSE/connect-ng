@@ -1,7 +1,7 @@
 #
 # spec file for package suseconnect-ng
 #
-# Copyright (c) 2021 SUSE LLC
+# Copyright (c) 2023 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -15,6 +15,7 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
+
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
@@ -22,7 +23,7 @@
 %bcond_with hwinfo
 
 Name:           suseconnect-ng
-Version:        0.0.3~git112.d4980ea
+Version:        1.1.0~git2.f42b4b2
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later
@@ -38,10 +39,10 @@ BuildRequires:  go1.18-openssl
 %else
 BuildRequires:  go >= 1.16
 %endif
-BuildRequires:  zypper
 BuildRequires:  ruby-devel
+BuildRequires:  zypper
 
-ExcludeArch: %ix86 s390 ppc64
+ExcludeArch:    %ix86 s390 ppc64
 %if %{with hwinfo}
 %global test_hwinfo_args -test-hwinfo
 
@@ -54,7 +55,6 @@ BuildRequires:  s390-tools
 %endif
 BuildRequires:  systemd
 %endif
-
 
 Obsoletes:      SUSEConnect < 1.1.0
 Provides:       SUSEConnect = 1.1.0
@@ -98,6 +98,7 @@ Summary:        C interface to suseconnect-ng
 Group:          System/Management
 # the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
 Requires:       suseconnect-ng
+
 %description -n libsuseconnect
 This package contains library which provides C interface to selected
 suseconnect-ng functions.
@@ -106,6 +107,11 @@ suseconnect-ng functions.
 Summary:        Ruby bindings for libsuseconnect library
 Group:          System/Management
 Requires:       libsuseconnect
+# Adding the rubygem provides, to work as a drop-in replacement for Ruby SUSEConnect on SLE15<SP4
+%if (0%{?sle_version} > 0 && 0%{?sle_version} < 150400)
+Provides:       rubygem(ruby:2.5.0:suse-connect)
+%endif
+
 %description -n suseconnect-ruby-bindings
 This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
@@ -236,3 +242,5 @@ make -C %_builddir/go/src/%import_path gofmt
 %files -n suseconnect-ruby-bindings
 %doc yast/README.md
 %_libdir/ruby/vendor_ruby/%rb_ver/suse
+
+%changelog
