@@ -23,6 +23,7 @@
 %bcond_with hwinfo
 
 Name:           suseconnect-ng
+# the version will get set by the 'set_version' service
 Version:        1.1.0~git2.f42b4b2
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
