@@ -57,7 +57,7 @@ BuildRequires:  systemd
 %endif
 
 Obsoletes:      SUSEConnect < 1.1.0
-Provides:       SUSEConnect = 1.1.0
+Provides:       SUSEConnect = %version
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
