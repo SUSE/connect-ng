@@ -1,9 +1,13 @@
 <services>
-  <!-- The copy of this file in the OBS package needs to be manually updated from the one in git repo. -->
+  <!-- The copy of this file in the OBS package needs to be manually updated
+       from the one in git repo.
+       Parameter definitions:
+       https://github.com/openSUSE/obs-service-tar_scm/blob/master/tar_scm.service.in
+  -->
   <service name="tar_scm" mode="manual">
     <param name="scm">git</param>
     <param name="url">https://github.com/SUSE/connect-ng.git</param>
-    <param name="revision">move_changes_to_git</param>
+    <param name="revision">main</param>
     <param name="version">_auto_</param>
     <param name="versionformat">@PARENT_TAG@~git@TAG_OFFSET@.%h</param>
     <param name="filename">connect-ng</param>
