@@ -23,6 +23,7 @@
 %bcond_with hwinfo
 
 Name:           suseconnect-ng
+# the version will get set by the 'set_version' service
 Version:        1.1.0~git2.f42b4b2
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
@@ -57,7 +58,7 @@ BuildRequires:  systemd
 %endif
 
 Obsoletes:      SUSEConnect < 1.1.0
-Provides:       SUSEConnect = 1.1.0
+Provides:       SUSEConnect = %version
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
