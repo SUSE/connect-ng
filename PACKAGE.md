@@ -89,6 +89,10 @@ For a more detailed view which target codestreams are in which state, find the
 `suseconnect-ng` package on
 [maintenance.suse.de](https://maintenance.suse.de/maintained/)
 
+Currently, 15 SP1/SP2/SP3 all inherit from the SP1 project.
+So a submission would typically go to SUSE:SLE-15-SP1:Updates,
+SUSE:SLE-15-SP4:Updates, SUSE:SLE-15-SP5:Updates.
+
 #### Submit updates
 
 For each maintained codestream you need to create a new maintenance request:
