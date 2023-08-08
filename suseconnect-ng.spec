@@ -200,6 +200,13 @@ if [ "$1" -eq 1 ]; then
 fi
 
 %post
+# Randomize schedule time for SLES12. SLES12 systemd does not support RandomizedDelaySec.
+%if (0%{?sle_version} > 0 && 0%{?sle_version} < 150000)
+    TIMER_HOUR=$(( RANDOM % 24 ))
+    TIMER_MINUTE=$(( RANDOM % 60 ))
+    sed -i '/RandomizedDelaySec*/d' %{_unitdir}/suseconnect-keepalive.timer
+    sed -i "s/OnCalendar=daily/OnCalendar=*-*-* $TIMER_HOUR:$TIMER_MINUTE:00/" %{_unitdir}/suseconnect-keepalive.timer
+%endif
 %service_add_post suseconnect-keepalive.service suseconnect-keepalive.timer
 
 %preun
