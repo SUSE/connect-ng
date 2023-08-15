@@ -97,6 +97,8 @@ For each maintained codestream you need to create a new maintenance request:
 osc -A https://api.suse.de mr openSUSE.org:systemsmanagement:SCC suseconnect-ng SUSE:SLE-15-SP4:GA
 ```
 
+**Note**: The codestreams of SLE-15-SP1, SLE-15-SP2 and SLE-15-SP3 are connected, that means we only need to submit for SP1 and it will get released on SP2 and SP3 also.
+
 **Note**: In case the `mr` (maintenance request) command is not working
 properly, try `sr` (submit request) command.
 
