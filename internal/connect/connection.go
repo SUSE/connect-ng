@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -197,4 +198,23 @@ func ReloadCertPool() error {
 	httpclient = nil
 	setupHTTPClient()
 	return nil
+}
+
+func downloadFile(url string) ([]byte, error) {
+	setupHTTPClient()
+
+	resp, err := httpclient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	resBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if !successCode(resp.StatusCode) {
+		return nil, fmt.Errorf("Downloading %s failed (code: %d): %s", url, resp.StatusCode, resBody)
+	}
+	return resBody, nil
 }

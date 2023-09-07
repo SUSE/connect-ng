@@ -157,3 +157,17 @@ func (p Product) distroTarget() string {
 	version := strings.Split(p.Version, ".")[0]
 	return identifier + "-" + version + "-" + p.Arch
 }
+
+func (p Product) findExtension(query Product) (Product, error) {
+	for _, e := range p.Extensions {
+		if e.ToTriplet() == query.ToTriplet() {
+			return e, nil
+		}
+		if len(e.Extensions) > 0 {
+			if child, err := e.findExtension(query); err == nil {
+				return child, nil
+			}
+		}
+	}
+	return Product{}, fmt.Errorf("Extension not found")
+}

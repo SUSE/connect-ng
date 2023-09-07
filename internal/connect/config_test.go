@@ -11,7 +11,8 @@ var cfg1 = `---
 insecure: false
 url: https://smt-azure.susecloud.net
 language: en_US.UTF-8
-no_zypper_refs: true`
+no_zypper_refs: true
+auto_agree_with_licenses: true`
 
 var cfg2 = `---
  insecure: true
@@ -27,7 +28,12 @@ badkey: badval
 
 func TestParseConfig(t *testing.T) {
 	r := strings.NewReader(cfg1)
-	expect := Config{BaseURL: "https://smt-azure.susecloud.net", Language: "en_US.UTF-8", NoZypperRefresh: true}
+	expect := Config{
+		BaseURL:         "https://smt-azure.susecloud.net",
+		Language:        "en_US.UTF-8",
+		NoZypperRefresh: true,
+		AutoAgreeEULA:   true,
+	}
 	c := Config{}
 	parseConfig(r, &c)
 	if !reflect.DeepEqual(c, expect) {
@@ -49,6 +55,7 @@ func TestSaveLoad(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "SUSEConnect.test")
 	c1 := NewConfig()
 	c1.Path = path
+	c1.AutoAgreeEULA = true
 	if err := c1.Save(); err != nil {
 		t.Fatalf("Unable to write config: %s", err)
 	}
