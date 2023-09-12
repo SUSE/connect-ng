@@ -54,23 +54,24 @@ func (p *singleStringFlag) Set(value string) error {
 
 func connectMain() {
 	var (
-		status           bool
-		keepAlive        bool
-		statusText       bool
-		debug            bool
-		writeConfig      bool
-		deRegister       bool
-		cleanup          bool
-		rollback         bool
-		baseURL          string
-		fsRoot           string
-		namespace        string
-		token            string
-		product          singleStringFlag
-		instanceDataFile string
-		listExtensions   bool
-		email            string
-		version          bool
+		status                bool
+		keepAlive             bool
+		statusText            bool
+		debug                 bool
+		writeConfig           bool
+		deRegister            bool
+		cleanup               bool
+		rollback              bool
+		baseURL               string
+		fsRoot                string
+		namespace             string
+		token                 string
+		product               singleStringFlag
+		instanceDataFile      string
+		listExtensions        bool
+		autoAgreeWithLicenses bool
+		email                 string
+		version               bool
 	)
 
 	// display help like the ruby SUSEConnect
@@ -93,6 +94,7 @@ func connectMain() {
 	flag.BoolVar(&rollback, "rollback", false, "")
 	flag.BoolVar(&version, "version", false, "")
 	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&autoAgreeWithLicenses, "auto-agree-with-licenses", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
@@ -162,6 +164,17 @@ func connectMain() {
 			connect.CFG.Language = lang
 		}
 	}
+	if autoAgreeWithLicenses {
+		connect.CFG.AutoAgreeEULA = true
+	} else {
+		// check for "SUSEConnect --auto-agree-with-licenses=false ..."
+		// which should take precedence over setting in /etc/SUSEConnect
+		flag.Visit(func(f *flag.Flag) {
+			if f.Name == "auto-agree-with-licenses" {
+				connect.CFG.AutoAgreeEULA = false
+			}
+		})
+	}
 	if status {
 		output, err := connect.GetProductStatuses("json")
 		exitOnError(err)
@@ -201,7 +214,13 @@ func connectMain() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
-			err := connect.Register()
+			// If the base system/extensions have EULAs, we need to make sure
+			// that they are accepted before proceeding on the registering. If
+			// they don't have EULA's, then this is a no-op.
+			err := connect.AcceptEULA()
+			exitOnError(err)
+
+			err = connect.Register()
 			exitOnError(err)
 		}
 	}

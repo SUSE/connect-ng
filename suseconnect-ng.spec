@@ -138,6 +138,7 @@ install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.5 %buildroot/%_
 install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.8 %buildroot/%_mandir/man8/SUSEConnect.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-migration.8 %buildroot/%_mandir/man8/zypper-migration.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-search-packages.8 %buildroot/%_mandir/man8/zypper-search-packages.8
+install -D -m 644 %_builddir/go/src/%import_path/SUSEConnect.example %{buildroot}%_sysconfdir/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
 install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.timer %buildroot/%_unitdir/suseconnect-keepalive.timer
@@ -194,6 +195,13 @@ if [ "$1" -eq 1 ]; then
 fi
 
 %post
+# Randomize schedule time for SLES12. SLES12 systemd does not support RandomizedDelaySec.
+%if (0%{?sle_version} > 0 && 0%{?sle_version} < 150000)
+    TIMER_HOUR=$(( RANDOM % 24 ))
+    TIMER_MINUTE=$(( RANDOM % 60 ))
+    sed -i '/RandomizedDelaySec*/d' %{_unitdir}/suseconnect-keepalive.timer
+    sed -i "s/OnCalendar=daily/OnCalendar=*-*-* $TIMER_HOUR:$TIMER_MINUTE:00/" %{_unitdir}/suseconnect-keepalive.timer
+%endif
 %service_add_post suseconnect-keepalive.service suseconnect-keepalive.timer
 
 %preun
@@ -229,6 +237,7 @@ make -C %_builddir/go/src/%import_path gofmt
 %_mandir/man5/*
 %_unitdir/suseconnect-keepalive.service
 %_unitdir/suseconnect-keepalive.timer
+%config %{_sysconfdir}/SUSEConnect.example
 
 %files -n libsuseconnect
 %license LICENSE LICENSE.LGPL
