@@ -12,5 +12,5 @@ var (
 
 // GetShortenedVersion returns the short program version
 func GetShortenedVersion() string {
-	return strings.Split(version, "~")[0]
+	return strings.Split(strings.TrimSpace(version), "~")[0]
 }
