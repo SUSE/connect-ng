@@ -227,7 +227,11 @@ func announceOrUpdate() error {
 	if err != nil {
 		return err
 	}
-	return writeSystemCredentials(login, password, "")
+
+	if err = writeSystemCredentials(login, password, ""); err == nil {
+		setupRegistryAuthentication(login, password)
+	}
+	return err
 }
 
 // IsRegistered returns true if there is a valid credentials file
@@ -346,6 +350,13 @@ func DeactivateProduct(product Product) (Service, error) {
 
 // DeregisterSystem deletes current system in SMT/SCC
 func DeregisterSystem() error {
+	// In case fetching credentials fails do not break
+	// but continue to allow deregistration with remote API
+	creds, err := getCredentials()
+	if err == nil {
+		removeRegistryAuthentication(creds.Username, creds.Password)
+	}
+
 	return deregisterSystem()
 }
 
