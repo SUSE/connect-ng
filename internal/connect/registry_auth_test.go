@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -22,6 +23,25 @@ func testPathMatches(t *testing.T, path string) {
 			expectedDockerPath,
 			expectedPodmanPath,
 			path)
+	}
+}
+
+func mockChown(t *testing.T, uid uint32, gid uint32) {
+	stat = func(_ string, s *syscall.Stat_t) error {
+		s.Uid = uid
+		s.Gid = gid
+		return nil
+	}
+
+	chown = func(_ string, u int, g int) error {
+		// we check that we always chown to the user/group
+		// we checked the directory before (stat)
+		if u != int(uid) || g != int(gid) {
+			t.Errorf("Expected uid/gid in `chown` to match `%d/%d` but got `%d/%d`",
+				uid, gid,
+				u, g)
+		}
+		return nil
 	}
 }
 
@@ -56,7 +76,7 @@ func mockWriteFile(t *testing.T, matcherfile string) {
 func mockMkDirAll(t *testing.T) {
 	mkDirAll = func(_ string, perm os.FileMode) error {
 		if perm != 0777 {
-			t.Log(fmt.Sprintf("mkdirall: %s is unlikely the right directory permission. Are you sure?", perm))
+			t.Log(fmt.Sprintf("mkdir: %s is unlikely the right directory permission. Are you sure?", perm))
 		}
 		return nil
 	}
@@ -65,6 +85,8 @@ func mockMkDirAll(t *testing.T) {
 func TestRegistryAuthSetupSuccessful(t *testing.T) {
 	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
 	mockMkDirAll(t)
+	mockChown(t, 1000, 1000)
+
 	mockCurrentUserHome("/home/test")
 	mockReadFile(t, "auth.json")
 	mockWriteFile(t, "auth_updated.json")
@@ -75,6 +97,8 @@ func TestRegistryAuthSetupSuccessful(t *testing.T) {
 func TestRegistryAuthSetupReadFailed(t *testing.T) {
 	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
 	mockMkDirAll(t)
+	mockChown(t, 1000, 1000)
+
 	mockCurrentUserHome("/home/test")
 	mockWriteFile(t, "auth_write_single.json")
 
@@ -89,6 +113,9 @@ func TestRegistryAuthSetupReadFailed(t *testing.T) {
 
 func TestRegistryAuthSetupWriteDockerFailed(t *testing.T) {
 	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
+	mockMkDirAll(t)
+	mockChown(t, 1000, 1000)
+
 	mockCurrentUserHome("/home/test")
 	mockReadFile(t, "empty_auth.json")
 
@@ -108,6 +135,9 @@ func TestRegistryAuthSetupWriteDockerFailed(t *testing.T) {
 
 func TestRegistryAuthRemoveSuccessful(t *testing.T) {
 	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
+	mockMkDirAll(t)
+	mockChown(t, 1000, 1000)
+
 	mockCurrentUserHome("/home/test")
 	mockReadFile(t, "auth_updated.json")
 	mockWriteFile(t, "auth.json")
@@ -115,8 +145,19 @@ func TestRegistryAuthRemoveSuccessful(t *testing.T) {
 	removeRegistryAuthentication(sampleLogin, samplePassword)
 }
 
+func TestRegistryAuthDoNotRemoveCustomCreds(t *testing.T) {
+	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
+	mockCurrentUserHome("/home/test")
+	mockChown(t, 1000, 1000)
+	mockReadFile(t, "auth_custom.json")
+	mockWriteFile(t, "auth_custom.json")
+
+	removeRegistryAuthentication(sampleLogin, samplePassword)
+}
+
 func TestRegistryAuthRemoveReadFailed(t *testing.T) {
 	os.Setenv("XDG_RUNTIME_DIR", expectedRuntimeDir)
+	mockChown(t, 1000, 1000)
 	mockCurrentUserHome("/home/test")
 
 	readFile = func(_ string) ([]byte, error) {

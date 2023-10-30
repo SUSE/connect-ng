@@ -124,6 +124,12 @@ func Deregister() error {
 		}
 	}
 
+	// remove potential docker and podman configurations for our registry
+	creds, err := getCredentials()
+	if err == nil {
+		removeRegistryAuthentication(creds.Username, creds.Password)
+	}
+
 	if err := deregisterSystem(); err != nil {
 		return err
 	}
@@ -350,13 +356,6 @@ func DeactivateProduct(product Product) (Service, error) {
 
 // DeregisterSystem deletes current system in SMT/SCC
 func DeregisterSystem() error {
-	// In case fetching credentials fails do not break
-	// but continue to allow deregistration with remote API
-	creds, err := getCredentials()
-	if err == nil {
-		removeRegistryAuthentication(creds.Username, creds.Password)
-	}
-
 	return deregisterSystem()
 }
 

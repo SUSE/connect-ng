@@ -7,11 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // If the configuration file is not found for podman which resides
 // in ${XDG_RUNTIME_DIR}/containers/auth.json it will fall back to
-// docker configuration in ${HOME}/.docker.config.json
+// docker configuration in ${HOME}/.docker/config.json
 // See: https://docs.podman.io/en/stable/markdown/podman-login.1.html
 
 const (
@@ -26,15 +27,45 @@ var (
 	writeFile = os.WriteFile
 	userHome  = os.UserHomeDir
 	mkDirAll  = os.MkdirAll
+	stat      = syscall.Stat
+	chown     = syscall.Chown
 )
 
-// This is already implemented in containers. But for the fun sake we reinvent the wheel!
-// See: https://github.com/containers/image/blob/main/pkg/docker/config/config.go
-// Theoden: You have no dependency here!
+// NOTE: We only need a fraction of potential data supplied by the docker configuration file.
+//       But since we need to read and later write the file we must keep the existing data
+//       and write it to the new file, to not lose information.
+//
+//       There is an alternative implementation idea of using a tree like structure but
+//       for the sake of simplicity the configuration structure is replicated.
+//
+//       See: https://github.com/docker/cli/blob/master/cli/config/configfile/file.go#L18
 
 type RegistryAuthConfig struct {
-	AuthConfigs map[string]RegistryAuthentication `json:"auths"`
-	CredHelpers map[string]string                 `json:"credHelpers,omitempty"`
+	AuthConfigs          map[string]RegistryAuthentication `json:"auths"`
+	HTTPHeaders          map[string]string                 `json:"HttpHeaders,omitempty"`
+	PsFormat             string                            `json:"psFormat,omitempty"`
+	ImagesFormat         string                            `json:"imagesFormat,omitempty"`
+	NetworksFormat       string                            `json:"networksFormat,omitempty"`
+	PluginsFormat        string                            `json:"pluginsFormat,omitempty"`
+	VolumesFormat        string                            `json:"volumesFormat,omitempty"`
+	StatsFormat          string                            `json:"statsFormat,omitempty"`
+	DetachKeys           string                            `json:"detachKeys,omitempty"`
+	CredentialsStore     string                            `json:"credsStore,omitempty"`
+	CredentialHelpers    map[string]string                 `json:"credHelpers,omitempty"`
+	Filename             string                            `json:"-"` // Note: for internal use only
+	ServiceInspectFormat string                            `json:"serviceInspectFormat,omitempty"`
+	ServicesFormat       string                            `json:"servicesFormat,omitempty"`
+	TasksFormat          string                            `json:"tasksFormat,omitempty"`
+	SecretFormat         string                            `json:"secretFormat,omitempty"`
+	ConfigFormat         string                            `json:"configFormat,omitempty"`
+	NodesFormat          string                            `json:"nodesFormat,omitempty"`
+	PruneFilters         []string                          `json:"pruneFilters,omitempty"`
+	Proxies              map[string]string                 `json:"proxies,omitempty"`
+	Experimental         string                            `json:"experimental,omitempty"`
+	CurrentContext       string                            `json:"currentContext,omitempty"`
+	CLIPluginsExtraDirs  []string                          `json:"cliPluginsExtraDirs,omitempty"`
+	Plugins              map[string]map[string]string      `json:"plugins,omitempty"`
+	Aliases              map[string]string                 `json:"aliases,omitempty"`
 }
 
 type RegistryAuthentication struct {
@@ -109,36 +140,60 @@ func (cfg *RegistryAuthConfig) Remove(registry string) {
 	delete(cfg.AuthConfigs, registry)
 }
 
-func dockerConfigPath() (string, bool) {
+func dockerConfigPath() (string, int, int, bool) {
 	home, err := userHome()
-	return filepath.Join(home, DEFAULT_DOCKER_CLIENT_CONFIG), err == nil
+	uId, gId := getPathOwnership(home)
+
+	return filepath.Join(home, DEFAULT_DOCKER_CLIENT_CONFIG), uId, gId, err == nil
 }
 
-func podmanConfigPath() (string, bool) {
+func podmanConfigPath() (string, int, int, bool) {
+	// In this case usually XDG_RUNTIME_DIR is set to a
+	// login user and NOT to the calling user (root)
+	// This way we need to fetch the user id and group id
+	// by looking into the ownership of the runtime path
 	path, found := os.LookupEnv("XDG_RUNTIME_DIR")
-	return filepath.Join(path, DEFAULT_PODMAN_CONFIG), found
+	uId, gId := getPathOwnership(path)
+
+	return filepath.Join(path, DEFAULT_PODMAN_CONFIG), uId, gId, found
+}
+
+func getPathOwnership(path string) (int, int) {
+	fileStat := syscall.Stat_t{}
+
+	if err := stat(path, &fileStat); err != nil {
+		// we assume the user root
+		return 0, 0
+	}
+	return int(fileStat.Uid), int(fileStat.Gid)
 }
 
 func setupRegistryAuthentication(login string, password string) {
-	setup := func(pathFn func() (string, bool)) {
+	setup := func(pathFn func() (string, int, int, bool)) {
 		config := newRegistryAuthConfig()
 
-		if path, ok := pathFn(); ok {
+		if path, uId, gId, ok := pathFn(); ok {
+			dir := filepath.Dir(path)
+			Info.Printf("dir: %s", dir)
+
 			// This also fails if the file does not yet exist
 			// so we continue to create it.
 			if err := config.LoadFrom(path); err != nil {
-				Debug.Printf("Could not load `%s`: %s", path, err)
+				Info.Printf("Could not load `%s`: %s", path, err)
 			}
 			config.Set(DEFAULT_SUSE_REGISTRY, login, password)
 
-			if err := mkDirAll(filepath.Dir(path), 0777); err != nil {
-				Debug.Printf("Could not create directory `%s`: %s", filepath.Dir(path), err)
+			if err := mkDirAll(dir, 0775); err != nil {
+				Info.Printf("Could not create directory `%s`: %s", dir, err)
 				return
 			}
 
 			if err := config.SaveTo(path); err != nil {
-				Debug.Printf("Could not save config to `%s`: %s", path, err)
+				Info.Printf("Could not save config to `%s`: %s", path, err)
+				return
 			}
+			chown(dir, uId, gId)
+			chown(path, uId, gId)
 		}
 	}
 	setup(dockerConfigPath)
@@ -146,10 +201,10 @@ func setupRegistryAuthentication(login string, password string) {
 }
 
 func removeRegistryAuthentication(login string, password string) {
-	remove := func(pathFn func() (string, bool)) {
+	remove := func(pathFn func() (string, int, int, bool)) {
 		config := newRegistryAuthConfig()
 
-		if path, ok := pathFn(); ok {
+		if path, _, _, ok := pathFn(); ok {
 			if err := config.LoadFrom(path); err != nil {
 				Debug.Printf("Could not load `%s`: %s", path, err)
 				return
