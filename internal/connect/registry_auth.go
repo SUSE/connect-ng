@@ -7,17 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
-// If the configuration file is not found for podman which resides
-// in ${XDG_RUNTIME_DIR}/containers/auth.json it will fall back to
-// docker configuration in ${HOME}/.docker/config.json
-// See: https://docs.podman.io/en/stable/markdown/podman-login.1.html
+// NOTE: Podman will read the same configuration file as the docker cli.
+//       We utilize this to not have to write multiple files. Since the default
+//       config is set to $XDG_RUNTIME_DIR/container/auth.json which should considered
+//       as volatile storage.
 
 const (
 	DEFAULT_DOCKER_CLIENT_CONFIG = ".docker/config.json"
-	DEFAULT_PODMAN_CONFIG        = "containers/auth.json"
 	DEFAULT_SUSE_REGISTRY        = "https://registry.suse.com"
 )
 
@@ -27,8 +25,6 @@ var (
 	writeFile = os.WriteFile
 	userHome  = os.UserHomeDir
 	mkDirAll  = os.MkdirAll
-	stat      = syscall.Stat
-	chown     = syscall.Chown
 )
 
 // NOTE: We only need a fraction of potential data supplied by the docker configuration file.
@@ -140,90 +136,54 @@ func (cfg *RegistryAuthConfig) Remove(registry string) {
 	delete(cfg.AuthConfigs, registry)
 }
 
-func dockerConfigPath() (string, int, int, bool) {
-	home, err := userHome()
-	uId, gId := getPathOwnership(home)
-
-	return filepath.Join(home, DEFAULT_DOCKER_CLIENT_CONFIG), uId, gId, err == nil
-}
-
-func podmanConfigPath() (string, int, int, bool) {
-	// In this case usually XDG_RUNTIME_DIR is set to a
-	// login user and NOT to the calling user (root)
-	// This way we need to fetch the user id and group id
-	// by looking into the ownership of the runtime path
-	path, found := os.LookupEnv("XDG_RUNTIME_DIR")
-	uId, gId := getPathOwnership(path)
-
-	return filepath.Join(path, DEFAULT_PODMAN_CONFIG), uId, gId, found
-}
-
-func getPathOwnership(path string) (int, int) {
-	fileStat := syscall.Stat_t{}
-
-	if err := stat(path, &fileStat); err != nil {
-		// we assume the user root
-		return 0, 0
-	}
-	return int(fileStat.Uid), int(fileStat.Gid)
-}
-
 func setupRegistryAuthentication(login string, password string) {
-	setup := func(pathFn func() (string, int, int, bool)) {
-		config := newRegistryAuthConfig()
+	config := newRegistryAuthConfig()
 
-		if path, uId, gId, ok := pathFn(); ok {
-			dir := filepath.Dir(path)
-			Info.Printf("dir: %s", dir)
+	if base, err := userHome(); err == nil {
+		path := filepath.Join(base, DEFAULT_DOCKER_CLIENT_CONFIG)
+		dir := filepath.Dir(path)
 
-			// This also fails if the file does not yet exist
-			// so we continue to create it.
-			if err := config.LoadFrom(path); err != nil {
-				Info.Printf("Could not load `%s`: %s", path, err)
-			}
-			config.Set(DEFAULT_SUSE_REGISTRY, login, password)
+		// This also fails if the file does not yet exist
+		// so we continue to create it.
+		if err := config.LoadFrom(path); err != nil {
+			Debug.Printf("Could not load `%s`: %s", path, err)
+		}
+		config.Set(DEFAULT_SUSE_REGISTRY, login, password)
 
-			if err := mkDirAll(dir, 0775); err != nil {
-				Info.Printf("Could not create directory `%s`: %s", dir, err)
-				return
-			}
+		if err := mkDirAll(dir, 0775); err != nil {
+			Debug.Printf("Could not create directory `%s`: %s", dir, err)
+			return
+		}
 
-			if err := config.SaveTo(path); err != nil {
-				Info.Printf("Could not save config to `%s`: %s", path, err)
-				return
-			}
-			chown(dir, uId, gId)
-			chown(path, uId, gId)
+		if err := config.SaveTo(path); err != nil {
+			Debug.Printf("Could not save config to `%s`: %s", path, err)
+			return
 		}
 	}
-	setup(dockerConfigPath)
-	setup(podmanConfigPath)
 }
 
 func removeRegistryAuthentication(login string, password string) {
-	remove := func(pathFn func() (string, int, int, bool)) {
-		config := newRegistryAuthConfig()
+	config := newRegistryAuthConfig()
 
-		if path, _, _, ok := pathFn(); ok {
-			if err := config.LoadFrom(path); err != nil {
-				Debug.Printf("Could not load `%s`: %s", path, err)
-				return
-			}
-			l, p, found := config.Get(DEFAULT_SUSE_REGISTRY)
+	if home, err := userHome(); err == nil {
+		path := filepath.Join(home, DEFAULT_DOCKER_CLIENT_CONFIG)
 
-			// Make sure to only delete if the credentials actually match,
-			// to not accidentially remove registry configuration which was
-			// manually added
-			if found == true && login == l && password == p {
-				config.Remove(DEFAULT_SUSE_REGISTRY)
+		if err := config.LoadFrom(path); err != nil {
+			Debug.Printf("Could not load `%s`: %s", path, err)
+			return
+		}
+		l, p, found := config.Get(DEFAULT_SUSE_REGISTRY)
 
-				if err := config.SaveTo(path); err != nil {
-					Debug.Printf("Could not save config to `%s`: %s", path, err)
-				}
+		// Make sure to only delete if the credentials actually match,
+		// to not accidentially remove registry configuration which was
+		// manually added
+		if found == true && login == l && password == p {
+			config.Remove(DEFAULT_SUSE_REGISTRY)
+
+			if err := config.SaveTo(path); err != nil {
+				Debug.Printf("Could not save config to `%s`: %s", path, err)
 			}
 		}
-
 	}
-	remove(dockerConfigPath)
-	remove(podmanConfigPath)
+
 }
