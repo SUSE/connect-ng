@@ -3,6 +3,7 @@ package connect
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -27,5 +28,19 @@ func createTestCredentials(username, password string, t *testing.T) {
 	err := writeSystemCredentials(username, password, "")
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func testContentMatches(t *testing.T, expected string, got string) {
+	if expected != got {
+		message := []string{"write: Expected content to match:",
+			"---",
+			"%s",
+			"---",
+			"but got:",
+			"---",
+			"%s",
+			"---"}
+		t.Errorf(strings.Join(message, "\n"), expected, got)
 	}
 }

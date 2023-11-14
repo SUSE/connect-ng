@@ -124,6 +124,12 @@ func Deregister() error {
 		}
 	}
 
+	// remove potential docker and podman configurations for our registry
+	creds, err := getCredentials()
+	if err == nil {
+		removeRegistryAuthentication(creds.Username, creds.Password)
+	}
+
 	if err := deregisterSystem(); err != nil {
 		return err
 	}
@@ -227,7 +233,11 @@ func announceOrUpdate() error {
 	if err != nil {
 		return err
 	}
-	return writeSystemCredentials(login, password, "")
+
+	if err = writeSystemCredentials(login, password, ""); err == nil {
+		setupRegistryAuthentication(login, password)
+	}
+	return err
 }
 
 // IsRegistered returns true if there is a valid credentials file
