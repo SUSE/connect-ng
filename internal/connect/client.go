@@ -127,6 +127,7 @@ func Deregister() error {
 	// remove potential docker and podman configurations for our registry
 	creds, err := getCredentials()
 	if err == nil {
+		Debug.Print("\nRemoving SUSE registry system authentication configuration ...")
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
@@ -235,6 +236,7 @@ func announceOrUpdate() error {
 	}
 
 	if err = writeSystemCredentials(login, password, ""); err == nil {
+		Debug.Print("\nAdding SUSE registry system authentication configuration ...")
 		setupRegistryAuthentication(login, password)
 	}
 	return err

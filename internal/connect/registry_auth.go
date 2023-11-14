@@ -159,6 +159,8 @@ func setupRegistryAuthentication(login string, password string) {
 			Debug.Printf("Could not save config to `%s`: %s", path, err)
 			return
 		}
+
+		Debug.Printf("SUSE registry system authentication written to `%s`", path)
 	}
 }
 
@@ -183,6 +185,8 @@ func removeRegistryAuthentication(login string, password string) {
 			if err := config.SaveTo(path); err != nil {
 				Debug.Printf("Could not save config to `%s`: %s", path, err)
 			}
+
+			Debug.Printf("SUSE registry system authentication removed from `%s`", path)
 		}
 	}
 
