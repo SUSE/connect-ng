@@ -167,6 +167,9 @@ func connectMain() {
 			connect.CFG.Language = lang
 		}
 	}
+	if _, ok := os.LookupEnv("SKIP_SERVICE_INSTALL"); ok {
+		connect.CFG.SkipServiceInstall = true
+	}
 	if autoAgreeWithLicenses {
 		connect.CFG.AutoAgreeEULA = true
 	} else {
