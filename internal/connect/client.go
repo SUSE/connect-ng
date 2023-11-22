@@ -219,8 +219,10 @@ func Deregister(jsonOutput bool) error {
 		return err
 	}
 
-	if err := removeOrRefreshService(baseProductService, jsonOutput); err != nil {
-		return err
+	if !CFG.SkipServiceInstall {
+		if err := removeOrRefreshService(baseProductService, jsonOutput); err != nil {
+			return err
+		}
 	}
 	if !jsonOutput {
 		Info.Print("\nCleaning up ...")
@@ -258,6 +260,11 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 	if err != nil {
 		return err
 	}
+
+	if CFG.SkipServiceInstall {
+		return nil
+	}
+
 	if err := removeOrRefreshService(service, jsonOutput); err != nil {
 		return err
 	}
