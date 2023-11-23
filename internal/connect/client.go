@@ -114,15 +114,17 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 		}
 
 		if err := addService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
-			return nil, err
+			return Service{}, err
 		}
 	}
-	if installReleasePkg {
+
+	if installReleasePkg && !CFG.SkipServiceInstall {
 		if jsonOutput {
 			Debug.Print("-> Installing release package ...")
 		} else {
 			Info.Print("-> Installing release package ...")
 		}
+
 		if err := InstallReleasePackage(product.Name); err != nil {
 			return Service{}, err
 		}
@@ -366,11 +368,9 @@ func announceOrUpdate(quiet bool) error {
 		return err
 	}
 
-	if !CFG.SkipServiceInstall {
-		if err = writeSystemCredentials(login, password, ""); err == nil {
-			Debug.Print("\nAdding SUSE registry system authentication configuration ...")
-			setupRegistryAuthentication(login, password)
-		}
+	if err = writeSystemCredentials(login, password, ""); err == nil {
+		Debug.Print("\nAdding SUSE registry system authentication configuration ...")
+		setupRegistryAuthentication(login, password)
 	}
 	return err
 }
