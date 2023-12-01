@@ -8,6 +8,11 @@ import (
 )
 
 // Product represents an installed product or product information from API
+//
+// NOTE (FTW epic): some of the things here do not map correctly with SCC's API
+// and it's admittedly quite bananas (e.g. SCC's "identifier" being "Name" but
+// then SCC's "name" being "LongName" and claiming that it's used by Yast
+// (wtf?)).
 type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`

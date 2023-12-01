@@ -55,4 +55,6 @@ Common options:
                              Automatically trust and import new repository
                              signing keys.
         --debug              Provide debug output.
+        --json               Switch the output format to JSON. This is only
+                             supported by the register and deregister commands.
     -h, --help               Show this message.
