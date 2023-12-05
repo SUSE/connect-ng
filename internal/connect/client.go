@@ -31,6 +31,12 @@ type ServiceOut struct {
 	Url  string `json:"url"`
 }
 
+var (
+	localAddService             = addService
+	localInstallReleasePackage  = InstallReleasePackage
+	localRemoveOrRefreshService = removeOrRefreshService
+)
+
 // Register announces the system, activates the
 // product on SCC and adds the service to the system
 func Register(jsonOutput bool) error {
@@ -113,7 +119,7 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 			Info.Print("-> Adding service to system ...")
 		}
 
-		if err := addService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
+		if err := localAddService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
 			return Service{}, err
 		}
 	}
@@ -125,7 +131,7 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 			Info.Print("-> Installing release package ...")
 		}
 
-		if err := InstallReleasePackage(product.Name); err != nil {
+		if err := localInstallReleasePackage(product.Name); err != nil {
 			return Service{}, err
 		}
 	}
@@ -222,7 +228,7 @@ func Deregister(jsonOutput bool) error {
 	}
 
 	if !CFG.SkipServiceInstall {
-		if err := removeOrRefreshService(baseProductService, jsonOutput); err != nil {
+		if err := localRemoveOrRefreshService(baseProductService, jsonOutput); err != nil {
 			return err
 		}
 	}
@@ -267,7 +273,7 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 		return nil
 	}
 
-	if err := removeOrRefreshService(service, jsonOutput); err != nil {
+	if err := localRemoveOrRefreshService(service, jsonOutput); err != nil {
 		return err
 	}
 	if jsonOutput {
