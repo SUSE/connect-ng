@@ -20,6 +20,7 @@ const (
 	defaultConfigPath = "/etc/SUSEConnect"
 	defaultBaseURL    = "https://scc.suse.com"
 	defaultInsecure   = false
+	defaultSkip       = false
 )
 
 // Config holds the config!
@@ -38,14 +39,16 @@ type Config struct {
 
 	NoZypperRefresh    bool
 	AutoImportRepoKeys bool
+	SkipServiceInstall bool
 }
 
 // NewConfig returns a Config with defaults
 func NewConfig() Config {
 	return Config{
-		Path:     defaultConfigPath,
-		BaseURL:  defaultBaseURL,
-		Insecure: defaultInsecure,
+		Path:               defaultConfigPath,
+		BaseURL:            defaultBaseURL,
+		Insecure:           defaultInsecure,
+		SkipServiceInstall: defaultSkip,
 	}
 }
 
