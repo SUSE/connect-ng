@@ -212,12 +212,10 @@ func connectMain() {
 		exitOnError(err)
 		fmt.Print(output)
 	} else if listExtensions {
-		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'list-extensions' command"))
-		}
-		output, err := connect.GetExtensionsList()
+		output, err := connect.RenderExtensionTree(jsonFlag)
 		exitOnError(err)
-		fmt.Print(output)
+		fmt.Println(output)
+		os.Exit(0)
 	} else if deRegister {
 		err := connect.Deregister(jsonFlag)
 		if jsonFlag && err != nil {
