@@ -25,10 +25,10 @@ var (
 )
 
 type extension struct {
-	Name         string       `json:"name"`
+	Name         string       `json:"identifier"`
 	Version      string       `json:"version"`
 	Arch         string       `json:"arch"`
-	FriendlyName string       `json:"friendly_name"`
+	FriendlyName string       `json:"name"`
 	Activated    bool         `json:"activated"`
 	Available    bool         `json:"available"`
 	Free         bool         `json:"free"`

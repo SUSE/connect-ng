@@ -98,7 +98,7 @@ func TestPrintExtensionsAsJSON(t *testing.T) {
 	mockRootWritable(true)
 
 	result, err := RenderExtensionTree(true)
-	json := "{\"name\":\"PackageHub\",\"version\":\"15.4\",\"arch\":\"x86_64\",\"friendly_name\":\"SUSE Package Hub 15 SP4 x86_64\",\"activated\":false,\"available\":false,\"free\":true,\"extensions\":[]}"
+	json := "{\"identifier\":\"PackageHub\",\"version\":\"15.4\",\"arch\":\"x86_64\",\"name\":\"SUSE Package Hub 15 SP4 x86_64\",\"activated\":false,\"available\":false,\"free\":true,\"extensions\":[]}"
 
 	expectNoError(t, err)
 	expectStringMatches(t, result, json)
