@@ -3,7 +3,7 @@ Tue Dec 22 08:57:50 UTC 2023 - Miquel Sabate Sola <msabate@suse.com>
 
 - Update to version 1.5.0
   * Add registry auth credentials support
-  * Feature: support ALP Micro system registration
+  * Feature: support ALP Micro system registration (bsc#1218364)
 
 -------------------------------------------------------------------
 Tue Sep 26 08:57:50 UTC 2023 - Miquel Sabate Sola <msabate@suse.com>
