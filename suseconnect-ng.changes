@@ -1,6 +1,13 @@
 -------------------------------------------------------------------
 Tue Sep 26 08:57:50 UTC 2023 - Miquel Sabate Sola <msabate@suse.com>
 
+- Update to version 1.5.0
+  * Add registry auth credentials support
+  * Feature: support ALP Micro system registration
+
+-------------------------------------------------------------------
+Tue Sep 26 08:57:50 UTC 2023 - Miquel Sabate Sola <msabate@suse.com>
+
 - Update to version 1.4.0
   * Added EULA display for addons (bsc#1170267)
   * Fix zypper argument for auto-agreeing licenses (bsc#1214781)
