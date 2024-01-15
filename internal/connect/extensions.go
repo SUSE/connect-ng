@@ -2,89 +2,144 @@ package connect
 
 import (
 	"bytes"
-	_ "embed" // golint
-	"sort"
+	_ "embed"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"text/template"
 )
 
 var (
-	//go:embed extensions-list.tmpl
-	extensionsListTemplate string
+	//go:embed extension.tmpl
+	extensionTemplate string
+
+	//go:embed extension-list.tmpl
+	extensionListTemplate string
+
+	// test method overwrites
+	localIsRegistered      = IsRegistered
+	localBaseProduct       = baseProduct
+	localShowProduct       = showProduct
+	localSystemActivations = systemActivations
+	localRootWritable      = isRootFSWritable
 )
 
-// helper struct to simplify extensions list template
-type displayExtension struct {
-	Product   Product
-	Code      string
-	Activated bool
-
-	Indent     string
-	ConnectCmd string
+type extension struct {
+	Name         string       `json:"identifier"`
+	Version      string       `json:"version"`
+	Arch         string       `json:"arch"`
+	FriendlyName string       `json:"name"`
+	Activated    bool         `json:"activated"`
+	Available    bool         `json:"available"`
+	Free         bool         `json:"free"`
+	Extensions   []*extension `json:"extensions"`
 }
 
-// GetExtensionsList returns the text output for --list-extensions
-func GetExtensionsList() (string, error) {
-	if !IsRegistered() {
-		return "", ErrListExtensionsUnregistered
+func extensionTree(as map[string]Activation, p Product) *extension {
+	current := productToExtension(as, p)
+
+	for _, extProduct := range p.Extensions {
+		current.Extensions = append(current.Extensions, extensionTree(as, extProduct))
 	}
-	base, err := baseProduct()
-	if err != nil {
-		return "", err
-	}
-	activations, err := systemActivations()
-	if err != nil {
-		return "", err
-	}
-	if _, ok := activations[base.ToTriplet()]; !ok {
-		return "", ErrListExtensionsUnregistered
-	}
-	product, err := showProduct(base)
-	if err != nil {
-		return "", err
-	}
-	return printExtensions(product.Extensions, activations, isRootFSWritable())
+	return current
 }
 
-func printExtensions(extensions []Product, activations map[string]Activation, rootFSWritable bool) (string, error) {
-	t, err := template.New("extensions-list").Parse(extensionsListTemplate)
+func productToExtension(as map[string]Activation, p Product) *extension {
+	_, activated := as[p.ToTriplet()]
+	return &extension{
+		Name:         p.Name,
+		Version:      p.Version,
+		Arch:         p.Arch,
+		FriendlyName: p.FriendlyName,
+		Activated:    activated,
+		Available:    p.Available,
+		Free:         p.Free,
+		Extensions:   []*extension{},
+	}
+}
+
+func RenderExtensionTree(outputJson bool) (string, error) {
+	// The system is registered remotely
+	if !localIsRegistered() {
+		return "", ErrListExtensionsUnregistered
+	}
+
+	base, err := localBaseProduct()
 	if err != nil {
 		return "", err
 	}
-	var output bytes.Buffer
-	cmd := "SUSEConnect"
-	if !rootFSWritable {
-		cmd = "transactional-update register"
-	}
-	err = t.Execute(&output, preformatExtensions(extensions, activations, cmd, 1))
+
+	as, err := localSystemActivations()
 	if err != nil {
+		return "", err
+	}
+
+	product, err := localShowProduct(base)
+	if err != nil {
+		return "", err
+	}
+
+	tree := extensionTree(as, product)
+
+	if outputJson {
+		result, err := json.Marshal(tree)
+		return string(result), err
+	}
+
+	return renderText(tree, localRootWritable())
+}
+
+func indentBlock(spaces int, block string) string {
+	pad := strings.Repeat(" ", spaces)
+	return pad + strings.Replace(block, "\n", "\n"+pad, -1)
+}
+
+func renderText(tree *extension, writableRoot bool) (string, error) {
+	tpl, _ := template.New("extensions-list").Parse(extensionListTemplate)
+	output := bytes.Buffer{}
+
+	// If the system is not writable we assume it is a transactional
+	// system and show the appropriate command
+	command := "SUSEConnect"
+	if !writableRoot {
+		command = "transactional-update register"
+	}
+
+	extensions, err := renderTextExtension(4, tree.Extensions, command)
+	if err != nil {
+		return "", err
+	}
+
+	if err := tpl.Execute(&output, extensions); err != nil {
 		return "", err
 	}
 	return output.String(), nil
 }
 
-// this function takes a tree of products and returns a flattened version
-// with some additional info to make the output template as simple as possible
-func preformatExtensions(extensions []Product, activations map[string]Activation, cmd string, level int) []displayExtension {
-	// sort (copy of) input by name
-	sorted := make([]Product, len(extensions))
-	copy(sorted, extensions)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].FriendlyName < sorted[j].FriendlyName
-	})
+func renderTextExtension(indent int, exts []*extension, command string) ([]string, error) {
+	tpl, _ := template.New("extension").Parse(extensionTemplate)
+	all := []string{}
 
-	var ret []displayExtension
-	for _, e := range sorted {
-		_, activated := activations[e.ToTriplet()]
-		ret = append(ret, displayExtension{
-			Product:    e,
-			Code:       e.ToTriplet(),
-			Activated:  activated,
-			Indent:     strings.Repeat("    ", level),
-			ConnectCmd: cmd,
-		})
-		// add subextensions
-		ret = append(ret, preformatExtensions(e.Extensions, activations, cmd, level+1)...)
+	for _, ext := range exts {
+		output := bytes.Buffer{}
+		code := fmt.Sprintf("%s/%s/%s", ext.Name, ext.Version, ext.Arch)
+
+		args := struct {
+			extension
+			Command string
+			Code    string
+		}{extension: *ext, Command: command, Code: code}
+
+		if err := tpl.Execute(&output, args); err != nil {
+			return nil, err
+		}
+		all = append(all, indentBlock(indent, output.String()))
+		leafs, err := renderTextExtension(indent+4, ext.Extensions, command)
+
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, leafs...)
 	}
-	return ret
+	return all, nil
 }
