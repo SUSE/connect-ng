@@ -288,9 +288,12 @@ func RefreshRepos(version string, force, quiet, verbose, nonInteractive bool) er
 }
 
 // DistUpgrade runs zypper dist-upgrade with given flags and extra args
-func DistUpgrade(version string, quiet, verbose, nonInteractive bool, extraArgs []string) error {
+func DistUpgrade(version string, quiet, verbose, AutoAgreeLicenses, nonInteractive bool, extraArgs []string) error {
 	flags := zypperFlags(version, quiet, verbose, nonInteractive, true)
 	args := append(flags, "dist-upgrade")
+	if AutoAgreeLicenses {
+		args = append(args, "--auto-agree-with-licenses")
+	}
 	args = append(args, extraArgs...)
 	_, err := zypperRun(args, []int{zypperOK})
 	return err

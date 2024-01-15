@@ -1,0 +1,5 @@
+{{ "\x1b[1m"}}{{ .FriendlyName }}{{"\x1b[0m" -}}
+{{ if not .Available }}{{ " \x1b[31m(Not available)\x1b[0m" }}{{ end -}}
+{{ if .Activated }}{{ " \x1b[33m(Activated)\x1b[0m" }}{{ end }}
+{{ if .Activated }}Deactivate with: {{ .Command }} {{"\x1b[31m-d\x1b[0m"}} -p {{ .Code -}}
+{{ else }}Activate with: {{ .Command }} -p {{ .Code }}{{ if not .Free }} -r {{"\x1b[32m\x1b[1mADDITIONAL REGCODE\x1b[0m"}}{{ end }}{{ end }}

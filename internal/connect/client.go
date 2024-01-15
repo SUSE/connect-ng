@@ -1,16 +1,49 @@
 package connect
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
+type RegisterOut struct {
+	Success  bool             `json:"success"`
+	Products []ProductService `json:"products"`
+	Message  string           `json:"message"`
+}
+
+type ProductService struct {
+	Product ProductOut `json:"product"`
+	Service ServiceOut `json:"service"`
+}
+
+type ProductOut struct {
+	Name       string `json:"name"`
+	Identifier string `json:"identifier"`
+	Version    string `json:"version"`
+	Arch       string `json:"arch"`
+}
+
+type ServiceOut struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+var (
+	localAddService             = addService
+	localInstallReleasePackage  = InstallReleasePackage
+	localRemoveOrRefreshService = removeOrRefreshService
+)
+
 // Register announces the system, activates the
 // product on SCC and adds the service to the system
-func Register() error {
-	printInformation("register")
-	err := announceOrUpdate()
+func Register(jsonOutput bool) error {
+	out := &RegisterOut{}
+
+	printInformation("register", jsonOutput)
+	err := announceOrUpdate(jsonOutput)
 	if err != nil {
 		return err
 	}
@@ -25,7 +58,21 @@ func Register() error {
 		installReleasePkg = false
 	}
 
-	if err = registerProduct(product, installReleasePkg); err != nil {
+	if service, err := registerProduct(product, installReleasePkg, jsonOutput); err == nil {
+		out.Products = append(out.Products, ProductService{
+			Product: ProductOut{
+				Name:       product.LongName,
+				Identifier: product.Name,
+				Version:    product.Version,
+				Arch:       product.Arch,
+			},
+			Service: ServiceOut{
+				Id:   service.ID,
+				Name: service.Name,
+				Url:  service.URL,
+			},
+		})
+	} else {
 		return err
 	}
 
@@ -34,43 +81,86 @@ func Register() error {
 		if err != nil {
 			return err
 		}
-		if err := registerProductTree(p); err != nil {
+		if err := registerProductTree(p, jsonOutput, out); err != nil {
 			return err
 		}
 	}
-	Info.Print(bold(greenText("\nSuccessfully registered system")))
+	if jsonOutput {
+		out.Success = true
+		out.Message = "Successfully registered system"
+		out, err := json.Marshal(out)
+		if err != nil {
+			return err
+		}
+		Info.Println(string(out))
+	} else {
+		Info.Print(bold(greenText("\nSuccessfully registered system")))
+	}
 	return nil
 }
 
 // registerProduct activates the product, adds the service and installs the release package
-func registerProduct(product Product, installReleasePkg bool) error {
-	Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
+	if jsonOutput {
+		Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	} else {
+		Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	}
+
 	service, err := activateProduct(product, CFG.Email)
 	if err != nil {
-		return err
+		return Service{}, err
 	}
-	Info.Print("-> Adding service to system ...")
-	if err := addService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
-		return err
-	}
-	if installReleasePkg {
-		Info.Print("-> Installing release package ...")
-		if err := InstallReleasePackage(product.Name); err != nil {
-			return err
+
+	if !CFG.SkipServiceInstall {
+		if jsonOutput {
+			Debug.Print("-> Adding service to system ...")
+		} else {
+			Info.Print("-> Adding service to system ...")
+		}
+
+		if err := localAddService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
+			return Service{}, err
 		}
 	}
-	return nil
+
+	if installReleasePkg && !CFG.SkipServiceInstall {
+		if jsonOutput {
+			Debug.Print("-> Installing release package ...")
+		} else {
+			Info.Print("-> Installing release package ...")
+		}
+
+		if err := localInstallReleasePackage(product.Name); err != nil {
+			return Service{}, err
+		}
+	}
+	return service, nil
 }
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(product Product) error {
+func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
-			if err := registerProduct(extension, true); err != nil {
+			if service, err := registerProduct(extension, true, jsonOutput); err == nil {
+				out.Products = append(out.Products, ProductService{
+					Product: ProductOut{
+						Name:       product.LongName,
+						Identifier: product.Name,
+						Version:    product.Version,
+						Arch:       product.Arch,
+					},
+					Service: ServiceOut{
+						Id:   service.ID,
+						Name: service.Name,
+						Url:  service.URL,
+					},
+				})
+			} else {
 				return err
 			}
-			if err := registerProductTree(extension); err != nil {
+			if err := registerProductTree(extension, jsonOutput, out); err != nil {
 				return err
 			}
 		}
@@ -79,7 +169,7 @@ func registerProductTree(product Product) error {
 }
 
 // Deregister deregisters the system
-func Deregister() error {
+func Deregister(jsonOutput bool) error {
 	if fileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration is disabled for on-demand instances. " +
@@ -90,9 +180,11 @@ func Deregister() error {
 		return ErrSystemNotRegistered
 	}
 
-	printInformation("deregister")
+	out := &RegisterOut{}
+
+	printInformation("deregister", jsonOutput)
 	if !CFG.Product.isEmpty() {
-		return deregisterProduct(CFG.Product)
+		return deregisterProduct(CFG.Product, jsonOutput, out)
 	}
 	baseProd, _ := baseProduct()
 	baseProductService, err := upgradeProduct(baseProd)
@@ -119,28 +211,49 @@ func Deregister() error {
 
 	// reverse loop over dependencies
 	for i := len(dependencies) - 1; i >= 0; i-- {
-		if err := deregisterProduct(dependencies[i]); err != nil {
+		if err := deregisterProduct(dependencies[i], jsonOutput, out); err != nil {
 			return err
 		}
+	}
+
+	// remove potential docker and podman configurations for our registry
+	creds, err := getCredentials()
+	if err == nil {
+		Debug.Print("\nRemoving SUSE registry system authentication configuration ...")
+		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
 	if err := deregisterSystem(); err != nil {
 		return err
 	}
 
-	if err := removeOrRefreshService(baseProductService); err != nil {
-		return err
+	if !CFG.SkipServiceInstall {
+		if err := localRemoveOrRefreshService(baseProductService, jsonOutput); err != nil {
+			return err
+		}
 	}
-	Info.Print("\nCleaning up ...")
+	if !jsonOutput {
+		Info.Print("\nCleaning up ...")
+	}
 	if err := Cleanup(); err != nil {
 		return err
 	}
-	Info.Print(bold(greenText("Successfully deregistered system")))
+	if jsonOutput {
+		out.Success = true
+		out.Message = "Successfully deregistered system"
+		out, err := json.Marshal(out)
+		if err != nil {
+			return err
+		}
+		Info.Println(string(out))
+	} else {
+		Info.Print(bold(greenText("Successfully deregistered system")))
+	}
 
 	return nil
 }
 
-func deregisterProduct(product Product) error {
+func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error {
 	base, err := baseProduct()
 	if err != nil {
 		return err
@@ -148,33 +261,63 @@ func deregisterProduct(product Product) error {
 	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
-	Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	if !jsonOutput {
+		Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+	}
 	service, err := deactivateProduct(product)
 	if err != nil {
 		return err
 	}
-	if err := removeOrRefreshService(service); err != nil {
+
+	if CFG.SkipServiceInstall {
+		return nil
+	}
+
+	if err := localRemoveOrRefreshService(service, jsonOutput); err != nil {
 		return err
 	}
-	Info.Print("-> Removing release package ...")
+	if jsonOutput {
+		out.Products = append(out.Products, ProductService{
+			Product: ProductOut{
+				Name:       product.LongName,
+				Identifier: product.Name,
+				Version:    product.Version,
+				Arch:       product.Arch,
+			},
+			Service: ServiceOut{
+				Id:   service.ID,
+				Name: service.Name,
+				Url:  service.URL,
+			},
+		})
+	} else {
+		Info.Print("-> Removing release package ...")
+	}
 	return removeReleasePackage(product.Name)
 }
 
 // SMT provides one service for all products, removing it would remove all repositories.
 // Refreshing the service instead to remove the repos of deregistered product.
-func removeOrRefreshService(service Service) error {
+func removeOrRefreshService(service Service, jsonOutput bool) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
-		Info.Print("-> Refreshing service ...")
+		if !jsonOutput {
+			Info.Print("-> Refreshing service ...")
+		}
 		refreshAllServices()
 		return nil
 	}
-	Info.Print("-> Removing service from system ...")
+	if !jsonOutput {
+		Info.Print("-> Removing service from system ...")
+	}
 	return removeService(service.Name)
 }
 
 // AnnounceSystem announce system via SCC/Registration Proxy
-func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, error) {
-	Info.Printf(bold("\nAnnouncing system to %s ..."), CFG.BaseURL)
+func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (string, string, error) {
+	if !quiet {
+		Info.Printf(bold("\nAnnouncing system to %s ..."), CFG.BaseURL)
+	}
+
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
 		return "", "", err
@@ -187,8 +330,10 @@ func AnnounceSystem(distroTgt string, instanceDataFile string) (string, string, 
 }
 
 // UpdateSystem resend the system's hardware details on SCC
-func UpdateSystem(distroTarget, instanceDataFile string) error {
-	Info.Printf(bold("\nUpdating system details on %s ..."), CFG.BaseURL)
+func UpdateSystem(distroTarget, instanceDataFile string, quiet bool) error {
+	if !quiet {
+		Info.Printf(bold("\nUpdating system details on %s ..."), CFG.BaseURL)
+	}
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
 		return err
@@ -205,29 +350,35 @@ func SendKeepAlivePing() error {
 	if !IsRegistered() {
 		return ErrPingFromUnregistered
 	}
-	err := UpdateSystem("", "")
+	err := UpdateSystem("", "", false)
 	if err == nil {
 		Info.Print(bold(greenText("\nSuccessfully updated system")))
 	}
 	return err
 }
 
-// announceOrUpdate Announces the system to the server, receiving and storing its
-// credentials. When already announced, sends the current hardware details to the server
-func announceOrUpdate() error {
+// announceOrUpdate Announces the system to the server, receiving and storing
+// its credentials. When already announced, sends the current hardware details
+// to the server. The output is not shown on stdout if `quiet` is set to true.
+func announceOrUpdate(quiet bool) error {
 	if IsRegistered() {
-		return UpdateSystem("", "")
+		return UpdateSystem("", "", quiet)
 	}
 
 	distroTgt := ""
 	if !CFG.Product.isEmpty() {
 		distroTgt = CFG.Product.distroTarget()
 	}
-	login, password, err := AnnounceSystem(distroTgt, CFG.InstanceDataFile)
+	login, password, err := AnnounceSystem(distroTgt, CFG.InstanceDataFile, quiet)
 	if err != nil {
 		return err
 	}
-	return writeSystemCredentials(login, password, "")
+
+	if err = writeSystemCredentials(login, password, ""); err == nil {
+		Debug.Print("\nAdding SUSE registry system authentication configuration ...")
+		setupRegistryAuthentication(login, password)
+	}
+	return err
 }
 
 // IsRegistered returns true if there is a valid credentials file
@@ -247,7 +398,7 @@ func URLDefault() bool {
 	return CFG.BaseURL == defaultBaseURL
 }
 
-func printInformation(action string) {
+func printInformation(action string, jsonOutput bool) {
 	var server string
 	if URLDefault() {
 		server = "SUSE Customer Center"
@@ -255,15 +406,31 @@ func printInformation(action string) {
 		server = "registration proxy " + CFG.BaseURL
 	}
 	if action == "register" {
-		Info.Printf(bold("Registering system to %s"), server)
+		if jsonOutput {
+			Debug.Printf(bold("Registering system to %s"), server)
+		} else {
+			Info.Printf(bold("Registering system to %s"), server)
+		}
 	} else {
-		Info.Printf(bold("Deregistering system from %s"), server)
+		if jsonOutput {
+			Debug.Printf(bold("Deregistering system from %s"), server)
+		} else {
+			Info.Printf(bold("Deregistering system from %s"), server)
+		}
 	}
 	if CFG.FsRoot != "" {
-		Info.Print("Rooted at:", CFG.FsRoot)
+		if jsonOutput {
+			Debug.Print("Rooted at:", CFG.FsRoot)
+		} else {
+			Info.Print("Rooted at:", CFG.FsRoot)
+		}
 	}
 	if CFG.Email != "" {
-		Info.Print("Using E-Mail:", CFG.Email)
+		if jsonOutput {
+			Debug.Print("Using E-Mail:", CFG.Email)
+		} else {
+			Info.Print("Using E-Mail:", CFG.Email)
+		}
 	}
 }
 

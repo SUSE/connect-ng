@@ -1,0 +1,14 @@
+{
+  "auths": {
+    "https://registry.suse.com": {
+      "auth": "U0NDX0ZPT09PT0JCQkJBUlJSUlI6c3Ryb25ncGFzc3dvcmQ="
+    },
+    "localhost:5000": {
+      "auth": "cmVnY29kZTpzdWJodWItaWQtMTE3ODUwNg==",
+      "identitytoken": "my precious!"
+    }
+  },
+  "credHelpers": {
+    "helper": "some helpful helper"
+  }
+}

@@ -94,6 +94,9 @@ Manage subscriptions at the SUSE Customer Center: https://scc.suse.com
   **--debug**
   : Provide debug output.
 
+  **--json**
+  : Print output in JSON format. This flag is only supported for registering, de-registering and list-extensions.
+
   **-h**, **--help**
   : Show help message.
 
