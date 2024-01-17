@@ -196,7 +196,7 @@ func AcceptEULA() error {
 	// Fetch list of extensions and search for requested product
 	base, err := baseProduct()
 	if err != nil {
-		return err
+		return nil
 	}
 
 	// If we encounter a switch of base products (e.g. SLES -> SLES_SAP)
