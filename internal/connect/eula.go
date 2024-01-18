@@ -196,8 +196,17 @@ func AcceptEULA() error {
 	// Fetch list of extensions and search for requested product
 	base, err := baseProduct()
 	if err != nil {
-		return err
+		return nil
 	}
+
+	// If we encounter a switch of base products (e.g. SLES -> SLES_SAP)
+	// we can not fetch the product information and thus the EULA since there
+	// might be no registration in place right now.
+	// See bsc#1218649 and bsc#1217961
+	if base.ToTriplet() != CFG.Product.ToTriplet() {
+		return nil
+	}
+
 	prod, err := showProduct(base)
 	if err != nil {
 		return err
