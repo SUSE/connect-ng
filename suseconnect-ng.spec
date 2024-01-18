@@ -1,7 +1,7 @@
 #
 # spec file for package suseconnect-ng
 #
-# Copyright (c) 2023 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -32,8 +32,8 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
-BuildRequires:  golang-packaging
 BuildRequires:  go1.18-openssl
+BuildRequires:  golang-packaging
 BuildRequires:  ruby-devel
 BuildRequires:  zypper
 
