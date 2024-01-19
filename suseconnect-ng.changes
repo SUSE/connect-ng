@@ -2,7 +2,7 @@
 Tue Jan 18 16:00 UTC 2024 - Thomas Schmidt <tschmidt@suse.com>
 
 - Update to version 1.6.0
-  * Allow horizontal migrations when showing EULAs (bsc#1218649 and bsc#1217961)
+  * Disable EULA display for addons (bsc#1218649 and bsc#1217961)
 
 -------------------------------------------------------------------
 Tue Dec 22 08:57:50 UTC 2023 - Miquel Sabate Sola <msabate@suse.com>

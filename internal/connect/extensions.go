@@ -100,7 +100,7 @@ func renderText(tree *extension, writableRoot bool) (string, error) {
 
 	// If the system is not writable we assume it is a transactional
 	// system and show the appropriate command
-	command := "SUSEConnect"
+	command := "suseconnect"
 	if !writableRoot {
 		command = "transactional-update register"
 	}
