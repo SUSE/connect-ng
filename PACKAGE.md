@@ -26,8 +26,9 @@ $ osc build SLE_15_SP3 x86_64 --no-verify
 ### Testing the package locally
 
 First of all, you need to create an updated tar file. In order to do this, you
-need to checkout the package and run the service that fetches the code (change the
-`revision` parameter in `_service` to build the tar from another branch than `main`):
+need to checkout the package and run the service that fetches the code (change
+the `revision` parameter in `_service` to build the tar from another branch/sha
+than `main`):
 
 ```bash
 $ mkdir obs; cd obs; osc co systemsmanagement:SCC suseconnect-ng -o .
@@ -35,36 +36,36 @@ $ osc service manualrun
 ```
 
 This will create a `connect-ng` directory with the latest changes from git's
-default branch. After this, you can apply whatever changes you want inside of
-the `connect-ng` and commit it. If you have the source code somewhere else, you
-can simply create a patch file from there, apply it and commit the changes
-locally on this newly cloned repository. After all that, just run the service
-again and you will get an updated tar file. That is:
+`main` branch. After this, you can apply whatever changes you want inside of
+the `connect-ng` and commit it.
 
-```bash
-# Optional: produce the patch file with `git diff` or `git show` from your
-# development repository if it's located somewhere else and apply it on the
-# `suseconnect-ng` directory you have from the previous `service manualrun`
-# command.
+If you have the source code somewhere else, you have two ways to go. First of
+all, you can produce a patch by using `git diff` on your locally cloned
+repository and then apply it into the source code that was downloaded when you
+first run `osc service manualrun`. Then, you can run `osc service manualrun` in
+order to produce the tar again and build it.
 
-# On the local copy of the package.
-$ osc service manualrun
-$ osc build openSUSE_Leap_15.4 x86_64 --no-verify
-```
+Otherwise, you can simply push your changes into a remote development branch.
+Then, inside of your local copy of the OBS project, change the `revision`
+parameter inside of the `_service` file to match the branch name or the commit
+sha you are testing. After that, you can continuously run `osc service
+manualrun` and `osc build ...` in order to test multiple iterations of your
+development branch.
 
-This will give you an RPM you can install locally.
+Either way you will give get an RPM that you can install locally.
 
 ## Step 3. Update package in OBS devel project
 
-The package is updated manually and it relies on the Git repository from
-`connect-ng` to contain the latest changes. Whenever you want to update the
-package on OBS, simply run the service and commit the changes like so:
+As with any other OBS project, whenever you are done with testing a package, you
+can update the package as usual:
 
-```bash
-$ osc service manualrun
-# review the changes
-$ osc commit
-```
+1. Make sure that the `revision` on the `_service` file is back on `main`
+   (upstream should always point to `main`).
+2. Make sure to run `osc service manualrun` and `osc build ...` again and that
+   everything is working.
+3. Add/remove files with the `add` and `remove` commands (tip: you can also use
+   the `addremove` command to automate this!).
+4. Update the changelog with the `vc` command and call `commit`.
 
 ## Submit maintenance updates
 
@@ -96,6 +97,8 @@ For each maintained codestream you need to create a new maintenance request:
 ```bash
 osc -A https://api.suse.de mr openSUSE.org:systemsmanagement:SCC suseconnect-ng SUSE:SLE-15-SP4:GA
 ```
+
+**Note**: The codestreams of SLE-15-SP1, SLE-15-SP2 and SLE-15-SP3 are connected, that means we only need to submit for SP1 and it will get released on SP2 and SP3 also.
 
 **Note**: In case the `mr` (maintenance request) command is not working
 properly, try `sr` (submit request) command.
