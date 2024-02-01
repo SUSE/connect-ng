@@ -8,6 +8,11 @@ import (
 )
 
 // Product represents an installed product or product information from API
+//
+// NOTE (FTW epic): some of the things here do not map correctly with SCC's API
+// and it's admittedly quite bananas (e.g. SCC's "identifier" being "Name" but
+// then SCC's "name" being "LongName" and claiming that it's used by Yast
+// (wtf?)).
 type Product struct {
 	Name    string `xml:"name,attr" json:"identifier"`
 	Version string `xml:"version,attr" json:"version"`
@@ -156,4 +161,18 @@ func (p Product) distroTarget() string {
 	}
 	version := strings.Split(p.Version, ".")[0]
 	return identifier + "-" + version + "-" + p.Arch
+}
+
+func (p Product) findExtension(query Product) (Product, error) {
+	for _, e := range p.Extensions {
+		if e.ToTriplet() == query.ToTriplet() {
+			return e, nil
+		}
+		if len(e.Extensions) > 0 {
+			if child, err := e.findExtension(query); err == nil {
+				return child, nil
+			}
+		}
+	}
+	return Product{}, fmt.Errorf("Extension not found")
 }

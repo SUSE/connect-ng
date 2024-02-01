@@ -20,6 +20,7 @@ const (
 	defaultConfigPath = "/etc/SUSEConnect"
 	defaultBaseURL    = "https://scc.suse.com"
 	defaultInsecure   = false
+	defaultSkip       = false
 )
 
 // Config holds the config!
@@ -34,17 +35,20 @@ type Config struct {
 	Product          Product
 	InstanceDataFile string
 	Email            string `json:"email"`
+	AutoAgreeEULA    bool
 
 	NoZypperRefresh    bool
 	AutoImportRepoKeys bool
+	SkipServiceInstall bool
 }
 
 // NewConfig returns a Config with defaults
 func NewConfig() Config {
 	return Config{
-		Path:     defaultConfigPath,
-		BaseURL:  defaultBaseURL,
-		Insecure: defaultInsecure,
+		Path:               defaultConfigPath,
+		BaseURL:            defaultBaseURL,
+		Insecure:           defaultInsecure,
+		SkipServiceInstall: defaultSkip,
 	}
 }
 
@@ -59,6 +63,7 @@ func (c Config) toYAML() []byte {
 	if c.Namespace != "" {
 		fmt.Fprintf(&buf, "namespace: %s\n", c.Namespace)
 	}
+	fmt.Fprintf(&buf, "auto_agree_with_licenses: %v\n", c.AutoAgreeEULA)
 	return buf.Bytes()
 }
 
@@ -104,6 +109,8 @@ func parseConfig(r io.Reader, c *Config) {
 			c.Insecure, _ = strconv.ParseBool(val)
 		case "no_zypper_refs":
 			c.NoZypperRefresh, _ = strconv.ParseBool(val)
+		case "auto_agree_with_licenses":
+			c.AutoAgreeEULA, _ = strconv.ParseBool(val)
 		default:
 			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}

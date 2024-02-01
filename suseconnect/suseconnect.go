@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -54,23 +55,25 @@ func (p *singleStringFlag) Set(value string) error {
 
 func connectMain() {
 	var (
-		status           bool
-		keepAlive        bool
-		statusText       bool
-		debug            bool
-		writeConfig      bool
-		deRegister       bool
-		cleanup          bool
-		rollback         bool
-		baseURL          string
-		fsRoot           string
-		namespace        string
-		token            string
-		product          singleStringFlag
-		instanceDataFile string
-		listExtensions   bool
-		email            string
-		version          bool
+		status                bool
+		keepAlive             bool
+		statusText            bool
+		debug                 bool
+		writeConfig           bool
+		deRegister            bool
+		cleanup               bool
+		rollback              bool
+		baseURL               string
+		fsRoot                string
+		namespace             string
+		token                 string
+		product               singleStringFlag
+		instanceDataFile      string
+		listExtensions        bool
+		autoAgreeWithLicenses bool
+		email                 string
+		version               bool
+		jsonFlag              bool
 	)
 
 	// display help like the ruby SUSEConnect
@@ -93,6 +96,7 @@ func connectMain() {
 	flag.BoolVar(&rollback, "rollback", false, "")
 	flag.BoolVar(&version, "version", false, "")
 	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&autoAgreeWithLicenses, "auto-agree-with-licenses", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
 	flag.StringVar(&namespace, "namespace", "", "")
@@ -103,6 +107,7 @@ func connectMain() {
 	flag.StringVar(&email, "e", "", "")
 	flag.Var(&product, "product", "")
 	flag.Var(&product, "p", "")
+	flag.BoolVar(&jsonFlag, "json", false, "")
 
 	flag.Parse()
 	if version {
@@ -162,7 +167,31 @@ func connectMain() {
 			connect.CFG.Language = lang
 		}
 	}
+	if _, ok := os.LookupEnv("SKIP_SERVICE_INSTALL"); ok {
+		connect.CFG.SkipServiceInstall = true
+	}
+	if autoAgreeWithLicenses {
+		connect.CFG.AutoAgreeEULA = true
+	} else {
+		// check for "SUSEConnect --auto-agree-with-licenses=false ..."
+		// which should take precedence over setting in /etc/SUSEConnect
+		flag.Visit(func(f *flag.Flag) {
+			if f.Name == "auto-agree-with-licenses" {
+				connect.CFG.AutoAgreeEULA = false
+			}
+		})
+	}
+
+	// Reading the configuration/flags is done, now let's check if the
+	// filesystem can handle operations from SUSEConnect.
+	if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
+		exitOnError(err)
+	}
+
 	if status {
+		if jsonFlag {
+			exitOnError(errors.New("cannot use the json option with the 'status' command"))
+		}
 		output, err := connect.GetProductStatuses("json")
 		exitOnError(err)
 		fmt.Println(output)
@@ -170,23 +199,43 @@ func connectMain() {
 		if isSumaManaged() {
 			os.Exit(0)
 		}
+		if jsonFlag {
+			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"))
+		}
 		err := connect.SendKeepAlivePing()
 		exitOnError(err)
 	} else if statusText {
+		if jsonFlag {
+			exitOnError(errors.New("cannot use the json option with the 'status-text' command"))
+		}
 		output, err := connect.GetProductStatuses("text")
 		exitOnError(err)
 		fmt.Print(output)
 	} else if listExtensions {
-		output, err := connect.GetExtensionsList()
+		output, err := connect.RenderExtensionTree(jsonFlag)
 		exitOnError(err)
-		fmt.Print(output)
+		fmt.Println(output)
+		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister()
-		exitOnError(err)
+		err := connect.Deregister(jsonFlag)
+		if jsonFlag && err != nil {
+			out := connect.RegisterOut{Success: false, Message: err.Error()}
+			str, _ := json.Marshal(&out)
+			fmt.Println(string(str))
+			os.Exit(1)
+		} else {
+			exitOnError(err)
+		}
 	} else if cleanup {
+		if jsonFlag {
+			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"))
+		}
 		err := connect.Cleanup()
 		exitOnError(err)
 	} else if rollback {
+		if jsonFlag {
+			exitOnError(errors.New("cannot use the json option with the 'rollback' command"))
+		}
 		err := connect.Rollback()
 		exitOnError(err)
 	} else {
@@ -201,8 +250,24 @@ func connectMain() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
-			err := connect.Register()
-			exitOnError(err)
+
+			// If the base system/extensions have EULAs, we need to make sure
+			// that they are accepted before proceeding on the registering. If
+			// they don't have EULA's, then this is a no-op.
+
+			// disabling the license dialog feature for now due to bsc#1218878, bsc#1218649
+			// err := connect.AcceptEULA()
+			// exitOnError(err)
+
+			err := connect.Register(jsonFlag)
+			if jsonFlag && err != nil {
+				out := connect.RegisterOut{Success: false, Message: err.Error()}
+				str, _ := json.Marshal(&out)
+				fmt.Println(string(str))
+				os.Exit(1)
+			} else {
+				exitOnError(err)
+			}
 		}
 	}
 	if writeConfig {

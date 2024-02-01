@@ -68,7 +68,7 @@ func free_string(str *C.char) {
 func announce_system(clientParams, distroTarget *C.char) *C.char {
 	loadConfig(C.GoString(clientParams))
 
-	login, password, err := connect.AnnounceSystem(C.GoString(distroTarget), "")
+	login, password, err := connect.AnnounceSystem(C.GoString(distroTarget), "", false)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -85,7 +85,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 func update_system(clientParams, distroTarget *C.char) *C.char {
 	loadConfig(C.GoString(clientParams))
 
-	if err := connect.UpdateSystem(C.GoString(distroTarget), ""); err != nil {
+	if err := connect.UpdateSystem(C.GoString(distroTarget), "", false); err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
