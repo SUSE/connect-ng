@@ -59,6 +59,7 @@ func migrationMain() {
 		query                    bool
 		disableRepos             bool
 		failDupOnlyOnFatalErrors bool
+		autoAgreeLicenses        bool
 		migrationNum             int
 		fsRoot                   string
 		toProduct                string
@@ -86,6 +87,8 @@ func migrationMain() {
 	flag.BoolVar(&breakMySystem, "break-my-system", false, "")
 	flag.BoolVar(&query, "query", false, "")
 	flag.BoolVar(&disableRepos, "disable-repos", false, "")
+	flag.BoolVar(&autoAgreeLicenses, "l", false, "")
+	flag.BoolVar(&autoAgreeLicenses, "auto-agree-with-licenses", false, "")
 	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
 	flag.BoolVar(&failDupOnlyOnFatalErrors, "strict-errors-dist-migration", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
@@ -93,8 +96,6 @@ func migrationMain() {
 	flag.StringVar(&toProduct, "product", "", "")
 	// zypper dup passthrough args
 	// bool flags don't need variables as these will be processed using flag.Visit()
-	flag.Bool("auto-agree-with-licenses", false, "")
-	flag.Bool("l", false, "")
 	flag.Bool("allow-vendor-change", false, "")
 	flag.Bool("no-allow-vendor-change", false, "")
 	flag.Bool("debug-solver", false, "")
@@ -313,7 +314,7 @@ func migrationMain() {
 
 	dupArgs := zypperDupArgs()
 	fsInconsistent, err := applyMigration(migration, systemProducts,
-		quiet, verbose, nonInteractive, disableRepos,
+		quiet, verbose, nonInteractive, disableRepos, autoAgreeLicenses,
 		failDupOnlyOnFatalErrors, dupArgs)
 
 	if err != nil {
@@ -645,7 +646,7 @@ func isFatalZypperError(code int) bool {
 
 // returns fs_inconsistent flag
 func applyMigration(migration connect.MigrationPath, systemProducts []connect.Product,
-	quiet, verbose, nonInteractive, forceDisableRepos, failDupOnlyOnFatalErrors bool,
+	quiet, verbose, nonInteractive, forceDisableRepos, autoAgreeLicenses, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
 	fsInconsistent := false
@@ -686,7 +687,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 		return fsInconsistent, ErrInterrupted
 	}
 
-	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, nonInteractive, dupArgs)
+	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, autoAgreeLicenses, nonInteractive, dupArgs)
 	connect.SetSystemEcho(echo)
 	if err != nil {
 		ze := err.(connect.ZypperError)
@@ -730,7 +731,8 @@ func checkFlagContradictions() error {
 
 func zypperDupArgs() []string {
 	// NOTE: "r" is not listed here as it shares values list with "repo"
-	wanted := connect.NewStringSet("auto-agree-with-licenses", "l",
+	// Same for l and auto-agree-with-licenses
+	wanted := connect.NewStringSet("auto-agree-with-licenses",
 		"allow-vendor-change", "no-allow-vendor-change",
 		"debug-solver", "recommends", "no-recommends",
 		"replacefiles", "details", "download",

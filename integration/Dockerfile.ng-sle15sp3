@@ -16,7 +16,7 @@ RUN zypper ar http://download.suse.de/ibs/SUSE/Products/SLE-Module-Basesystem/15
     zypper --non-interactive up &&\
     zypper --non-interactive install git-core ruby-devel make gcc gcc-c++ build wget dmidecode \
       vim osc hwinfo libx86emu3 zypper-migration-plugin sudo awk curl \
-      obs-service-tar_scm obs-service-recompress obs-service-extract_file obs-service-set_version obs-service-format_spec_file
+      obs-service-tar_scm obs-service-recompress obs-service-extract_file obs-service-set_version obs-service-format_spec_file obs-service-download_files
 
 RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/lastBuild/artifact/.regcodes -O ~/.regcodes
 RUN wget --no-check-certificate https://ci.suse.de/job/scc-connect-ng-config/lastBuild/artifact/.oscrc -O ~/.oscrc

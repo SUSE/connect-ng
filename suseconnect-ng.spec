@@ -1,7 +1,7 @@
 #
 # spec file for package suseconnect-ng
 #
-# Copyright (c) 2021 SUSE LLC
+# Copyright (c) 2024 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -15,6 +15,7 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
+
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
@@ -22,7 +23,8 @@
 %bcond_with hwinfo
 
 Name:           suseconnect-ng
-Version:        0.0.3~git112.d4980ea
+# the version will get set by the 'set_version' service
+Version:        1.1.0~git2.f42b4b2
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later
@@ -30,21 +32,15 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
-BuildRequires:  golang-packaging
-# use FIPS compliant go version for SLE targets and Leap 15.5+ targets
-%if ( 0%{?is_opensuse} == 0 && 0%{?sle_version} ) || ( 0%{?is_opensuse} == 1 && 0%{?sle_version} >= 150500 )
-# temporary until BuildRequires: go-openssl >= 1.16 works
 BuildRequires:  go1.18-openssl
-%else
-BuildRequires:  go >= 1.16
-%endif
-BuildRequires:  zypper
+BuildRequires:  golang-packaging
 BuildRequires:  ruby-devel
+BuildRequires:  zypper
 
+ExcludeArch:    %ix86 s390 ppc64
 %if %{with hwinfo}
 %global test_hwinfo_args -test-hwinfo
 
-ExcludeArch: %ix86 s390 ppc64
 # packages required only for hwinfo tests
 %ifarch ia64 x86_64 %arm aarch64
 BuildRequires:  dmidecode
@@ -55,9 +51,8 @@ BuildRequires:  s390-tools
 BuildRequires:  systemd
 %endif
 
-
-Obsoletes:      SUSEConnect < 1.0.0
-Provides:       SUSEConnect = 1.0.0
+Obsoletes:      SUSEConnect < 1.1.0
+Provides:       SUSEConnect = %version
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
@@ -98,6 +93,7 @@ Summary:        C interface to suseconnect-ng
 Group:          System/Management
 # the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
 Requires:       suseconnect-ng
+
 %description -n libsuseconnect
 This package contains library which provides C interface to selected
 suseconnect-ng functions.
@@ -106,6 +102,11 @@ suseconnect-ng functions.
 Summary:        Ruby bindings for libsuseconnect library
 Group:          System/Management
 Requires:       libsuseconnect
+# Adding the rubygem provides, to work as a drop-in replacement for Ruby SUSEConnect on SLE15<SP4
+%if (0%{?sle_version} > 0 && 0%{?sle_version} < 150400)
+Provides:       rubygem(ruby:2.5.0:suse-connect)
+%endif
+
 %description -n suseconnect-ruby-bindings
 This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
@@ -137,6 +138,7 @@ install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.5 %buildroot/%_
 install -D -m 644 %_builddir/go/src/%import_path/man/SUSEConnect.8 %buildroot/%_mandir/man8/SUSEConnect.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-migration.8 %buildroot/%_mandir/man8/zypper-migration.8
 install -D -m 644 %_builddir/go/src/%import_path/man/zypper-search-packages.8 %buildroot/%_mandir/man8/zypper-search-packages.8
+install -D -m 644 %_builddir/go/src/%import_path/SUSEConnect.example %{buildroot}%_sysconfdir/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
 install -D -m 644 %_builddir/go/src/%import_path/suseconnect-keepalive.timer %buildroot/%_unitdir/suseconnect-keepalive.timer
@@ -185,7 +187,21 @@ about these improvements and any ideas you might have.
 EOF
 fi
 
+# If the keepalive timer exists on package install (not upgrade), then we are replacing SUSEConnect.
+# Record the enabled and active statuses so they can be restored in %posttrans.
+if [ "$1" -eq 1 ]; then
+  /usr/bin/systemctl is-enabled suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-enabled || :
+  /usr/bin/systemctl is-active suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-active || :
+fi
+
 %post
+# Randomize schedule time for SLES12. SLES12 systemd does not support RandomizedDelaySec.
+%if (0%{?sle_version} > 0 && 0%{?sle_version} < 150000)
+    TIMER_HOUR=$(( RANDOM % 24 ))
+    TIMER_MINUTE=$(( RANDOM % 60 ))
+    sed -i '/RandomizedDelaySec*/d' %{_unitdir}/suseconnect-keepalive.timer
+    sed -i "s/OnCalendar=daily/OnCalendar=*-*-* $TIMER_HOUR:$TIMER_MINUTE:00/" %{_unitdir}/suseconnect-keepalive.timer
+%endif
 %service_add_post suseconnect-keepalive.service suseconnect-keepalive.timer
 
 %preun
@@ -193,6 +209,16 @@ fi
 
 %postun
 %service_del_postun suseconnect-keepalive.service suseconnect-keepalive.timer
+
+%posttrans
+if [ -e /run/suseconnect-keepalive.timer.is-enabled ]; then
+   /usr/bin/systemctl enable suseconnect-keepalive.timer >/dev/null 2>&1 || :
+   rm /run/suseconnect-keepalive.timer.is-enabled ||:
+fi
+if [ -e /run/suseconnect-keepalive.timer.is-active ]; then
+  /usr/bin/systemctl start suseconnect-keepalive.timer >/dev/null 2>&1 || :
+  rm /run/suseconnect-keepalive.timer.is-active ||:
+fi
 
 %check
 %gotest -v %import_path/internal/connect %{?test_hwinfo_args}
@@ -211,6 +237,7 @@ make -C %_builddir/go/src/%import_path gofmt
 %_mandir/man5/*
 %_unitdir/suseconnect-keepalive.service
 %_unitdir/suseconnect-keepalive.timer
+%config %{_sysconfdir}/SUSEConnect.example
 
 %files -n libsuseconnect
 %license LICENSE LICENSE.LGPL
@@ -219,3 +246,5 @@ make -C %_builddir/go/src/%import_path gofmt
 %files -n suseconnect-ruby-bindings
 %doc yast/README.md
 %_libdir/ruby/vendor_ruby/%rb_ver/suse
+
+%changelog
