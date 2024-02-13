@@ -183,9 +183,13 @@ func connectMain() {
 	}
 
 	// Reading the configuration/flags is done, now let's check if the
-	// filesystem can handle operations from SUSEConnect.
-	if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
-		exitOnError(err)
+	// filesystem can handle operations from SUSEConnect for specific actions
+	// which require filesystem to be read write (aka writing outside of /etc)
+	// /etc is writable at any time, system token roation works just fine
+	if deRegister || rollback || cleanup {
+		if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
+			exitOnError(err)
+		}
 	}
 
 	if status {
@@ -258,6 +262,11 @@ func connectMain() {
 			// disabling the license dialog feature for now due to bsc#1218878, bsc#1218649
 			// err := connect.AcceptEULA()
 			// exitOnError(err)
+
+			// we need a read-write filesystem to install release packages
+			if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
+				exitOnError(err)
+			}
 
 			err := connect.Register(jsonFlag)
 			if jsonFlag && err != nil {
