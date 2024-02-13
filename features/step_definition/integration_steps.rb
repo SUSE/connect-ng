@@ -9,14 +9,13 @@ Then(/^I call SUSEConnect with '(.*)' arguments$/) do |args|
 
   connect = "SUSEConnect --url #{@url}"
   connect << " -r #{regcode_for_test(options['regcode'])}" if options['regcode']
+  connect << " -d" if options['de-register']
   connect << " -p #{options['product']}" if options['product']
   connect << " --namespace #{options['namespace']}" if options['namespace']
   connect << ' -s' if options['status']
-  connect << '  --write-config' if options['write-config']
+  connect << ' --write-config' if options['write-config']
   connect << ' --cleanup' if options['cleanup']
-
-  output = connect.gsub(/(.*) -r (.*) (.*)/, '\1 -r REDACTED \3')
-  step "I run `#{output}`"
+  step "I run `#{connect}`"
 end
 
 Then(/^zypper (should|should not) contain a service for (.+)$/) do |condition, name|

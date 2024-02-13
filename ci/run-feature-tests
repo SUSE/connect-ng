@@ -23,10 +23,11 @@ done
 
 group "cleanup test system"
   SUSEConnect --clean
+  [ -f /etc/SUSEConnect ] && rm /etc/SUSEConnect
 groupend
 
 group "run feature tests"
 pushd "$SOURCE"
-  PRODUCT=$PRODUCT cucumber
+  PRODUCT=$PRODUCT cucumber -q --format progress
 popd
 groupend
