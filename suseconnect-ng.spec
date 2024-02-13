@@ -15,16 +15,11 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
-
 %global provider_prefix github.com/SUSE/connect-ng
 %global import_path     %{provider_prefix}
 
-# set this to enable hwinfo test in %check
-%bcond_with hwinfo
-
 Name:           suseconnect-ng
-# the version will get set by the 'set_version' service
-Version:        1.1.0~git2.f42b4b2
+Version:        1.7
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later
@@ -32,24 +27,12 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
-BuildRequires:  go1.18-openssl
+BuildRequires:  go1.21-openssl
 BuildRequires:  golang-packaging
 BuildRequires:  ruby-devel
 BuildRequires:  zypper
 
 ExcludeArch:    %ix86 s390 ppc64
-%if %{with hwinfo}
-%global test_hwinfo_args -test-hwinfo
-
-# packages required only for hwinfo tests
-%ifarch ia64 x86_64 %arm aarch64
-BuildRequires:  dmidecode
-%endif
-%ifarch s390x
-BuildRequires:  s390-tools
-%endif
-BuildRequires:  systemd
-%endif
 
 Obsoletes:      SUSEConnect < 1.1.0
 Provides:       SUSEConnect = %version
@@ -219,11 +202,6 @@ if [ -e /run/suseconnect-keepalive.timer.is-active ]; then
   /usr/bin/systemctl start suseconnect-keepalive.timer >/dev/null 2>&1 || :
   rm /run/suseconnect-keepalive.timer.is-active ||:
 fi
-
-%check
-%gotest -v %import_path/internal/connect %{?test_hwinfo_args}
-%gotest -v %import_path/suseconnect
-make -C %_builddir/go/src/%import_path gofmt
 
 %files
 %license LICENSE LICENSE.LGPL

@@ -1,15 +1,32 @@
+NAME          = connect-ng
+VERSION       = $(shell bash -c "cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'")
+DIST          = $(NAME)-$(VERSION)/
+
 all: test build build-so
 
+dist: clean internal/connect/version.txt
+	@mkdir -p $(DIST)
+	@cp -r internal $(DIST)
+	@cp -r libsuseconnect $(DIST)
+	@cp -r suseconnect $(DIST)
+	@cp -r yast $(DIST)
+	@cp -r man $(DIST)
+	@cp go.mod $(DIST)
+	@cp go.sum $(DIST)
+	@cp LICENSE LICENSE.LGPL README.md $(DIST)
+	@cp SUSEConnect.example $(DIST)
+	@cp suseconnect-keepalive.service $(DIST)
+	@cp suseconnect-keepalive.timer $(DIST)
+	@cp suseconnect-ng.changes $(DIST)
+	@cp suseconnect-ng-rpmlintrc suseconnect-ng.spec $(DIST)
+	@tar cfvj $(NAME)-$(VERSION).tar.xz $(NAME)-$(VERSION)/
+	@rm -r $(NAME)-$(VERSION)
+	
 out:
 	mkdir -p out
 
 internal/connect/version.txt:
-	# this is the equivalent from _service of: @PARENT_TAG@~git@TAG_OFFSET@.%h
-	parent=$$(git describe --tags --abbrev=0 --match='v*' | sed 's:^v::' ); \
-	       offset=$$(git rev-list --count "v$${parent}..HEAD"); \
-	       git log --no-show-signature -n1 --date='format:%Y%m%d' --pretty="format:$${parent}~git$${offset}.%h" > internal/connect/version.txt
-	cat -v internal/connect/version.txt
-	@echo
+	@echo "$(VERSION)" > internal/connect/version.txt
 
 build: out internal/connect/version.txt
 	go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
@@ -41,4 +58,6 @@ build-s390: out internal/connect/version.txt
 
 clean:
 	go clean
-	rm internal/connect/version.txt
+	@rm -f internal/connect/version.txt
+	@rm -rf connect-ng-$(NAME)-$(VERSION)/
+	@rm -f connect-ng-*.tar.xz

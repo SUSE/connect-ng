@@ -1,0 +1,65 @@
+#!/bin/bash
+set -e
+
+# Where the connect-ng source is located within the container
+SOURCE=${SOURCE:-/usr/src/connect-ng}
+
+# Where is the rpm build environment to be found
+BUILD_DIR=${BUILD_DIR:-/usr/src/packages}
+
+# Where copy the built rpm files after a successful build
+ARTIFACT_DIR=${ARTIFACT_DIR:-$SOURCE/artifacts}
+
+# we need to add the repository on the fly since BCI/15.5 does not
+# provide golang-packaging out of the box.
+DEVEL_REPO=${DEVEL_REPO:-https://download.opensuse.org/repositories/devel:/languages:/go/SLE_15_SP5/devel:languages:go.repo}
+
+# Current version we are working with
+function get_version {
+  pushd "$SOURCE" &> /dev/null
+    cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'
+  popd &> /dev/null
+}
+VERSION=${VERSION:-$(get_version)}
+
+# The source tarball
+TARBALL=${TARBALL:-connect-ng-$VERSION.tar.xz}
+
+group() { echo "::group::$1"; }
+groupend() { echo "::groupend::"; }
+fail() { echo "::error::$1"; exit 1;}
+
+group "setup artifact directory"
+  if [ -d "$ARTIFACT_DIR" ]; then
+    rm -r "$ARTIFACT_DIR"
+  fi
+  mkdir -p "$ARTIFACT_DIR"
+groupend
+
+group "prepare source tarball"
+pushd "$SOURCE"
+    make dist
+    mv "$TARBALL" "$ARTIFACT_DIR"
+    cp suseconnect-ng-rpmlintrc "$ARTIFACT_DIR"
+    cp suseconnect-ng.changes "$ARTIFACT_DIR"
+    cp suseconnect-ng.spec "$ARTIFACT_DIR"
+popd
+groupend
+
+# prepare build env
+group "prepare build environment"  
+pushd "$BUILD_DIR"
+  mkdir -p {BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS,OTHERS}
+  cp -r "$ARTIFACT_DIR"/* SOURCES/
+
+  zypper --non-interactive addrepo "$DEVEL_REPO"
+  zypper --non-interactive --gpg-auto-import-keys install golang-packaging
+popd
+groupend
+
+group "build suseconnect-ng-$VERSION.rpm"
+pushd "$BUILD_DIR"
+  rpmbuild -ba --define '_srcdefattr (-,root,root)' --nosignature --undefine _enable_debug_packages SOURCES/suseconnect-ng.spec
+  cp RPMS/x86_64/*.rpm "$ARTIFACT_DIR"
+popd
+groupend

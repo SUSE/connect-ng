@@ -2,3 +2,5 @@ out
 internal/connect/version.txt
 connect-ruby
 obs
+artifacts
+*.tar.xz

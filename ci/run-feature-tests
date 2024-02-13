@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Where the connect-ng source is located within the container
+SOURCE=${SOURCE:-/usr/src/connect-ng}
+
+# Base product to run feature tests against
+PRODUCT=${PRODUCT:-SLE_15_SP5}
+
+# exported variables we expect to exist to run the tests
+KEYS_TO_CHECK=(VALID_REGCODE EXPIRED_REGCODE BETA_VALID_REGCODE BETA_NOT_ACTIVATED_REGCODE NOT_ACTIVATED_REGCODE)
+
+group() { echo "::group::$1"; }
+groupend() { echo "::groupend::"; }
+fail() { echo "::error::$1"; exit 1; }
+
+for name in ${KEYS_TO_CHECK[@]}; do
+if [ "${!name}" == "" ]; then
+  echo "Expect the environment variables to be set:"
+  echo "${KEYS_TO_CHECK[*]}"
+  fail "ENV variable not found: $name is not set."
+fi
+done
+
+group "run feature tests"
+pushd "$SOURCE"
+  PRODUCT=$PRODUCT cucumber
+popd
+groupend
