@@ -12,7 +12,6 @@ dist: clean internal/connect/version.txt
 	@cp -r yast $(DIST)
 	@cp -r man $(DIST)
 	@cp go.mod $(DIST)
-	@cp go.sum $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)
 	@cp suseconnect-keepalive.service $(DIST)

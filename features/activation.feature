@@ -59,6 +59,7 @@ Feature: Test product activation
 
   Scenario: System cleanup
     Then a file named "/etc/zypp/credentials.d/SCCcredentials" should exist
+    And no zypper credentials exists
     And zypp credentials for base should exist
     And zypper should contain the repositories for base product
 

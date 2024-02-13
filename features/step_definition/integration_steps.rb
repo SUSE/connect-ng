@@ -15,7 +15,8 @@ Then(/^I call SUSEConnect with '(.*)' arguments$/) do |args|
   connect << '  --write-config' if options['write-config']
   connect << ' --cleanup' if options['cleanup']
 
-  step "I run `#{connect}`"
+  output = connect.gsub(/(.*) -r (.*) (.*)/, '\1 -r REDACTED \3')
+  step "I run `#{output}`"
 end
 
 Then(/^zypper (should|should not) contain a service for (.+)$/) do |condition, name|
@@ -52,6 +53,10 @@ end
 Then(/zypp credentials for base (should|should not) exist$/) do |condition|
   credentials_path = '/etc/zypp/credentials.d/'
   step "a file named \"#{credentials_path}#{service_name}\" #{condition} exist"
+end
+
+Then(/no zypper credentials exist$/) do
+  expect(Dir.glob('/etc/zypp/credentials.d/*')).to be_empty
 end
 
 Then(/zypp credentials for base (should|should not) contain "(.*)"$/) do |condition, content|

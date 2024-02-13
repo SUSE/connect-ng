@@ -1,11 +1,14 @@
 def service_name
-  product = SUSE::Connect::Zypper.base_product
+  product = base_product
   if product.identifier == 'openSUSE'
     "#{product.identifier}_#{product.version}_#{product.arch}"
   else
-    identifier = product.instance_variable_get(:@summary).tr(' ', '_')
-    "#{identifier}_#{product.arch}"
+    product.friendly_name.tr(' ', '_')
   end
+end
+
+def base_product
+  SUSE::Connect::YaST.status({}).activated_products.select { |p| p.isbase }.first
 end
 
 def base_product_version

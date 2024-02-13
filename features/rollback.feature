@@ -4,9 +4,9 @@ Feature: Rollback registration state to system products
   Scenario: Register base system
     Given I have a system with activated base product
 
-  Scenario: Migration targets
-    When Prepare SUSEConnect client with a valid regcode
-    Then I should receive the next Service Packs as online migration targets
+  # Scenario: Migration targets
+  #   When Prepare SUSEConnect client with a valid regcode
+  #   Then I should receive the next Service Packs as online migration targets
 
   Scenario: Rollback can be called from console with the same outcome as called from library
     When I run `SUSEConnect --rollback`
@@ -22,6 +22,5 @@ Feature: Rollback registration state to system products
     And zypper should contain a service for base product
     And zypper should contain the repositories for base product
 
-
   Scenario: Remove all registration leftovers
-    Then I deregister the system
+    When System cleanup

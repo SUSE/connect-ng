@@ -21,6 +21,10 @@ if [ "${!name}" == "" ]; then
 fi
 done
 
+group "cleanup test system"
+  SUSEConnect --clean
+groupend
+
 group "run feature tests"
 pushd "$SOURCE"
   PRODUCT=$PRODUCT cucumber

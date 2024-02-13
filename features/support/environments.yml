@@ -9,7 +9,7 @@ SLE_15_SP5:
   base_product:
     repositories:
     - SUSE_Linux_Enterprise_Server_15_SP5_x86_64:SLE-Product-SLES15-SP5-Pool
-    - SUSE_Linux_Enterprise_Server_15_SP5_x86_64:SLE-Product-SLES15-SP4-Updates
+    - SUSE_Linux_Enterprise_Server_15_SP5_x86_64:SLE-Product-SLES15-SP5-Updates
   paid_extension:
     identifier: sle-ha/15.5/x86_64
   free_extension:
