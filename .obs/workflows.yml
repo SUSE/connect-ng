@@ -1,6 +1,0 @@
-workflow:
-  steps:
-    - branch_package:
-        source_project: home:jzerebecki:CI:suseconnect-ng
-        source_package: suseconnect-ng
-        target_project: home:jzerebecki:CI:target
