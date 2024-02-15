@@ -32,7 +32,15 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         connect-ng-%{version}.tar.xz
 Source1:        %name-rpmlintrc
-BuildRequires:  go1.18-openssl
+
+# Build against latest golang in Tumbleweed and
+# go1.18-openssl on all other distributions
+%if 0%{?suse_version} >= 1600
+BuildRequires: golang(API)
+%else
+BuildRequires: go1.18-openssl
+%endif
+
 BuildRequires:  golang-packaging
 BuildRequires:  ruby-devel
 BuildRequires:  zypper
