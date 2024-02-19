@@ -31,9 +31,16 @@ fail() { echo "::error::$1"; exit 1;}
 
 group "setup artifact directory"
   if [ -d "$ARTIFACT_DIR" ]; then
-    rm -r "$ARTIFACT_DIR"
+    rm -fr "$ARTIFACT_DIR"
   fi
-  mkdir -p "$ARTIFACT_DIR"
+  mkdir "$ARTIFACT_DIR" && echo "Exited with $?"
+groupend
+
+group "setup build directory"
+  if [ -d "$BUILD_DIR" ]; then
+    rm -r "$BUILD_DIR"
+  fi
+  mkdir -p "$BUILD_DIR"
 groupend
 
 group "prepare source tarball"

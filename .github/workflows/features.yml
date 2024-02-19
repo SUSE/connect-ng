@@ -21,6 +21,7 @@ on:
 
 env:
   SOURCE: /usr/src/connect-ng
+  ARTIFACT_SOURCE: artifacts
   BETA_VALID_REGCODE: ${{ secrets.BETA_VALID_REGCODE }}
   VALID_REGCODE: ${{ secrets.VALID_REGCODE }}
   EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
@@ -29,34 +30,37 @@ env:
 
 jobs:
   feature-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.SOURCE }}
+    strategy:
+      matrix:
+        container: [registry.suse.com/bci/golang:1.20-openssl, registry.suse.com/bci/golang:1.21-openssl]
+    
+    runs-on: ${{ matrix.container }}
     container:
-      image: registry.opensuse.org/systemsmanagement/scc/containers/SLES_15_SP5/connect-ci-container:latest
+      image: ${{ matrix.container }}
       options: --user root
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: move source to /usr/src/connect-ng
         run: |
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
+      - name: install dependencies
+        run: zypper in -y bzip2 rpmbuild ruby-devel ruby2.5-rubygem-bundler nodejs-default
 
       - name: build RPM package
         run: bash ci/build-rpm
-
+          
       - name: gather RPM build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: connect-rpms
-          path: ${{ env.SOURCE }}/artifacts/*.rpm
-
+          path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
+            
       - name: configure Connect to run feature tests
         run: bash ci/configure
-
+  
       - name: run feature tests
         run: bash ci/run-feature-tests
