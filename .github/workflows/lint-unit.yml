@@ -1,5 +1,4 @@
----
-name: feature tests
+name: lint + unit + engine tests
 
 # About security when running the tests and NOT exposing
 # the secrets to externals. Currently Github Actions does
@@ -21,19 +20,12 @@ on:
 
 env:
   SOURCE: /usr/src/connect-ng
-  ARTIFACT_SOURCE: artifacts
-  BETA_VALID_REGCODE: ${{ secrets.BETA_VALID_REGCODE }}
-  VALID_REGCODE: ${{ secrets.VALID_REGCODE }}
-  EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
-  NOT_ACTIVATED_REGCODE: ${{ secrets.NOT_ACTIVATED_REGCODE }}
-  BETA_NOT_ACTIVATED_REGCODE: ${{ secrets.BETA_NOT_ACTIVATED_REGCODE }}
 
 jobs:
-  feature-tests:
+  unit-tests:
     strategy:
       matrix:
         container: [registry.suse.com/bci/golang:1.21-openssl]
-    
     runs-on: ${{ matrix.container }}
     container:
       image: ${{ matrix.container }}
@@ -47,17 +39,11 @@ jobs:
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
 
-      - name: build RPM package
-        run: bash ci/build-rpm
-          
-      # - name: gather RPM build artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: connect-rpms
-      #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
-            
-      - name: configure Connect to run feature tests
-        run: bash ci/configure
-  
-      - name: run feature tests
-        run: bash ci/run-feature-tests
+      - name: run golang linting
+        run: make gofmt
+
+      - name: run unit tests
+        run: make test
+
+      - name: build the binary
+        run: make build build-so

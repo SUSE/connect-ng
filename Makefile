@@ -1,4 +1,4 @@
-NAME          = connect-ng
+NAME          = suseconnect-ng
 VERSION       = $(shell bash -c "cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'")
 DIST          = $(NAME)-$(VERSION)/
 

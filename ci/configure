@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Explicitly setting the architecture to use
+ARCH=${ARCH:-x86_64}
+
 # Where the connect-ng source is located within the container
 SOURCE=${SOURCE:-/usr/src/connect-ng}
 
@@ -11,7 +14,7 @@ groupend() { echo "::groupend::"; }
 fail() { echo "::error::$1"; exit 1; }
 
 group "install suseconnect"
-pushd "$BUILD_DIR/RPMS/x86_64"
+pushd "$BUILD_DIR/RPMS/${ARCH}"
   zypper --non-interactive --no-refresh install --allow-unsigned-rpm *.rpm
 popd
 groupend
