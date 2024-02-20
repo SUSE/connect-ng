@@ -142,6 +142,7 @@ func UpdateCertificates() error {
 // root path is empty, then "/" is assumed.
 func ReadOnlyFilesystem(root string) error {
 	path := root
+
 	if path == "" {
 		path = "/"
 	}
@@ -150,22 +151,22 @@ func ReadOnlyFilesystem(root string) error {
 		return fmt.Errorf("Checking whether %v is mounted read-only failed: %v", path, err)
 	}
 
-	// Just like zypper, we will assume that a BTRFS file system with the
-	// `transactional-update` binary installed is a transactional server.
-	_, err := os.Stat("/usr/sbin/transactional-update")
-	if statfs.Type == BTRFS_SUPER_MAGIC && err == nil {
-		// The user did not use the 'root' flag from the CLI: this is not
-		// `transactional-update` calling SUSEConnect but rather a user
-		// directly. This is not allowed.
-		if root == "" {
-			return errors.New("This is a transactional-server, please use `transactional-update register` to manage your product activations")
-		}
-	}
-
-	// The root is read only, we cannot write in there.
 	if (statfs.Flags & ST_RDONLY) == ST_RDONLY {
+		// Just like zypper, we will assume that a BTRFS file system with the
+		// `transactional-update` binary installed is a transactional server.
+		_, err := os.Stat("/usr/sbin/transactional-update")
+		if statfs.Type == BTRFS_SUPER_MAGIC && err == nil {
+			// The user did not use the 'root' flag from the CLI: this is not
+			// `transactional-update` calling SUSEConnect but rather a user
+			// directly which is dicouraged.
+			if root == "" {
+				return errors.New("This is a transactional system, please use `transactional-update register` to manage your product activations")
+			}
+
+			return nil
+		}
+		// The root is read only, we cannot write in there.
 		return fmt.Errorf("`%v` is mounted as `read-only`. Aborting", path)
 	}
-
 	return nil
 }
