@@ -1,0 +1,76 @@
+#!/bin/bash
+set -e
+
+# Explicitly setting the architecture to use
+ARCH=${ARCH:-x86_64}
+
+# Where the connect-ng source is located within the container
+SOURCE=${SOURCE:-/usr/src/connect-ng}
+
+# Where is the rpm build environment to be found
+BUILD_DIR=${BUILD_DIR:-/usr/src/packages}
+
+# Where copy the built rpm files after a successful build
+ARTIFACT_DIR=${ARTIFACT_DIR:-$SOURCE/artifacts}
+
+# Current version we are working with
+function get_version {
+  pushd "$SOURCE" &> /dev/null
+    cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'
+  popd &> /dev/null
+}
+VERSION=${VERSION:-$(get_version)}
+
+# The source tarball
+TARBALL=${TARBALL:-suseconnect-ng-$VERSION.tar.xz}
+
+group() { echo "::group::$1"; }
+groupend() { echo "::groupend::"; }
+fail() { echo "::error::$1"; exit 1;}
+
+group "setup artifact directory"
+  if [ -d "$ARTIFACT_DIR" ]; then
+    rm -fr "$ARTIFACT_DIR"
+  fi
+  mkdir "$ARTIFACT_DIR" && echo "Exited with $?"
+groupend
+
+group "setup build directory"
+  if [ -d "$BUILD_DIR" ]; then
+    rm -r "$BUILD_DIR"
+  fi
+
+  mkdir -p "$BUILD_DIR"
+groupend
+
+group "install dependencies"
+  zypper --non-interactive --gpg-auto-import-keys install bzip2 rpm-build ruby-devel ruby2.5-rubygem-bundler nodejs-default make
+
+  update-alternatives --install /usr/bin/bundle bundle /usr/bin/bundle.ruby2.5 5
+  update-alternatives --install /usr/bin/bundler bundler /usr/bin/bundler.ruby2.5 5
+groupend
+
+group "prepare source tarball"
+pushd "$SOURCE"
+    make dist
+    mv "$TARBALL" "$ARTIFACT_DIR"
+    cp suseconnect-ng-rpmlintrc "$ARTIFACT_DIR"
+    cp suseconnect-ng.changes "$ARTIFACT_DIR"
+    cp suseconnect-ng.spec "$ARTIFACT_DIR"
+popd
+groupend
+
+# prepare build env
+group "prepare build environment"  
+pushd "$BUILD_DIR"
+  mkdir -p {BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS,OTHERS}
+  cp -r "$ARTIFACT_DIR"/* SOURCES/
+popd
+groupend
+
+group "build suseconnect-ng-$VERSION.rpm"
+pushd "$BUILD_DIR"
+  rpmbuild -ba --define '_srcdefattr (-,root,root)' --nosignature --undefine _enable_debug_packages SOURCES/suseconnect-ng.spec
+  cp "RPMS/${ARCH}"/*.rpm "$ARTIFACT_DIR"
+popd
+groupend

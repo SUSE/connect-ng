@@ -15,7 +15,6 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
-
 %global project github.com/SUSE/connect-ng
 
 Name:           suseconnect-ng
