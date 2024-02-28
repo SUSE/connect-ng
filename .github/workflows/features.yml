@@ -17,7 +17,7 @@ name: feature tests
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 env:
   SOURCE: /usr/src/connect-ng
