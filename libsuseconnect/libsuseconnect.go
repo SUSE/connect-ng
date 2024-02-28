@@ -33,6 +33,14 @@ type callbackWriter struct {
 	level int
 }
 
+type GenericJSONError struct {
+	ErrType string `json:"err_type"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	// [optional] auxiliary error data
+	Data string `json:"data,omitempty"`
+}
+
 func (w callbackWriter) Write(p []byte) (n int, err error) {
 	message := C.CString(string(p))
 	C.log_bridge_fun(logFun, C.int(w.level), message)
@@ -240,13 +248,7 @@ func certToPEM(cert *x509.Certificate) string {
 }
 
 func errorToJSON(err error) string {
-	var s struct {
-		ErrType string `json:"err_type"`
-		Message string `json:"message"`
-		Code    int    `json:"code"`
-		// [optional] auxiliary error data
-		Data string `json:"data,omitempty"`
-	}
+	s := GenericJSONError{}
 
 	// map Go x509 errors to OpenSSL verify return values
 	// see: https://www.openssl.org/docs/man1.0.2/man1/verify.html

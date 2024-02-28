@@ -5,6 +5,37 @@ import (
 	"net/http"
 )
 
+type SystemInformation struct {
+	Hostname     string `json:"hostname"`
+	DistroTarget string `json:"distro_target"`
+	InstanceData string `json:"instance_data,omitempty"`
+	Namespace    string `json:"namespace,omitempty"`
+	Hwinfo       hwinfo `json:"hwinfo"`
+}
+
+type SystemCredentialsResponse struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type SystemActivationRequest struct {
+	Indentifier string `json:"identifier"`
+	Version     string `json:"version"`
+	Arch        string `json:"arch"`
+	ReleaseType string `json:"release_type"`
+	Token       string `json:"token"`
+	Email       string `json:"email"`
+}
+
+type SystemSynchronizeProductsRequest struct {
+	Products []Product `json:"products"`
+}
+
+type SystemMigrationsRequest struct {
+	InstalledProducts []Product `json:"installed_products"`
+	TargetBaseProduct Product   `json:"target_base_product"`
+}
+
 // announceSystem announces a system to SCC
 // https://scc.suse.com/connect/v4/documentation#/subscriptions/post_subscriptions_systems
 // The body parameter is produced by makeSysInfoBody()
@@ -13,10 +44,7 @@ func announceSystem(body []byte) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	var creds struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	creds := SystemCredentialsResponse{}
 	if err = json.Unmarshal(resp, &creds); err != nil {
 		return "", "", JSONError{err}
 	}
@@ -90,20 +118,13 @@ func downgradeProduct(product Product) (Service, error) {
 }
 
 func activateProduct(product Product, email string) (Service, error) {
-	var payload = struct {
-		Indentifier string `json:"identifier"`
-		Version     string `json:"version"`
-		Arch        string `json:"arch"`
-		ReleaseType string `json:"release_type"`
-		Token       string `json:"token"`
-		Email       string `json:"email"`
-	}{
-		product.Name,
-		product.Version,
-		product.Arch,
-		product.ReleaseType,
-		CFG.Token,
-		email,
+	payload := SystemActivationRequest{
+		Indentifier: product.Name,
+		Version:     product.Version,
+		Arch:        product.Arch,
+		ReleaseType: product.ReleaseType,
+		Token:       CFG.Token,
+		Email:       email,
 	}
 
 	service := Service{}
@@ -147,10 +168,9 @@ func deregisterSystem() error {
 
 func syncProducts(products []Product) ([]Product, error) {
 	remoteProducts := make([]Product, 0)
-	var payload struct {
-		Products []Product `json:"products"`
+	payload := SystemSynchronizeProductsRequest{
+		Products: products,
 	}
-	payload.Products = products
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return remoteProducts, err
@@ -176,13 +196,8 @@ func updateSystem(body []byte) error {
 
 // makeSysInfoBody returns the JSON payload needed for the announce/update system calls
 func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byte, error) {
-	var payload struct {
-		Hostname     string `json:"hostname"`
-		DistroTarget string `json:"distro_target"`
-		InstanceData string `json:"instance_data,omitempty"`
-		Namespace    string `json:"namespace,omitempty"`
-		Hwinfo       hwinfo `json:"hwinfo"`
-	}
+	payload := SystemInformation{}
+
 	if distroTarget != "" {
 		payload.DistroTarget = distroTarget
 	} else {
@@ -207,10 +222,9 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byt
 
 func productMigrations(installed []Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
-	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
+	payload := SystemMigrationsRequest{
+		InstalledProducts: installed,
 	}
-	payload.InstalledProducts = installed
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return migrations, err
@@ -227,12 +241,10 @@ func productMigrations(installed []Product) ([]MigrationPath, error) {
 
 func offlineProductMigrations(installed []Product, target Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
-	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
-		TargetBaseProduct Product   `json:"target_base_product"`
+	payload := SystemMigrationsRequest{
+		InstalledProducts: installed,
+		TargetBaseProduct: target,
 	}
-	payload.InstalledProducts = installed
-	payload.TargetBaseProduct = target
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return migrations, err
