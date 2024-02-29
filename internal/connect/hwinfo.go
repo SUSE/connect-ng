@@ -2,8 +2,9 @@ package connect
 
 import (
 	"bufio"
+	"fmt"
+	"encoding/json"
 	"bytes"
-	"io"
 	"net"
 	"os"
 	"regexp"
@@ -11,9 +12,15 @@ import (
 	"strings"
 )
 
+
+
+
 var (
 	cloudEx = `Version: .*(amazon)|Manufacturer: (Amazon)|Manufacturer: (Google)|Manufacturer: (Microsoft) Corporation`
 	cloudRe = regexp.MustCompile(cloudEx)
+
+	containerEx = `.*(docker|runc|buildah|buildkit|nerdctl|libpod).*`
+	containerRe = regexp.MustCompile(containerEx)
 )
 
 const (
@@ -45,35 +52,60 @@ func getHwinfo() (hwinfo, error) {
 	hw.CloudProvider = cloudProvider()
 
 	// Include memory information if possible.
-	if mem := systemMemory(); mem > 0 {
-		hw.MemTotal = mem
-	}
+	hw.MemTotal = systemMemory()
 
 	var lscpuM map[string]string
-	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
-		if lscpuM, err = lscpu(); err != nil {
-			return hwinfo{}, err
+	if lscpuM, err = lscpu(); err != nil {
+		return hw, err
+	}
+
+	hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
+	hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
+	hw.UUID, _ = uuid()
+	
+	// Try to use systemd to detect the hypervisor.
+	// see `systemd-detect-virt --list` for the full list of possible
+	// outputs. Do not bail yet here.
+
+	var hypervisorIdent []string
+
+	if hypervisor, err := hypervisor(); err == nil && hypervisor != "" {
+		hypervisorIdent = append(hypervisorIdent, hypervisor)
+	}
+
+	// attempt to determine if we're running on a container without systemd
+	if runtime, err := containerRuntime(); err == nil && runtime != "" {
+		hypervisorIdent = append(hypervisorIdent, runtime)
+	}
+
+	// additionally append the hypervisor vendor reported by lscpu.
+	// e.g. KVM, XEN, IBM, pHyp
+	if hypervisorVendor, ok := lscpuM["Hypervisor vendor"]; ok {
+		hypervisorIdent = append(hypervisorIdent, hypervisorVendor)
+	}
+
+	// additionally append the hypervisor vendor reported by lscpu.
+	// e.g. KVM, XEN, IBM, pHyp
+	if hypvervisor, ok := lscpuM["Hypervisor"]; ok {
+		// remove z/VM from the beginning of the string
+		if hw.Arch == archS390 {
+			hypvervisor = strings.SplitN(hypvervisor, " ", 2)[1]
 		}
-		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
-		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
-		hw.UUID, _ = uuid() // ignore error to match original
-	}
 
-	if hw.Arch == archX86 || hw.Arch == archPPC {
-		hw.Hypervisor = lscpuM["Hypervisor vendor"]
+		hypervisorIdent = append(hypervisorIdent, hypvervisor)
 	}
+	
+	hw.Hypervisor = strings.Join(hypervisorIdent, "/")
 
-	if hw.Arch == archARM {
-		hw.Clusters, _ = strconv.Atoi(lscpuM["Cluster(s)"])
-		// ignore errors to avoid failing on systems without systemd
-		hw.Hypervisor, _ = hypervisor()
-	}
+	hw.Clusters, _ = strconv.Atoi(lscpuM["Cluster(s)"])
 
 	if hw.Arch == archS390 {
-		if err := cpuinfoS390(&hw); err != nil {
-			return hwinfo{}, err
-		}
-		hw.UUID = uuidS390()
+		// enrich data for s390x, uuid in s390 is returned
+		// by read_values -u, but it's not yet released.
+		//
+		// as a fallback, it'll be constructed by the same components
+		// that are returned by read_values -s
+		cpuinfoS390(&hw)
 	}
 
 	return hw, nil
@@ -98,19 +130,17 @@ func cpuinfoS390(hw *hwinfo) error {
 		hw.Sockets, _ = strconv.Atoi(sockets)
 	}
 
-	if hypervisor, ok := rvs["VM00 Control Program"]; ok {
-		// Strip and remove recurring whitespaces e.g. " z/VM    6.1.0" => "z/VM 6.1.0"
-		subs := strings.Fields(hypervisor)
-		hw.Hypervisor = strings.Join(subs, " ")
-	} else {
-		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
+	// when read_values finally ships -u, we can remove these blocks
+	hw.UUID = fmt.Sprintf("%s-%s", rvs["Sequence Code"], rvs["LPAR Name"])
+	if vm_name, ok := rvs["VM00 Name"]; ok {
+		hw.UUID = fmt.Sprintf("%s-%s", hw.UUID, vm_name)
 	}
 
 	return nil
 }
 
 func arch() (string, error) {
-	output, err := execute([]string{"uname", "-i"}, nil)
+	output, err := execute([]string{"uname", "-m"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +148,7 @@ func arch() (string, error) {
 }
 
 func lscpu() (map[string]string, error) {
-	output, err := execute([]string{"lscpu"}, nil)
+	output, err := execute([]string{"lscpu", "-J"}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -126,17 +156,30 @@ func lscpu() (map[string]string, error) {
 }
 
 func lscpu2map(b []byte) map[string]string {
-	m := make(map[string]string)
-	scanner := bufio.NewScanner(bytes.NewReader(b))
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		key, val := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-		m[key] = val
+
+	type lscpuItem struct {
+		Key string `json:"field"`
+		Value string `json:"data"`
 	}
+
+	type lscpuOutput struct {
+		LSCPU []lscpuItem `json:"lscpu"`
+	}
+
+	var lscpu lscpuOutput;
+
+	m := make(map[string]string)
+
+	if err := json.Unmarshal(b, &lscpu); err != nil {
+		return m
+	}
+	
+	for _, item := range lscpu.LSCPU {
+		fieldname := strings.Split(item.Key, ":")
+		m[fieldname[0]] = item.Value
+	}
+
+	fmt.Printf("%#v", m)
 	return m
 }
 
@@ -170,6 +213,20 @@ func hypervisor() (string, error) {
 	return string(output), nil
 }
 
+func containerRuntime() (string, error) {
+	content, err := os.ReadFile("/proc/self/cgroup")
+	if err != nil {
+		return "", err
+	}
+	matches := containerRe.FindSubmatch(content)
+
+	if len(matches) == 0 {
+		return "", nil
+	}
+
+	return string(matches[1]), nil
+}
+
 // uuid returns the system uuid on x86 and arm
 func uuid() (string, error) {
 	if fileExists("/sys/hypervisor/uuid") {
@@ -188,27 +245,6 @@ func uuid() (string, error) {
 		return "", nil
 	}
 	return out, nil
-}
-
-// uuidS390 returns the system uuid on S390 or "" if it cannot be found
-func uuidS390() string {
-	out, err := readValues("-u")
-	if err != nil {
-		return ""
-	}
-	uuid := string(out)
-	if isUUID(uuid) {
-		return uuid
-	}
-	Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
-	return ""
-}
-
-// isUUID returns true if s is a valid uuid
-func isUUID(s string) bool {
-	exp := `^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`
-	uuidRe := regexp.MustCompile(exp)
-	return uuidRe.MatchString(s)
 }
 
 // getPrivateIPAddr returns the first private IP address on the host
@@ -277,39 +313,40 @@ func readValues2map(b []byte) map[string]string {
 	return m
 }
 
-// Returns the parsed value for the given file. The implementation has been
-// split from `systemMemory` so testing it is easier, but bear in mind that
-// these two are coupled.
-func parseMeminfo(file io.Reader) int {
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
-		if len(fields) < 2 || fields[0] != "MemTotal:" {
-			continue
-		}
-
-		val, err := strconv.Atoi(fields[1])
-		if err != nil {
-			Debug.Printf("could not obtain memory information for this system: %v", err)
-			return 0
-		}
-		return val / 1024
-	}
-
-	Debug.Print("could not obtain memory information for this system")
-	return 0
-}
-
 // Returns an integer with the amount of megabytes of total memory (i.e.
 // `MemTotal` in /proc/meminfo). It will return 0 if this information could not
 // be extracted for whatever reason.
+
 func systemMemory() int {
-	file, err := os.Open("/proc/meminfo")
+	output, err := execute([]string{"lsmem", "-J", "-b"}, nil)
+
 	if err != nil {
-		Debug.Print("'/proc/meminfo' could not be read!")
 		return 0
 	}
-	defer file.Close()
 
-	return parseMeminfo(file)
+	return parseMeminfo(output)
+}
+
+func parseMeminfo(b []byte) int {
+	type lsmemItem struct {
+		Size int `json:"size"`
+	}
+
+	type lsmemOutput struct {
+		Blocks []lsmemItem `json:"memory"`
+	}
+
+	var lsmem lsmemOutput;
+
+	ram := 0
+
+	if err := json.Unmarshal(b, &lsmem); err != nil {
+		return ram
+	}
+	
+	for _, block := range lsmem.Blocks {
+		ram += block.Size
+	}
+
+	return ram / (1024*1024) // memory is reported in bytes
 }
