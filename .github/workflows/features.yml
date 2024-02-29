@@ -17,7 +17,7 @@ name: feature tests
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 env:
   SOURCE: /usr/src/connect-ng
@@ -30,13 +30,9 @@ env:
 
 jobs:
   feature-tests:
-    strategy:
-      matrix:
-        container: [registry.suse.com/bci/golang:1.21-openssl]
-    
-    runs-on: ${{ matrix.container }}
+    runs-on: ubuntu-latest
     container:
-      image: ${{ matrix.container }}
+      image: registry.suse.com/bci/golang:1.21-openssl
       options: --user root
 
     steps:
@@ -49,15 +45,15 @@ jobs:
 
       - name: build RPM package
         run: bash ci/build-rpm
-          
+
       # - name: gather RPM build artifacts
       #   uses: actions/upload-artifact@v4
       #   with:
       #     name: connect-rpms
       #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
-            
+
       - name: configure Connect to run feature tests
         run: bash ci/configure
-  
+
       - name: run feature tests
         run: bash ci/run-feature-tests

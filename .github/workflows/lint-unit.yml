@@ -1,4 +1,4 @@
-name: lint + unit + engine tests
+name: lint + unit tests
 
 # About security when running the tests and NOT exposing
 # the secrets to externals. Currently Github Actions does
@@ -16,20 +16,16 @@ name: lint + unit + engine tests
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 env:
   SOURCE: /usr/src/connect-ng
 
 jobs:
   unit-tests:
-    strategy:
-      matrix:
-        container: [registry.suse.com/bci/golang:1.21-openssl]
-    runs-on: ${{ matrix.container }}
+    runs-on: ubuntu-latest
     container:
-      image: ${{ matrix.container }}
-      options: --user root
+      image: registry.suse.com/bci/golang:1.21-openssl
 
     steps:
       - uses: actions/checkout@v4
@@ -46,4 +42,7 @@ jobs:
         run: make test
 
       - name: build the binary
-        run: make build build-so
+        run: |
+          # We need to make sure git trusts us here. mark the directory as safe playground
+          git config --global --add safe.directory /__w/connect-ng/connect-ng
+          make build build-so
