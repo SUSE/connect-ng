@@ -307,19 +307,18 @@ func createTestUptimeLogFileWithContent(content string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer tempFile.Close()
 	tempFilePath := tempFile.Name()
 	if _, err := tempFile.WriteString(content); err != nil {
 		os.Remove(tempFilePath)
 		return "", err
 	}
-	defer tempFile.Close()
 
 	return tempFilePath, nil
 }
 
 func TestUptimeLogFileDoesNotExist(t *testing.T) {
-	uptimeLogFileContent := ``
-	tempFilePath, err := createTestUptimeLogFileWithContent(uptimeLogFileContent)
+	tempFilePath, err := createTestUptimeLogFileWithContent("")
 	if err != nil {
 		t.Fatalf("Failed to create temp uptime log file for testing")
 	}
@@ -340,7 +339,7 @@ func TestReadUptimeLogFile(t *testing.T) {
 	defer os.Remove(tempFilePath)
 	uptimeLog, err := readUptimeLogFile(tempFilePath)
 	if err != nil {
-		t.Fatalf("Failed to read uptime log file")
+		t.Fatalf("Failed to read uptime log file: %s", err)
 	}
 	if uptimeLog == nil {
 		t.Fatal("Failed to open uptime log file")
