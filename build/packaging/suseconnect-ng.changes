@@ -7,6 +7,9 @@ Thu Apr 25 15:39:00 UTC 2024 - Felix Schnizlein <fschnizlein@suse.com>
   * Add --gpg-auto-import-keys flag before action in zypper command (bsc#1219004)
   * Include /etc/products.d in directories whose content are backed
     up and restored if a zypper-migration rollback happens. (bsc#1219004)
+  * Add the ability to upload the system uptime logs, produced by the
+    suse-uptime-tracker daemon, to SCC/RMT as part of keepalive report.
+    (jsc#PED-7982) (jsc#PED-8018)
 
 -------------------------------------------------------------------
 Tue May  7 14:12:47 UTC 2024 - Thomas Schmidt <tschmidt@suse.com>

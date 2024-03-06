@@ -1,10 +1,18 @@
 package connect
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"os"
 
+	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+)
+
+const (
+	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
 
 // announceSystem announces a system to SCC
@@ -176,14 +184,45 @@ func updateSystem(body []byte) error {
 	return err
 }
 
+// readUptimeLogFile reads the system uptime log from a given file and
+// returns them as a string array. If the given file does not exist,
+// it will be interpreted as if the system uptime log feature is not
+// enabled. Hence an empty array will be returned.
+func readUptimeLogFile(uptimeLogFilePath string) ([]string, error) {
+	// NOTE: if uptime log file does not exist, we assume the uptime
+	// tracking feature is not enabled
+	_, err := os.Stat(uptimeLogFilePath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+
+	uptimeLogFile, err := os.Open(uptimeLogFilePath)
+	if err != nil {
+		return nil, err
+	}
+	fileScanner := bufio.NewScanner(uptimeLogFile)
+	fileScanner.Split(bufio.ScanLines)
+	var logEntries []string
+
+	for fileScanner.Scan() {
+		logEntries = append(logEntries, fileScanner.Text())
+	}
+	err = uptimeLogFile.Close()
+	if err != nil {
+		return nil, err
+	}
+	return logEntries, nil
+}
+
 // makeSysInfoBody returns the JSON payload needed for the announce/update system calls
-func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byte, error) {
+func makeSysInfoBody(distroTarget, namespace string, instanceData []byte, includeUptimeLog bool) ([]byte, error) {
 	var payload struct {
-		Hostname     string `json:"hostname"`
-		DistroTarget string `json:"distro_target"`
-		InstanceData string `json:"instance_data,omitempty"`
-		Namespace    string `json:"namespace,omitempty"`
-		Hwinfo       hwinfo `json:"hwinfo"`
+		Hostname     string   `json:"hostname"`
+		DistroTarget string   `json:"distro_target"`
+		InstanceData string   `json:"instance_data,omitempty"`
+		Namespace    string   `json:"namespace,omitempty"`
+		Hwinfo       hwinfo   `json:"hwinfo"`
+		OnlineAt     []string `json:"online_at,omitempty"`
 	}
 	if distroTarget != "" {
 		payload.DistroTarget = distroTarget
@@ -196,6 +235,16 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byt
 	}
 	payload.InstanceData = string(instanceData)
 	payload.Namespace = namespace
+
+	if includeUptimeLog {
+		uptimeLog, err := readUptimeLogFile(UptimeLogFilePath)
+		if err != nil {
+			util.Info.Print("Unable to system uptime log")
+		}
+		if uptimeLog != nil {
+			payload.OnlineAt = uptimeLog
+		}
+	}
 
 	hw, err := getHwinfo()
 	if err != nil {
