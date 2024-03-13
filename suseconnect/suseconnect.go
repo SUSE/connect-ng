@@ -185,8 +185,11 @@ func connectMain() {
 	// Reading the configuration/flags is done, now let's check if the
 	// filesystem can handle operations from SUSEConnect for specific actions
 	// which require filesystem to be read write (aka writing outside of /etc)
-	// /etc is writable at any time, system token roation works just fine
-	if deRegister || rollback || cleanup {
+	// /etc is writable at any time, system token roation works just fine.
+	//
+	// Rollback *must* be allowed because is used as a synchonization mechanism
+	// in the transactional-update toolkit.
+	if deRegister || cleanup {
 		if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
 			exitOnError(err)
 		}
