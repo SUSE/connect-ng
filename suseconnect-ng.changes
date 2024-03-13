@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Mar 13 12:37:29 UTC 2024 - José Gómez <1josegomezr@gmail.com>
+
+- Allow "--rollback" flag to run on readonly filesystem (bsc#1220679)
+
+-------------------------------------------------------------------
 Wed Feb 14 18:28 UTC 2024 - Felix Schnizlein <fschnizlein@suse.com>
 
 - Update to version 1.7.0
