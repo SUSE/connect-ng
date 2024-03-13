@@ -86,22 +86,29 @@ To checkout in which codestreams the package is currently maintaned, run:
 osc -A https://api.suse.de maintained suseconnect-ng
 ```
 
-For a more detailed view which target codestreams are in which state, find the
-`suseconnect-ng` package on
-[maintenance.suse.de](https://maintenance.suse.de/maintained/)
+Some code streams may be missing in the previous command, for a more detailed
+view which target codestreams are in which state, find the `suseconnect-ng`
+package on[maintenance.suse.de](https://smelt.suse.de/maintained/)
 
 #### Submit updates
 
-For each maintained codestream you need to create a new maintenance request:
+For each maintained codestream you need to create a new submit request:
 
 ```bash
-osc -A https://api.suse.de mr openSUSE.org:systemsmanagement:SCC suseconnect-ng SUSE:SLE-15-SP4:GA
+osc -A https://api.suse.de sr openSUSE.org:systemsmanagement:SCC suseconnect-ng SUSE:SLE-15-SP4:GA
 ```
 
 **Note**: The codestreams of SLE-15-SP1, SLE-15-SP2 and SLE-15-SP3 are connected, that means we only need to submit for SP1 and it will get released on SP2 and SP3 also.
 
-**Note**: In case the `mr` (maintenance request) command is not working
-properly, try `sr` (submit request) command.
+**Note**: The codestreams that are not yet on final codefreeze (alphas or betas) work with submit requests.
+
+**Note**: SLE Micro <= 5.5 inherits MicroOS and SLE Releases.
+
+**Note**: `submitrequest` (`sr`)'s would auto-translate to `maintenancerequest` (`mr`)'s!
+
+**Note**: In case the `sr` (submit request) command is not working properly, try
+  `mr` (maintenance request) command. If a maintenance request is not
+  applicable, the maintainers will notify you in the request.
 
 **Note:**
 
