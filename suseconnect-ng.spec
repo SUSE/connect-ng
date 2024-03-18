@@ -28,7 +28,7 @@ Source:         suseconnect-ng-%{version}.tar.xz
 Source1:        %{name}-rpmlintrc
 
 # Build against latest golang in Tumbleweed and
-# go1.18-openssl on all other distributions
+# go1.21-openssl on all other distributions
 %if 0%{?suse_version} > 1600
 BuildRequires:  golang(API)
 %else
