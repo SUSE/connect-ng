@@ -8,7 +8,7 @@ dist: clean internal/connect/version.txt
 	@mkdir -p $(DIST)
 	@cp -r internal $(DIST)
 	@cp -r libsuseconnect $(DIST)
-	@cp -r suseconnect $(DIST)
+	@cp -r cmd/suseconnect $(DIST)
 	@cp -r yast $(DIST)
 	@cp -r man $(DIST)
 	@cp go.mod $(DIST)
@@ -28,10 +28,10 @@ internal/connect/version.txt:
 	@echo "$(VERSION)" > internal/connect/version.txt
 
 build: out internal/connect/version.txt
-	go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	go build -v -o out/ github.com/SUSE/connect-ng/cmd/suseconnect
 
 test: internal/connect/version.txt
-	go test -v ./internal/connect ./suseconnect
+	go test -v ./internal/connect ./cmd/suseconnect
 
 test-yast: build-so
 	docker build -t go-connect-test-yast -f Dockerfile.yast . && docker run -t go-connect-test-yast
@@ -50,10 +50,10 @@ build-so: out internal/connect/version.txt
 	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
 
 build-arm: out internal/connect/version.txt
-	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/cmd/suseconnect
 
 build-s390: out internal/connect/version.txt
-	GOOS=linux GOARCH=s390x go build -v -o out/ github.com/SUSE/connect-ng/suseconnect
+	GOOS=linux GOARCH=s390x go build -v -o out/ github.com/SUSE/connect-ng/cmd/suseconnect
 
 clean:
 	go clean
