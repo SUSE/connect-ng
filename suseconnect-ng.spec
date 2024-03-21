@@ -104,7 +104,9 @@ This package provides bindings needed to use libsuseconnect from Ruby scripts.
 %build
 # the binary
 echo %{version} > internal/connect/version.txt
-go build -v -ldflags "-s -w" -buildmode=pie -o bin/suseconnect %{project}/suseconnect
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
 
 # the library
 mkdir -p %_builddir/go/lib
@@ -113,11 +115,14 @@ go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{proj
 %install
 # Install binary + symlinks
 install -D -m 0755 bin/suseconnect %{buildroot}/%{_bindir}/suseconnect
-install -d -m 0755 %{buildroot}/%{_sbindir} %{buildroot}/usr/lib/zypper/commands
 ln -s %{_bindir}/suseconnect %{buildroot}/%{_bindir}/SUSEConnect
+
+install -d -m 0755 %{buildroot}/%{_sbindir}
 ln -s %{_bindir}/suseconnect %{buildroot}/%{_sbindir}/SUSEConnect
-ln -s %{_bindir}/suseconnect %{buildroot}/usr/lib/zypper/commands/zypper-migration
-ln -s %{_bindir}/suseconnect %{buildroot}/usr/lib/zypper/commands/zypper-search-packages
+
+install -d -m 0755 %{buildroot}/usr/lib/zypper/commands
+install -D -m 0755 bin/zypper-search-packages %{buildroot}/usr/lib/zypper/commands/zypper-search-packages
+install -D -m 0755 bin/zypper-migration %{buildroot}/usr/lib/zypper/commands/zypper-migration
 
 # Install library + ruby bindings
 install -D -m 0755 lib/libsuseconnect.so %{buildroot}/%{_libdir}/libsuseconnect.so

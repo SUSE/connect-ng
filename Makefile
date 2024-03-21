@@ -8,7 +8,7 @@ dist: clean internal/connect/version.txt
 	@mkdir -p $(DIST)
 	@cp -r internal $(DIST)
 	@cp -r libsuseconnect $(DIST)
-	@cp -r cmd/suseconnect $(DIST)
+	@cp -r cmd $(DIST)
 	@cp -r yast $(DIST)
 	@cp -r man $(DIST)
 	@cp go.mod $(DIST)
@@ -29,6 +29,8 @@ internal/connect/version.txt:
 
 build: out internal/connect/version.txt
 	go build -v -o out/ github.com/SUSE/connect-ng/cmd/suseconnect
+	go build -v -o out/ github.com/SUSE/connect-ng/cmd/zypper-migration
+	go build -v -o out/ github.com/SUSE/connect-ng/cmd/zypper-search-packages
 
 test: internal/connect/version.txt
 	go test -v ./internal/connect ./cmd/suseconnect
