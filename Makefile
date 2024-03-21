@@ -10,7 +10,7 @@ dist: clean internal/connect/version.txt
 	@cp -r libsuseconnect $(DIST)
 	@cp -r cmd $(DIST)
 	@cp -r yast $(DIST)
-	@cp -r man $(DIST)
+	@cp -r docs $(DIST)
 	@cp go.mod $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)

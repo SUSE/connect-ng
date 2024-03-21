@@ -130,10 +130,10 @@ install -d -m 0755 %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
 cp -r yast/lib/* %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
 
 # Install metadata
-install -D -m 644 man/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
-install -D -m 644 man/SUSEConnect.8 %{buildroot}/%{_mandir}/man8/SUSEConnect.8
-install -D -m 644 man/zypper-migration.8 %{buildroot}/%{_mandir}/man8/zypper-migration.8
-install -D -m 644 man/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zypper-search-packages.8
+install -D -m 644 docs/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
+install -D -m 644 docs/SUSEConnect.8 %{buildroot}/%{_mandir}/man8/SUSEConnect.8
+install -D -m 644 docs/zypper-migration.8 %{buildroot}/%{_mandir}/man8/zypper-migration.8
+install -D -m 644 docs/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zypper-search-packages.8
 install -D -m 644 SUSEConnect.example %{buildroot}%{_sysconfdir}/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
