@@ -104,31 +104,36 @@ This package provides bindings needed to use libsuseconnect from Ruby scripts.
 %build
 # the binary
 echo %{version} > internal/connect/version.txt
-go build -v -ldflags "-s -w" -buildmode=pie -o bin/suseconnect %{project}/suseconnect
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
+go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
 
 # the library
 mkdir -p %_builddir/go/lib
-go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{project}/libsuseconnect
+go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
 
 %install
 # Install binary + symlinks
 install -D -m 0755 bin/suseconnect %{buildroot}/%{_bindir}/suseconnect
-install -d -m 0755 %{buildroot}/%{_sbindir} %{buildroot}/usr/lib/zypper/commands
 ln -s %{_bindir}/suseconnect %{buildroot}/%{_bindir}/SUSEConnect
+
+install -d -m 0755 %{buildroot}/%{_sbindir}
 ln -s %{_bindir}/suseconnect %{buildroot}/%{_sbindir}/SUSEConnect
-ln -s %{_bindir}/suseconnect %{buildroot}/usr/lib/zypper/commands/zypper-migration
-ln -s %{_bindir}/suseconnect %{buildroot}/usr/lib/zypper/commands/zypper-search-packages
+
+install -d -m 0755 %{buildroot}/usr/lib/zypper/commands
+install -D -m 0755 bin/zypper-search-packages %{buildroot}/usr/lib/zypper/commands/zypper-search-packages
+install -D -m 0755 bin/zypper-migration %{buildroot}/usr/lib/zypper/commands/zypper-migration
 
 # Install library + ruby bindings
 install -D -m 0755 lib/libsuseconnect.so %{buildroot}/%{_libdir}/libsuseconnect.so
 install -d -m 0755 %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
-cp -r yast/lib/* %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
+cp -r third_party/yast/lib/* %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
 
 # Install metadata
-install -D -m 644 man/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
-install -D -m 644 man/SUSEConnect.8 %{buildroot}/%{_mandir}/man8/SUSEConnect.8
-install -D -m 644 man/zypper-migration.8 %{buildroot}/%{_mandir}/man8/zypper-migration.8
-install -D -m 644 man/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zypper-search-packages.8
+install -D -m 644 docs/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
+install -D -m 644 docs/SUSEConnect.8 %{buildroot}/%{_mandir}/man8/SUSEConnect.8
+install -D -m 644 docs/zypper-migration.8 %{buildroot}/%{_mandir}/man8/zypper-migration.8
+install -D -m 644 docs/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zypper-search-packages.8
 install -D -m 644 SUSEConnect.example %{buildroot}%{_sysconfdir}/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
@@ -229,7 +234,7 @@ fi
 %{_libdir}/libsuseconnect.so
 
 %files -n suseconnect-ruby-bindings
-%doc yast/README.md
+%doc third_party/yast/README.md
 %{_libdir}/ruby/vendor_ruby/%rb_ver/suse
 
 %changelog

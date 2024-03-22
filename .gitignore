@@ -3,5 +3,6 @@ internal/connect/version.txt
 connect-ruby
 obs
 artifacts
+bin
 *.tar.xz
 *.env*
