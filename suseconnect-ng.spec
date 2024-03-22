@@ -110,7 +110,7 @@ go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-search-packages %{proj
 
 # the library
 mkdir -p %_builddir/go/lib
-go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{project}/libsuseconnect
+go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
 
 %install
 # Install binary + symlinks
