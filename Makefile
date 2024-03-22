@@ -7,9 +7,8 @@ all: test build build-so
 dist: clean internal/connect/version.txt
 	@mkdir -p $(DIST)
 	@cp -r internal $(DIST)
-	@cp -r libsuseconnect $(DIST)
+	@cp -r third_party $(DIST)
 	@cp -r cmd $(DIST)
-	@cp -r yast $(DIST)
 	@cp -r docs $(DIST)
 	@cp go.mod $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
@@ -36,7 +35,7 @@ test: internal/connect/version.txt
 	go test -v ./internal/connect ./cmd/suseconnect
 
 test-yast: build-so
-	docker build -t go-connect-test-yast -f Dockerfile.yast . && docker run -t go-connect-test-yast
+	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
 
 test-scc: connect-ruby
 	docker build -t connect.ng-sle15sp3 -f integration/Dockerfile.ng-sle15sp3 .
@@ -49,7 +48,7 @@ gofmt:
 	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
 
 build-so: out internal/connect/version.txt
-	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/libsuseconnect
+	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 build-arm: out internal/connect/version.txt
 	GOOS=linux GOARCH=arm64 GOARM=7 go build -v -o out/ github.com/SUSE/connect-ng/cmd/suseconnect

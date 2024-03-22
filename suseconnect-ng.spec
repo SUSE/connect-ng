@@ -127,7 +127,7 @@ install -D -m 0755 bin/zypper-migration %{buildroot}/usr/lib/zypper/commands/zyp
 # Install library + ruby bindings
 install -D -m 0755 lib/libsuseconnect.so %{buildroot}/%{_libdir}/libsuseconnect.so
 install -d -m 0755 %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
-cp -r yast/lib/* %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
+cp -r third_party/yast/lib/* %{buildroot}/%{_libdir}/ruby/vendor_ruby/%{rb_ver}
 
 # Install metadata
 install -D -m 644 docs/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
@@ -234,7 +234,7 @@ fi
 %{_libdir}/libsuseconnect.so
 
 %files -n suseconnect-ruby-bindings
-%doc yast/README.md
+%doc third_party/yast/README.md
 %{_libdir}/ruby/vendor_ruby/%rb_ver/suse
 
 %changelog
