@@ -44,7 +44,7 @@ jobs:
           cp -r $GITHUB_WORKSPACE $SOURCE
 
       - name: build RPM package
-        run: bash ci/build-rpm
+        run: bash build/ci/build-rpm
 
       # - name: gather RPM build artifacts
       #   uses: actions/upload-artifact@v4
@@ -53,7 +53,7 @@ jobs:
       #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
 
       - name: configure Connect to run feature tests
-        run: bash ci/configure
+        run: bash build/ci/configure
 
       - name: run feature tests
-        run: bash ci/run-feature-tests
+        run: bash build/ci/run-feature-tests

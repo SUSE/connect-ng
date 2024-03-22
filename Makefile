@@ -1,5 +1,5 @@
 NAME          = suseconnect-ng
-VERSION       = $(shell bash -c "cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'")
+VERSION       = $(shell bash -c "cat build/packaging/suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'")
 DIST          = $(NAME)-$(VERSION)/
 
 all: test build build-so
@@ -13,10 +13,7 @@ dist: clean internal/connect/version.txt
 	@cp go.mod $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)
-	@cp suseconnect-keepalive.service $(DIST)
-	@cp suseconnect-keepalive.timer $(DIST)
-	@cp suseconnect-ng.changes $(DIST)
-	@cp suseconnect-ng-rpmlintrc suseconnect-ng.spec $(DIST)
+	@cp -r build/packaging/* $(DIST)
 	@tar cfvj $(NAME)-$(VERSION).tar.xz $(NAME)-$(VERSION)/
 	@rm -r $(NAME)-$(VERSION)
 	
