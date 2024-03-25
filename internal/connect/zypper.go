@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+    "github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 const (
@@ -299,24 +300,6 @@ func DistUpgrade(version string, quiet, verbose, AutoAgreeLicenses, nonInteracti
 	return err
 }
 
-// Repo holds repository data as returned by `zypper repos` or "show_product" API
-type Repo struct {
-	// SCC docs say that "id" should be integer but SMT returns string sometimes
-	// not mapping to struct field as it doesn't seem to be used by Connect
-	Name     string `xml:"name,attr" json:"name"`
-	Alias    string `xml:"alias,attr" json:"-"`
-	Type     string `xml:"type,attr" json:"-"`
-	Priority int    `xml:"priority,attr" json:"-"`
-	Enabled  bool   `xml:"enabled,attr" json:"enabled"`
-	URL      string `xml:"url" json:"url"`
-
-	DistroTarget     string   `json:"distro_target,omitempty"`
-	Description      string   `json:"description,omitempty"`
-	AutoRefresh      bool     `json:"autorefresh"`
-	InstallerUpdates bool     `json:"installer_updates"`
-	Arch             []string `json:"arch,omitempty"`
-}
-
 func parseReposXML(xmlDoc []byte) ([]Repo, error) {
 	var repos struct {
 		Repos []Repo `xml:"repo-list>repo"`
@@ -336,14 +319,6 @@ func Repos() ([]Repo, error) {
 		return []Repo{}, err
 	}
 	return parseReposXML(output)
-}
-
-// Package holds package info as returned by `zypper search`
-type Package struct {
-	Name    string `xml:"name,attr"`
-	Edition string `xml:"edition,attr"` // VERSION[-RELEASE]
-	Arch    string `xml:"arch,attr"`
-	Repo    string `xml:"repository,attr"`
 }
 
 func parseSearchResultXML(xmlDoc []byte) ([]Package, error) {

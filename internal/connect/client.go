@@ -18,19 +18,6 @@ type ProductService struct {
 	Service ServiceOut `json:"service"`
 }
 
-type ProductOut struct {
-	Name       string `json:"name"`
-	Identifier string `json:"identifier"`
-	Version    string `json:"version"`
-	Arch       string `json:"arch"`
-}
-
-type ServiceOut struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
-	Url  string `json:"url"`
-}
-
 var (
 	localAddService             = addService
 	localInstallReleasePackage  = InstallReleasePackage

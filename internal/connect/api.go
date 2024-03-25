@@ -3,6 +3,7 @@ package connect
 import (
 	"encoding/json"
 	"net/http"
+    "github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 // announceSystem announces a system to SCC

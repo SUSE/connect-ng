@@ -1,4 +1,4 @@
-package connect
+package models
 
 import (
 	"encoding/json"
@@ -39,7 +39,7 @@ type Product struct {
 	ShortName    string `json:"shortname,omitempty"`
 	LongName     string `json:"name,omitempty"`
 	ReleaseStage string `json:"release_stage,omitempty"`
-	Repositories []Repo `json:"repositories,omitempty"`
+	Repositories []Repository `json:"repositories,omitempty"`
 }
 
 // UnmarshalJSON custom unmarshaller for Product.
@@ -175,4 +175,24 @@ func (p Product) findExtension(query Product) (Product, error) {
 		}
 	}
 	return Product{}, fmt.Errorf("Extension not found")
+}
+
+// from package_search.go
+// SearchPackageProduct represents product reference in package search result
+type SearchPackageProduct struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Ident   string `json:"identifier"`
+	Type    string `json:"type"`
+	Free    bool   `json:"free"`
+	Edition string `json:"edition"`
+	Arch    string `json:"architecture"`
+}
+
+// from client.go
+type ProductOut struct {
+	Name       string `json:"name"`
+	Identifier string `json:"identifier"`
+	Version    string `json:"version"`
+	Arch       string `json:"arch"`
 }

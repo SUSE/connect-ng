@@ -1,4 +1,4 @@
-package connect
+package models
 
 import (
 	"encoding/base64"

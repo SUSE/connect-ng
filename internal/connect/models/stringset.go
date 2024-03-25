@@ -1,4 +1,4 @@
-package connect
+package models
 
 // StringSet is used to implement a set of strings
 type StringSet struct {
