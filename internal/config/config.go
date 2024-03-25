@@ -1,4 +1,4 @@
-package models
+package config
 
 import (
 	"bufio"
@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+    "github.com/SUSE/connect-ng/internal/logging"
 )
 
 var (
@@ -32,7 +34,9 @@ type Config struct {
 	Namespace        string `json:"namespace"`
 	FsRoot           string
 	Token            string
-	Product          Product
+    // TODO: FIX product handling in cmd/suseconnect to not rely on actual product object
+	//Product          Product
+    Product          string
 	InstanceDataFile string
 	Email            string `json:"email"`
 	AutoAgreeEULA    bool
@@ -78,12 +82,12 @@ func (c Config) Save() error {
 func (c *Config) Load() {
 	f, err := os.Open(c.Path)
 	if err != nil {
-		Debug.Println(err)
+		logging.Debug.Println(err)
 		return
 	}
 	defer f.Close()
 	parseConfig(f, c)
-	Debug.Printf("Config after parsing: %+v", c)
+	logging.Debug.Printf("Config after parsing: %+v", c)
 }
 
 func parseConfig(r io.Reader, c *Config) {
@@ -112,7 +116,7 @@ func parseConfig(r io.Reader, c *Config) {
 		case "auto_agree_with_licenses":
 			c.AutoAgreeEULA, _ = strconv.ParseBool(val)
 		default:
-			Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
+			logging.Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
 	}
 }
@@ -120,6 +124,6 @@ func parseConfig(r io.Reader, c *Config) {
 // MergeJSON merges attributes of jsn that match Config fields
 func (c *Config) MergeJSON(jsn string) error {
 	err := json.Unmarshal([]byte(jsn), c)
-	Debug.Printf("Merged options: %+v", c)
+	logging.Debug.Printf("Merged options: %+v", c)
 	return err
 }

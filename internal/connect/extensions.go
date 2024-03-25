@@ -1,4 +1,4 @@
-package models
+package connect
 
 import (
 	"bytes"
@@ -23,17 +23,6 @@ var (
 	localSystemActivations = systemActivations
 	localRootWritable      = isRootFSWritable
 )
-
-type extension struct {
-	Name         string       `json:"identifier"`
-	Version      string       `json:"version"`
-	Arch         string       `json:"arch"`
-	FriendlyName string       `json:"name"`
-	Activated    bool         `json:"activated"`
-	Available    bool         `json:"available"`
-	Free         bool         `json:"free"`
-	Extensions   []*extension `json:"extensions"`
-}
 
 func extensionTree(as map[string]Activation, p Product) *extension {
 	current := productToExtension(as, p)

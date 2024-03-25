@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+    "github.com/SUSE/connect-ng/internal/logging"
+    "github.com/SUSE/connect-ng/internal/utils"
 )
 
 const (
@@ -60,8 +63,8 @@ func getCredentials() (Credentials, error) {
 
 // ReadCredentials returns the credentials from path
 func ReadCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading credentials: ", path)
-	if !fileExists(path) {
+	logging.Debug.Print("Reading credentials: ", path)
+    if !utils.FileExists(path) {
 		return Credentials{}, ErrMissingCredentialsFile
 	}
 	f, err := os.Open(path)
@@ -74,7 +77,7 @@ func ReadCredentials(path string) (Credentials, error) {
 		return Credentials{}, err
 	}
 	creds.Filename = path
-	Debug.Print("Credentials read: ", creds)
+	logging.Debug.Print("Credentials read: ", creds)
 	return creds, nil
 }
 
@@ -98,13 +101,13 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 }
 
 func (c Credentials) write() error {
-	Debug.Print("Writing credentials: ", c)
+	logging.Debug.Print("Writing credentials: ", c)
 	path := c.Filename
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(CFG.FsRoot, defaulCredentialsDir, path)
 	}
 	dir := filepath.Dir(path)
-	if !fileExists(dir) {
+    if !utils.FileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
@@ -146,17 +149,17 @@ func writeServiceCredentials(serviceName string) error {
 
 func removeSystemCredentials() error {
 	path := systemCredentialsFile()
-	return removeFile(path)
+	return utils.RemoveFile(path)
 }
 
 func removeServiceCredentials(serviceName string) error {
-	Debug.Print("Removing service credentials for: ", serviceName)
+	logging.Debug.Print("Removing service credentials for: ", serviceName)
 	path := serviceCredentialsFile(serviceName)
-	return removeFile(path)
+	return utils.RemoveFile(path)
 }
 
 func readCurlrcCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading proxy credentials: ", path)
+	logging.Debug.Print("Reading proxy credentials: ", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return Credentials{}, err
@@ -167,7 +170,7 @@ func readCurlrcCredentials(path string) (Credentials, error) {
 		return Credentials{}, err
 	}
 	creds.Filename = path
-	Debug.Print("Proxy credentials read: ", creds)
+	logging.Debug.Print("Proxy credentials read: ", creds)
 	return creds, nil
 }
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 // Product represents an installed product or product information from API
@@ -176,6 +178,33 @@ func (p Product) findExtension(query Product) (Product, error) {
 	}
 	return Product{}, fmt.Errorf("Extension not found")
 }
+
+// parseProductsXML returns products parsed from zypper XML
+func parseProductsXML(xmlDoc []byte) ([]Product, error) {
+	var products struct {
+		Products []Product `xml:"product-list>product"`
+	}
+	if err := xml.Unmarshal(xmlDoc, &products); err != nil {
+		return []Product{}, err
+	}
+	// override ProductType with OEM value if defined
+	for i, p := range products.Products {
+		if oemValue, err := oemReleaseType(p.ProductLine); err == nil {
+			products.Products[i].ReleaseType = oemValue
+		}
+	}
+	return products.Products, nil
+}
+
+// installedProducts returns installed products
+func InstalledProducts() ([]Product, error) {
+    xml, err := zypper.GetInstalledProductsXML()
+	if err != nil {
+		return []Product{}, err
+	}
+	return parseProductsXML(xml)
+}
+
 
 // from package_search.go
 // SearchPackageProduct represents product reference in package search result

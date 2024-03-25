@@ -10,49 +10,6 @@ import (
     "github.com/SUSE/connect-ng/internal/connect/models"
 )
 
-const (
-	zypperPath = "/usr/bin/zypper"
-	oemPath    = "/var/lib/suseRegister/OEM"
-)
-
-const (
-	zypperOK = 0
-
-	// Single-digit codes denote errors
-	zypperErrBug         = 1 // Unexpected situation occurred, probably caused by a bug
-	zypperErrSyntax      = 2 // zypper was invoked with an invalid command or option, or a bad syntax
-	zypperErrInvalidArgs = 3 // Some of provided arguments were invalid. E.g. an invalid URI was provided to the addrepo command
-	zypperErrZypp        = 4 // A problem is reported by ZYPP library
-	zypperErrPrivileges  = 5 // User invoking zypper has insufficient privileges for specified operation
-	zypperErrNoRepos     = 6 // No repositories are defined
-	zypperErrZyppLocked  = 7 // The ZYPP library is locked, e.g. packagekit is running
-	zypperErrCommit      = 8 // An error occurred during installation or removal of packages. You may run zypper verify to repair any dependency problems
-
-	// Codes from 100 and above denote additional information passing
-	zypperInfoUpdateNeeded    = 100 // Returned by the patch-check command if there are patches available for installation
-	zypperInfoSecUpdateNeeded = 101 // Returned by the patch-check command if there are security patches available for installation
-	zypperInfoRebootNeeded    = 102 // Returned after a successful installation of a patch which requires reboot of computer
-	zypperInfoRestartNeeded   = 103 // Returned after a successful installation of a patch which requires restart of the package manager itself
-	zypperInfoCapNotFound     = 104 // install or remove command encountered arguments matching no of the available package names or capabilities
-	zypperInfoOnSignal        = 105 // Returned upon exiting after receiving a SIGINT or SIGTERM
-	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
-)
-
-func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
-	cmd := []string{zypperPath}
-	if CFG.FsRoot != "" {
-		cmd = append(cmd, "--root", CFG.FsRoot)
-	}
-	cmd = append(cmd, args...)
-	QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
-	output, err := execute(cmd, validExitCodes)
-	if err != nil {
-		if ee, ok := err.(ExecuteError); ok {
-			return nil, ZypperError(ee)
-		}
-	}
-	return output, nil
-}
 
 // installedProducts returns installed products
 func installedProducts() ([]Product, error) {
@@ -62,26 +19,6 @@ func installedProducts() ([]Product, error) {
 		return []Product{}, err
 	}
 	return parseProductsXML(output)
-}
-
-// get first line of OEM file if present
-func oemReleaseType(productLine string) (string, error) {
-	if productLine == "" {
-		return "", fmt.Errorf("empty productline")
-	}
-	oemFile := filepath.Join(CFG.FsRoot, oemPath, productLine)
-	if !fileExists(oemFile) {
-		return "", fmt.Errorf("OEM file not found: %v", oemFile)
-	}
-	data, err := os.ReadFile(oemFile)
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(string(data), "\n")
-	if len(lines) == 0 {
-		return "", fmt.Errorf("empty OEM file: %v", oemFile)
-	}
-	return strings.TrimSpace(lines[0]), nil
 }
 
 // parseProductsXML returns products parsed from zypper XML
