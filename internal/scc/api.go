@@ -1,9 +1,12 @@
-package connect
+package scc
 
 import (
 	"encoding/json"
 	"net/http"
-    "github.com/SUSE/connect-ng/internal/connect/models"
+
+	"github.com/SUSE/connect-ng/internal/config"
+	"github.com/SUSE/connect-ng/internal/connect/models"
+	"github.com/SUSE/connect-ng/internal/utils"
 )
 
 // announceSystem announces a system to SCC
@@ -19,7 +22,7 @@ func announceSystem(body []byte) (string, string, error) {
 		Password string `json:"password"`
 	}
 	if err = json.Unmarshal(resp, &creds); err != nil {
-		return "", "", JSONError{err}
+		return "", "", utils.JSONError{err}
 	}
 	return creds.Login, creds.Password, nil
 }
@@ -31,7 +34,7 @@ func upToDate() bool {
 	if err == nil {
 		return false
 	}
-	if ae, ok := err.(APIError); ok {
+	if ae, ok := err.(utils.APIError); ok {
 		if ae.Code == http.StatusUnprocessableEntity {
 			return true
 		}
@@ -40,39 +43,39 @@ func upToDate() bool {
 }
 
 // systemActivations returns a map keyed by "Identifier/Version/Arch"
-func systemActivations() (map[string]Activation, error) {
-	activeMap := make(map[string]Activation)
+func SystemActivations() (map[string]models.Activation, error) {
+	activeMap := make(map[string]models.Activation)
 	resp, err := callHTTP("GET", "/connect/systems/activations", nil, nil, authSystem)
 	if err != nil {
 		return activeMap, err
 	}
-	var activations []Activation
+	var activations []models.Activation
 	if err = json.Unmarshal(resp, &activations); err != nil {
-		return activeMap, JSONError{err}
+		return activeMap, utils.JSONError{err}
 	}
 	for _, activation := range activations {
-		activeMap[activation.toTriplet()] = activation
+		activeMap[activation.ToTriplet()] = activation
 	}
 	return activeMap, nil
 }
 
-func showProduct(productQuery Product) (Product, error) {
-	resp, err := callHTTP("GET", "/connect/systems/products", nil, productQuery.toQuery(), authSystem)
-	remoteProduct := Product{}
+func ShowProduct(productQuery models.Product) (models.Product, error) {
+	resp, err := callHTTP("GET", "/connect/systems/products", nil, productQuery.ToQuery(), authSystem)
+	remoteProduct := models.Product{}
 	if err != nil {
 		return remoteProduct, err
 	}
 	if err = json.Unmarshal(resp, &remoteProduct); err != nil {
-		return remoteProduct, JSONError{err}
+		return remoteProduct, utils.JSONError{err}
 	}
 	return remoteProduct, nil
 }
 
-func upgradeProduct(product Product) (Service, error) {
+func upgradeProduct(product models.Product) (models.Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
 	payload, err := json.Marshal(product)
-	remoteService := Service{}
+	remoteService := models.Service{}
 	if err != nil {
 		return remoteService, err
 	}
@@ -81,16 +84,16 @@ func upgradeProduct(product Product) (Service, error) {
 		return remoteService, err
 	}
 	if err = json.Unmarshal(resp, &remoteService); err != nil {
-		return remoteService, JSONError{err}
+		return remoteService, utils.JSONError{err}
 	}
 	return remoteService, nil
 }
 
-func downgradeProduct(product Product) (Service, error) {
+func downgradeProduct(product models.Product) (models.Service, error) {
 	return upgradeProduct(product)
 }
 
-func activateProduct(product Product, email string) (Service, error) {
+func activateProduct(product models.Product, email string) (models.Service, error) {
 	var payload = struct {
 		Indentifier string `json:"identifier"`
 		Version     string `json:"version"`
@@ -103,11 +106,11 @@ func activateProduct(product Product, email string) (Service, error) {
 		product.Version,
 		product.Arch,
 		product.ReleaseType,
-		CFG.Token,
+		config.CFG.Token,
 		email,
 	}
 
-	service := Service{}
+	service := models.Service{}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return service, err
@@ -118,16 +121,16 @@ func activateProduct(product Product, email string) (Service, error) {
 	}
 	err = json.Unmarshal(resp, &service)
 	if err != nil {
-		return service, JSONError{err}
+		return service, utils.JSONError{err}
 	}
 	return service, nil
 }
 
-func deactivateProduct(product Product) (Service, error) {
+func deactivateProduct(product models.Product) (models.Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
 	payload, err := json.Marshal(product)
-	remoteService := Service{}
+	remoteService := models.Service{}
 	if err != nil {
 		return remoteService, err
 	}
@@ -136,7 +139,7 @@ func deactivateProduct(product Product) (Service, error) {
 		return remoteService, err
 	}
 	if err = json.Unmarshal(resp, &remoteService); err != nil {
-		return remoteService, JSONError{err}
+		return remoteService, utils.JSONError{err}
 	}
 	return remoteService, nil
 }
@@ -146,10 +149,10 @@ func deregisterSystem() error {
 	return err
 }
 
-func syncProducts(products []Product) ([]Product, error) {
-	remoteProducts := make([]Product, 0)
+func syncProducts(products []models.Product) ([]models.Product, error) {
+	remoteProducts := make([]models.Product, 0)
 	var payload struct {
-		Products []Product `json:"products"`
+		Products []models.Product `json:"products"`
 	}
 	payload.Products = products
 	body, err := json.Marshal(payload)
@@ -162,7 +165,7 @@ func syncProducts(products []Product) ([]Product, error) {
 	}
 	err = json.Unmarshal(resp, &remoteProducts)
 	if err != nil {
-		return remoteProducts, JSONError{err}
+		return remoteProducts, utils.JSONError{err}
 	}
 	return remoteProducts, nil
 }
@@ -206,10 +209,10 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byt
 	return json.Marshal(payload)
 }
 
-func productMigrations(installed []Product) ([]MigrationPath, error) {
+func productMigrations(installed []models.Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
 	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
+		InstalledProducts []models.Product `json:"installed_products"`
 	}
 	payload.InstalledProducts = installed
 	body, err := json.Marshal(payload)
@@ -221,16 +224,16 @@ func productMigrations(installed []Product) ([]MigrationPath, error) {
 		return migrations, err
 	}
 	if err = json.Unmarshal(resp, &migrations); err != nil {
-		return migrations, JSONError{err}
+		return migrations, utils.JSONError{err}
 	}
 	return migrations, nil
 }
 
-func offlineProductMigrations(installed []Product, target Product) ([]MigrationPath, error) {
+func offlineProductMigrations(installed []models.Product, target models.Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
 	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
-		TargetBaseProduct Product   `json:"target_base_product"`
+		InstalledProducts []models.Product `json:"installed_products"`
+		TargetBaseProduct models.Product   `json:"target_base_product"`
 	}
 	payload.InstalledProducts = installed
 	payload.TargetBaseProduct = target
@@ -243,19 +246,50 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 		return migrations, err
 	}
 	if err = json.Unmarshal(resp, &migrations); err != nil {
-		return migrations, JSONError{err}
+		return migrations, utils.JSONError{err}
 	}
 	return migrations, nil
 }
 
-func installerUpdates(product Product) ([]Repo, error) {
-	repos := make([]Repo, 0)
-	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.toQuery(), authNone)
+func installerUpdates(product models.Product) ([]models.Repository, error) {
+	repos := make([]models.Repository, 0)
+	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.ToQuery(), authNone)
 	if err != nil {
 		return repos, err
 	}
 	if err = json.Unmarshal(resp, &repos); err != nil {
-		return repos, JSONError{err}
+		return repos, utils.JSONError{err}
 	}
 	return repos, nil
+}
+
+//moved from status.go
+
+// SystemProducts returns sum of installed and activated products
+// Products from zypper have priority over products from
+// activations as they have summary field which is missing
+// in the latter.
+func SystemProducts() ([]models.Product, error) {
+	products, err := models.InstalledProducts()
+	if err != nil {
+		return products, err
+	}
+	installedIDs := models.NewStringSet()
+	for _, prod := range products {
+		installedIDs.Add(prod.ToTriplet())
+	}
+	if !IsRegistered() {
+		return products, nil
+	}
+	activations, err := SystemActivations()
+	if err != nil {
+		return products, err
+	}
+	for _, a := range activations {
+		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
+			products = append(products, a.Service.Product)
+		}
+	}
+
+	return products, nil
 }
