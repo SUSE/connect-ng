@@ -1,4 +1,4 @@
-package connect
+package util
 
 import (
 	"fmt"
@@ -25,14 +25,14 @@ func isLoggerEnabled(l *log.Logger) bool {
 	return l.Writer() != io.Discard
 }
 
-func greenText(text string) string {
+func GreenText(text string) string {
 	return fmt.Sprintf("\x1b[32m%s\x1b[0m", text)
 }
 
-func redText(text string) string {
+func RedText(text string) string {
 	return fmt.Sprintf("\x1b[31m%s\x1b[0m", text)
 }
 
-func bold(text string) string {
+func Bold(text string) string {
 	return fmt.Sprintf("\x1b[1m%s\x1b[0m", text)
 }
