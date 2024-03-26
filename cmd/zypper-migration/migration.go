@@ -16,6 +16,7 @@ import (
 	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -308,7 +309,7 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		Debug.Printf("Signal received: %v", sig)
+		util.Debug.Printf("Signal received: %v", sig)
 		interrupted = true
 	}()
 

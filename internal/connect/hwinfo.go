@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -103,7 +105,7 @@ func cpuinfoS390(hw *hwinfo) error {
 		subs := strings.Fields(hypervisor)
 		hw.Hypervisor = strings.Join(subs, " ")
 	} else {
-		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
+		util.Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
 	}
 
 	return nil
@@ -200,7 +202,7 @@ func uuidS390() string {
 	if isUUID(uuid) {
 		return uuid
 	}
-	Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
+	util.Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
 	return ""
 }
 
@@ -243,10 +245,10 @@ func hostname() string {
 	if err == nil && name != "" && name != "(none)" {
 		return name
 	}
-	Debug.Print(err)
+	util.Debug.Print(err)
 	ip, err := getPrivateIPAddr()
 	if err != nil {
-		Debug.Print(err)
+		util.Debug.Print(err)
 		return ""
 	}
 	return ip
@@ -290,13 +292,13 @@ func parseMeminfo(file io.Reader) int {
 
 		val, err := strconv.Atoi(fields[1])
 		if err != nil {
-			Debug.Printf("could not obtain memory information for this system: %v", err)
+			util.Debug.Printf("could not obtain memory information for this system: %v", err)
 			return 0
 		}
 		return val / 1024
 	}
 
-	Debug.Print("could not obtain memory information for this system")
+	util.Debug.Print("could not obtain memory information for this system")
 	return 0
 }
 
@@ -306,7 +308,7 @@ func parseMeminfo(file io.Reader) int {
 func systemMemory() int {
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {
-		Debug.Print("'/proc/meminfo' could not be read!")
+		util.Debug.Print("'/proc/meminfo' could not be read!")
 		return 0
 	}
 	defer file.Close()

@@ -12,6 +12,9 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -57,7 +60,7 @@ func addHeaders(req *http.Request) {
 	req.Header.Add("User-Agent", appName+"/"+GetShortenedVersion())
 
 	// Pass the current system token.
-	creds, err := getCredentials()
+	creds, err := GetCredentials()
 	token := ""
 	if err == nil {
 		token = creds.SystemToken
@@ -68,7 +71,7 @@ func addHeaders(req *http.Request) {
 func addAuthHeader(req *http.Request, auth authType) error {
 	switch auth {
 	case authSystem:
-		c, err := getCredentials()
+		c, err := GetCredentials()
 		if err != nil {
 			return err
 		}
@@ -106,7 +109,7 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 		return proxyURL, err
 	}
 	// add or replace proxy credentials if configured
-	if c, err := readCurlrcCredentials(curlrcCredentialsFile()); err == nil {
+	if c, err := credentials.ReadCurlrcCredentials(credentials.CurlrcCredentialsPath()); err == nil {
 		proxyURL.User = url.UserPassword(c.Username, c.Password)
 	}
 	return proxyURL, nil
@@ -143,7 +146,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 
 	if isLoggerEnabled(Debug) {
 		reqBlob, _ := httputil.DumpRequestOut(req, true)
-		Debug.Printf("%s\n", reqBlob)
+		util.Debug.Printf("%s\n", reqBlob)
 	}
 
 	resp, err := httpclient.Do(req)
@@ -156,12 +159,12 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	// This will be given through the `System-Token` header, so we have to grab
 	// this here and store it for the next request.
 	if err := handleSystemToken(resp.Header.Get("System-Token")); err != nil {
-		Debug.Printf("system-token: %s\n", err)
+		util.Debug.Printf("system-token: %s\n", err)
 	}
 
 	if isLoggerEnabled(Debug) {
 		respBlob, _ := httputil.DumpResponse(resp, true)
-		Debug.Printf("%s\n", respBlob)
+		util.Debug.Printf("%s\n", respBlob)
 	}
 
 	if !successCode(resp.StatusCode) {
@@ -183,7 +186,7 @@ func handleSystemToken(token string) error {
 		return nil
 	}
 
-	creds, err := getCredentials()
+	creds, err := GetCredentials()
 	if err != nil {
 		return err
 	}

@@ -47,7 +47,7 @@ var logFun C.logLineFunc
 func set_log_callback(logCallback C.logLineFunc) {
 	logFun = logCallback
 	// NOTE: Debug is not redirected here as it is disabled by default
-	connect.Info.SetOutput(callbackWriter{llInfo})
+	connect.util.Info.SetOutput(callbackWriter{llInfo})
 	// TODO: add other levels?
 }
 
@@ -229,7 +229,7 @@ func loadConfig(clientParams string) {
 	json.Unmarshal([]byte(clientParams), &extConfig)
 	// enable debug output if "debug" was set in json
 	if v, _ := strconv.ParseBool(extConfig.Debug); v {
-		connect.Debug.SetOutput(callbackWriter{llDebug})
+		connect.util.Debug.SetOutput(callbackWriter{llDebug})
 	}
 	connect.CFG.Load()
 	connect.CFG.MergeJSON(clientParams)
@@ -287,7 +287,7 @@ func errorToJSON(err error) string {
 			s.ErrType = "NetError"
 			s.Message = ierr.Error()
 		} else {
-			connect.Debug.Printf("url.Error: %T: %v", ierr, err)
+			connect.util.Debug.Printf("url.Error: %T: %v", ierr, err)
 			s.Message = err.Error()
 		}
 	} else if je, ok := err.(connect.JSONError); ok {
@@ -300,7 +300,7 @@ func errorToJSON(err error) string {
 		case connect.ErrMissingCredentialsFile:
 			s.ErrType = "MissingCredentialsFile"
 		}
-		connect.Debug.Printf("Error: %T: %v", err, err)
+		connect.util.Debug.Printf("Error: %T: %v", err, err)
 		s.Message = err.Error()
 	}
 

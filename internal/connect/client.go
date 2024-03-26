@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
+	cred "github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 type RegisterOut struct {
@@ -32,8 +37,8 @@ type ServiceOut struct {
 }
 
 var (
-	localAddService             = addService
-	localInstallReleasePackage  = InstallReleasePackage
+	localAddService             = zypper.AddService
+	localInstallReleasePackage  = zypper.InstallReleasePackage
 	localRemoveOrRefreshService = removeOrRefreshService
 )
 
@@ -51,10 +56,11 @@ func Register(jsonOutput bool) error {
 	installReleasePkg := true
 	product := CFG.Product
 	if product.isEmpty() {
-		product, err = baseProduct()
+		base, err := zypper.BaseProduct()
 		if err != nil {
 			return err
 		}
+		product = zypperProductToProduct(base)
 		installReleasePkg = false
 	}
 
@@ -92,9 +98,9 @@ func Register(jsonOutput bool) error {
 		if err != nil {
 			return err
 		}
-		Info.Println(string(out))
+		util.Info.Println(string(out))
 	} else {
-		Info.Print(bold(greenText("\nSuccessfully registered system")))
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully registered system")))
 	}
 	return nil
 }
@@ -102,9 +108,9 @@ func Register(jsonOutput bool) error {
 // registerProduct activates the product, adds the service and installs the release package
 func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
 	if jsonOutput {
-		Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+		util.Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	} else {
-		Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+		util.Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	}
 
 	service, err := activateProduct(product, CFG.Email)
@@ -114,24 +120,24 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 
 	if !CFG.SkipServiceInstall {
 		if jsonOutput {
-			Debug.Print("-> Adding service to system ...")
+			util.Debug.Print("-> Adding service to system ...")
 		} else {
-			Info.Print("-> Adding service to system ...")
+			util.Info.Print("-> Adding service to system ...")
 		}
 
-		if err := localAddService(service.URL, service.Name, !CFG.NoZypperRefresh); err != nil {
+		if err := localAddService(service.URL, service.Name, !CFG.NoZypperRefresh, CFG.Insecure); err != nil {
 			return Service{}, err
 		}
 	}
 
 	if installReleasePkg && !CFG.SkipServiceInstall {
 		if jsonOutput {
-			Debug.Print("-> Installing release package ...")
+			util.Debug.Print("-> Installing release package ...")
 		} else {
-			Info.Print("-> Installing release package ...")
+			util.Info.Print("-> Installing release package ...")
 		}
 
-		if err := localInstallReleasePackage(product.Name); err != nil {
+		if err := localInstallReleasePackage(product.Name, CFG.AutoImportRepoKeys); err != nil {
 			return Service{}, err
 		}
 	}
@@ -170,7 +176,7 @@ func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) err
 
 // Deregister deregisters the system
 func Deregister(jsonOutput bool) error {
-	if fileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
+	if util.FileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration is disabled for on-demand instances. " +
 			"Use `registercloudguest --clean` instead.")
@@ -186,7 +192,11 @@ func Deregister(jsonOutput bool) error {
 	if !CFG.Product.isEmpty() {
 		return deregisterProduct(CFG.Product, jsonOutput, out)
 	}
-	baseProd, _ := baseProduct()
+	base, err := zypper.BaseProduct()
+	if err != nil {
+		return err
+	}
+	baseProd := zypperProductToProduct(base)
 	baseProductService, err := upgradeProduct(baseProd)
 	if err != nil {
 		return err
@@ -196,7 +206,7 @@ func Deregister(jsonOutput bool) error {
 	if err != nil {
 		return err
 	}
-	installed, _ := installedProducts()
+	installed, _ := zypper.InstalledProducts()
 	installedIDs := NewStringSet()
 	for _, prod := range installed {
 		installedIDs.Add(prod.Name)
@@ -217,9 +227,9 @@ func Deregister(jsonOutput bool) error {
 	}
 
 	// remove potential docker and podman configurations for our registry
-	creds, err := getCredentials()
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
 	if err == nil {
-		Debug.Print("\nRemoving SUSE registry system authentication configuration ...")
+		util.Debug.Print("\nRemoving SUSE registry system authentication configuration ...")
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
@@ -233,7 +243,7 @@ func Deregister(jsonOutput bool) error {
 		}
 	}
 	if !jsonOutput {
-		Info.Print("\nCleaning up ...")
+		util.Info.Print("\nCleaning up ...")
 	}
 	if err := Cleanup(); err != nil {
 		return err
@@ -245,24 +255,24 @@ func Deregister(jsonOutput bool) error {
 		if err != nil {
 			return err
 		}
-		Info.Println(string(out))
+		util.Info.Println(string(out))
 	} else {
-		Info.Print(bold(greenText("Successfully deregistered system")))
+		util.Info.Print(util.Bold(util.GreenText("Successfully deregistered system")))
 	}
 
 	return nil
 }
 
 func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error {
-	base, err := baseProduct()
+	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
 	}
-	if product.ToTriplet() == base.ToTriplet() {
+	if product.ToTriplet() == zypperProductToProduct(base).ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
 	if !jsonOutput {
-		Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
+		util.Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	}
 	service, err := deactivateProduct(product)
 	if err != nil {
@@ -291,9 +301,9 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 			},
 		})
 	} else {
-		Info.Print("-> Removing release package ...")
+		util.Info.Print("-> Removing release package ...")
 	}
-	return removeReleasePackage(product.Name)
+	return zypper.RemoveReleasePackage(product.Name)
 }
 
 // SMT provides one service for all products, removing it would remove all repositories.
@@ -301,21 +311,21 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 func removeOrRefreshService(service Service, jsonOutput bool) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
 		if !jsonOutput {
-			Info.Print("-> Refreshing service ...")
+			util.Info.Print("-> Refreshing service ...")
 		}
-		refreshAllServices()
+		zypper.RefreshAllServices()
 		return nil
 	}
 	if !jsonOutput {
-		Info.Print("-> Removing service from system ...")
+		util.Info.Print("-> Removing service from system ...")
 	}
-	return removeService(service.Name)
+	return zypper.RemoveService(service.Name)
 }
 
 // AnnounceSystem announce system via SCC/Registration Proxy
 func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (string, string, error) {
 	if !quiet {
-		Info.Printf(bold("\nAnnouncing system to %s ..."), CFG.BaseURL)
+		util.Info.Printf(util.Bold("\nAnnouncing system to %s ..."), CFG.BaseURL)
 	}
 
 	instanceData, err := readInstanceData(instanceDataFile)
@@ -332,7 +342,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (stri
 // UpdateSystem resend the system's hardware details on SCC
 func UpdateSystem(distroTarget, instanceDataFile string, quiet bool) error {
 	if !quiet {
-		Info.Printf(bold("\nUpdating system details on %s ..."), CFG.BaseURL)
+		util.Info.Printf(util.Bold("\nUpdating system details on %s ..."), CFG.BaseURL)
 	}
 	instanceData, err := readInstanceData(instanceDataFile)
 	if err != nil {
@@ -352,7 +362,7 @@ func SendKeepAlivePing() error {
 	}
 	err := UpdateSystem("", "", false)
 	if err == nil {
-		Info.Print(bold(greenText("\nSuccessfully updated system")))
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	}
 	return err
 }
@@ -374,8 +384,8 @@ func announceOrUpdate(quiet bool) error {
 		return err
 	}
 
-	if err = writeSystemCredentials(login, password, ""); err == nil {
-		Debug.Print("\nAdding SUSE registry system authentication configuration ...")
+	if err = credentials.CreateCredentials(login, password, "", credentials.SystemCredentialsPath(CFG.FsRoot)); err == nil {
+		util.Debug.Print("\nAdding SUSE registry system authentication configuration ...")
 		setupRegistryAuthentication(login, password)
 	}
 	return err
@@ -383,7 +393,7 @@ func announceOrUpdate(quiet bool) error {
 
 // IsRegistered returns true if there is a valid credentials file
 func IsRegistered() bool {
-	_, err := getCredentials()
+	_, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
 	return err == nil
 }
 
@@ -407,29 +417,29 @@ func printInformation(action string, jsonOutput bool) {
 	}
 	if action == "register" {
 		if jsonOutput {
-			Debug.Printf(bold("Registering system to %s"), server)
+			util.Debug.Printf(util.Bold("Registering system to %s"), server)
 		} else {
-			Info.Printf(bold("Registering system to %s"), server)
+			util.Info.Printf(util.Bold("Registering system to %s"), server)
 		}
 	} else {
 		if jsonOutput {
-			Debug.Printf(bold("Deregistering system from %s"), server)
+			util.Debug.Printf(util.Bold("Deregistering system from %s"), server)
 		} else {
-			Info.Printf(bold("Deregistering system from %s"), server)
+			util.Info.Printf(util.Bold("Deregistering system from %s"), server)
 		}
 	}
 	if CFG.FsRoot != "" {
 		if jsonOutput {
-			Debug.Print("Rooted at:", CFG.FsRoot)
+			util.Debug.Print("Rooted at:", CFG.FsRoot)
 		} else {
-			Info.Print("Rooted at:", CFG.FsRoot)
+			util.Info.Print("Rooted at:", CFG.FsRoot)
 		}
 	}
 	if CFG.Email != "" {
 		if jsonOutput {
-			Debug.Print("Using E-Mail:", CFG.Email)
+			util.Debug.Print("Using E-Mail:", CFG.Email)
 		} else {
-			Info.Print("Using E-Mail:", CFG.Email)
+			util.Info.Print("Using E-Mail:", CFG.Email)
 		}
 	}
 }
@@ -439,7 +449,7 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 		return nil, nil
 	}
 	path := filepath.Join(CFG.FsRoot, instanceDataFile)
-	Debug.Print("Reading file from: ", path)
+	util.Debug.Print("Reading file from: ", path)
 	instanceData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -468,10 +478,11 @@ func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error
 	// default to system base product if empty product passed
 	if baseProd.isEmpty() {
 		var err error
-		baseProd, err = baseProduct()
+		base, err := zypper.BaseProduct()
 		if err != nil {
 			return []SearchPackageResult{}, err
 		}
+		baseProd = zypperProductToProduct(base)
 	}
 	return searchPackage(query, baseProd)
 }
@@ -517,7 +528,7 @@ func DeregisterSystem() error {
 }
 
 // InstallerUpdates returns an array of Installer-Updates repositories for the given product
-func InstallerUpdates(product Product) ([]Repo, error) {
+func InstallerUpdates(product Product) ([]zypper.Repository, error) {
 	return installerUpdates(product)
 }
 

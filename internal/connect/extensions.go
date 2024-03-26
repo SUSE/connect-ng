@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -18,10 +21,10 @@ var (
 
 	// test method overwrites
 	localIsRegistered      = IsRegistered
-	localBaseProduct       = baseProduct
+	localBaseProduct       = zypper.BaseProduct
 	localShowProduct       = showProduct
 	localSystemActivations = systemActivations
-	localRootWritable      = isRootFSWritable
+	localRootWritable      = util.IsRootFSWritable
 )
 
 type extension struct {

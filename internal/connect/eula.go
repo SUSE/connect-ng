@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const eulaIndex = "directory.yast"
@@ -69,7 +71,7 @@ func parseEULAIndex(data []byte, baseURL string) (map[string]string, error) {
 			ret[match[1]] = url.String()
 			continue
 		}
-		Debug.Printf("Ignoring unknown index entry: %s", name)
+		util.Debug.Printf("Ignoring unknown index entry: %s", name)
 	}
 	return ret, nil
 }
@@ -83,7 +85,7 @@ func downloadEULAIndex(baseURL string) (map[string]string, error) {
 	if err != nil {
 		return map[string]string{}, err
 	}
-	Debug.Printf("Downloading license index from %s...", url)
+	util.Debug.Printf("Downloading license index from %s...", url)
 	index, err := downloadFile(url.String())
 	if err != nil {
 		return map[string]string{}, err
@@ -92,7 +94,7 @@ func downloadEULAIndex(baseURL string) (map[string]string, error) {
 	if err != nil {
 		return map[string]string{}, err
 	}
-	Debug.Printf("Downloaded license index %+v", ret)
+	util.Debug.Printf("Downloaded license index %+v", ret)
 	return ret, nil
 }
 
@@ -102,7 +104,7 @@ func showTextInPager(text []byte) error {
 	if p, ok := os.LookupEnv("PAGER"); ok && p != "" {
 		pager = p
 	}
-	Debug.Printf("Using %s as pager.", pager)
+	util.Debug.Printf("Using %s as pager.", pager)
 
 	// Run interactive pager (`sh` is needed to allow custom pagers e.g. `less
 	// -N`)
@@ -116,7 +118,7 @@ func showTextInPager(text []byte) error {
 // Prints the text of the EULA without some padding at the end which doesn't
 // make much sense outside of the pager.
 func printEULA(text []byte) {
-	Info.Println(string(bytes.TrimSpace(text)))
+	util.Info.Println(string(bytes.TrimSpace(text)))
 }
 
 // Returns the text of the EULA to be shown to the user, or nothing if there was
@@ -204,14 +206,14 @@ func AcceptEULA() error {
 	// See bsc#1218649 and bsc#1217961
 	prod, err := showProduct(base)
 	if err != nil {
-		Debug.Print("Cannot load base product details for EULA.")
+		util.Debug.Print("Cannot load base product details for EULA.")
 		return nil
 	}
 	extension, _ := prod.findExtension(CFG.Product)
 
 	// No EULA or product not found (handle in registration code)
 	if strings.TrimSpace(extension.EULAURL) == "" {
-		Debug.Printf("No EULA found for '%s'.", CFG.Product.Name)
+		util.Debug.Printf("No EULA found for '%s'.", CFG.Product.Name)
 		return nil
 	}
 
@@ -224,7 +226,7 @@ func AcceptEULA() error {
 	if CFG.AutoAgreeEULA {
 		printEULA(eula)
 		fmt.Println("")
-		Info.Printf("-> License auto-accepted through user configuration ...\n\n")
+		util.Info.Printf("-> License auto-accepted through user configuration ...\n\n")
 		return nil
 	}
 

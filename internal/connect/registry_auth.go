@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 // NOTE: Podman will read the same configuration file as the docker cli.
@@ -102,7 +104,7 @@ func (cfg *RegistryAuthConfig) isConfigured(registry string) bool {
 
 func (cfg *RegistryAuthConfig) Set(registry string, login string, password string) {
 	if cfg.isConfigured(registry) {
-		Debug.Printf("`%s` is already configured. Skipping", registry)
+		util.Debug.Printf("`%s` is already configured. Skipping", registry)
 		return
 	}
 
@@ -146,21 +148,21 @@ func setupRegistryAuthentication(login string, password string) {
 		// This also fails if the file does not yet exist
 		// so we continue to create it.
 		if err := config.LoadFrom(path); err != nil {
-			Debug.Printf("Could not load `%s`: %s", path, err)
+			util.Debug.Printf("Could not load `%s`: %s", path, err)
 		}
 		config.Set(DEFAULT_SUSE_REGISTRY, login, password)
 
 		if err := mkDirAll(dir, 0775); err != nil {
-			Debug.Printf("Could not create directory `%s`: %s", dir, err)
+			util.Debug.Printf("Could not create directory `%s`: %s", dir, err)
 			return
 		}
 
 		if err := config.SaveTo(path); err != nil {
-			Debug.Printf("Could not save config to `%s`: %s", path, err)
+			util.Debug.Printf("Could not save config to `%s`: %s", path, err)
 			return
 		}
 
-		Debug.Printf("SUSE registry system authentication written to `%s`", path)
+		util.Debug.Printf("SUSE registry system authentication written to `%s`", path)
 	}
 }
 
@@ -171,7 +173,7 @@ func removeRegistryAuthentication(login string, password string) {
 		path := filepath.Join(home, DEFAULT_DOCKER_CLIENT_CONFIG)
 
 		if err := config.LoadFrom(path); err != nil {
-			Debug.Printf("Could not load `%s`: %s", path, err)
+			util.Debug.Printf("Could not load `%s`: %s", path, err)
 			return
 		}
 		l, p, found := config.Get(DEFAULT_SUSE_REGISTRY)
@@ -183,10 +185,10 @@ func removeRegistryAuthentication(login string, password string) {
 			config.Remove(DEFAULT_SUSE_REGISTRY)
 
 			if err := config.SaveTo(path); err != nil {
-				Debug.Printf("Could not save config to `%s`: %s", path, err)
+				util.Debug.Printf("Could not save config to `%s`: %s", path, err)
 			}
 
-			Debug.Printf("SUSE registry system authentication removed from `%s`", path)
+			util.Debug.Printf("SUSE registry system authentication removed from `%s`", path)
 		}
 	}
 

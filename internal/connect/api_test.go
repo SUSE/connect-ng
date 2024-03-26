@@ -30,7 +30,7 @@ func TestAnnounceSystem(t *testing.T) {
 	}
 
 	// System token should have been updated.
-	creds, err := getCredentials()
+	creds, err := GetCredentials()
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}

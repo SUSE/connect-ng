@@ -108,8 +108,8 @@ func main() {
 	if debug {
 		connect.EnableDebug()
 	}
-	connect.Debug.Println("cmd line:", os.Args)
-	connect.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
+	connect.util.Debug.Println("cmd line:", os.Args)
+	connect.util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {

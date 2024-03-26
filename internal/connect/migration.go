@@ -2,6 +2,8 @@ package connect
 
 import (
 	"path/filepath"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 // MigrationPath holds a list of products
@@ -9,7 +11,7 @@ type MigrationPath []Product
 
 // Rollback restores system state to before failed migration
 func Rollback() error {
-	Info.Print("Starting to sync system product activations to the server. This can take some time...")
+	util.Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
 	base, err := baseProduct()
 	if err != nil {

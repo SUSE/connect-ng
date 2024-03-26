@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 // Product represents an installed product or product information from API
@@ -31,15 +33,15 @@ type Product struct {
 	Extensions []Product `json:"extensions,omitempty"`
 
 	// these are used by YaST
-	ID           int    `json:"-"` // handled by custom unmarshaller/marshaller
-	Description  string `xml:"description" json:"description,omitempty"`
-	EULAURL      string `json:"eula_url,omitempty"`
-	FormerName   string `json:"former_identifier,omitempty"`
-	ProductType  string `json:"product_type,omitempty"`
-	ShortName    string `json:"shortname,omitempty"`
-	LongName     string `json:"name,omitempty"`
-	ReleaseStage string `json:"release_stage,omitempty"`
-	Repositories []Repo `json:"repositories,omitempty"`
+	ID           int                 `json:"-"` // handled by custom unmarshaller/marshaller
+	Description  string              `xml:"description" json:"description,omitempty"`
+	EULAURL      string              `json:"eula_url,omitempty"`
+	FormerName   string              `json:"former_identifier,omitempty"`
+	ProductType  string              `json:"product_type,omitempty"`
+	ShortName    string              `json:"shortname,omitempty"`
+	LongName     string              `json:"name,omitempty"`
+	ReleaseStage string              `json:"release_stage,omitempty"`
+	Repositories []zypper.Repository `json:"repositories,omitempty"`
 }
 
 // UnmarshalJSON custom unmarshaller for Product.
@@ -73,6 +75,23 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 
 	*p = Product(prod)
 	return nil
+}
+
+// To allow separation of the producs we receive from zypper and from scc
+// we created a specific ZypperProduct type
+// This allows us to separate zypper into its own module
+func zypperProductToProduct(zypProd zypper.ZypperProduct) Product {
+	return Product{
+		Name:        zypProd.Name,
+		Version:     zypProd.Version,
+		Arch:        zypProd.Arch,
+		Release:     zypProd.Release,
+		Summary:     zypProd.Summary,
+		IsBase:      zypProd.IsBase,
+		ReleaseType: zypProd.ReleaseType,
+		ProductLine: zypProd.ProductLine,
+		Description: zypProd.Description,
+	}
 }
 
 // findID decodes the "id" field from data
