@@ -1,4 +1,4 @@
-package connect
+package credentials
 
 import (
 	"os"
@@ -29,14 +29,14 @@ func TestParseCredentials(t *testing.T) {
 
 func TestWriteReadDeleteSystem(t *testing.T) {
 	CFG.FsRoot = t.TempDir()
-	_, err := getCredentials()
+	_, err := GetCredentials()
 	if err != ErrMissingCredentialsFile {
 		t.Fatalf("Expected [%s], got [%s]", ErrMissingCredentialsFile, err)
 	}
 	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	c, err := getCredentials()
+	c, err := GetCredentials()
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
