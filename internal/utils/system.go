@@ -1,12 +1,12 @@
 package utils
 
 import (
-    "io"
-    "os"
-    "os/exec"
-    "bytes"
+	"bytes"
+	"io"
+	"os"
+	"os/exec"
 
-    "github.com/SUSE/connect-ng/internal/logging"
+	"github.com/SUSE/connect-ng/internal/logging"
 )
 
 var systemEcho bool

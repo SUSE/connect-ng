@@ -1,22 +1,21 @@
 package zypper
 
 import (
-    "os"
-    "strings"
-    "fmt"
-    "path/filepath"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
-    "github.com/SUSE/connect-ng/internal/config"
-    "github.com/SUSE/connect-ng/internal/utils"
+	"github.com/SUSE/connect-ng/internal/config"
+	"github.com/SUSE/connect-ng/internal/utils"
 )
 
 const (
-	oemPath    = "/var/lib/suseRegister/OEM"
+	oemPath = "/var/lib/suseRegister/OEM"
 )
 
-
 // get first line of OEM file if present
-func oemReleaseType(productLine string) (string, error) {
+func OemReleaseType(productLine string) (string, error) {
 	if productLine == "" {
 		return "", fmt.Errorf("empty productline")
 	}

@@ -2,14 +2,10 @@ package connect
 
 import (
 	"encoding/xml"
-	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-    "github.com/SUSE/connect-ng/internal/connect/models"
-)
 
+	"github.com/SUSE/connect-ng/internal/connect/models"
+)
 
 // installedProducts returns installed products
 func installedProducts() ([]Product, error) {
@@ -60,7 +56,7 @@ func parseServicesXML(xmlDoc []byte) ([]Service, error) {
 }
 
 // TODO: memoize?
-func baseProduct() (Product, error) {
+func baseProduct() (models.Product, error) {
 	products, err := installedProducts()
 	if err != nil {
 		return Product{}, err

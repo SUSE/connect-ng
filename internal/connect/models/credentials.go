@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"regexp"
 
-    "github.com/SUSE/connect-ng/internal/logging"
-    "github.com/SUSE/connect-ng/internal/utils"
+	"github.com/SUSE/connect-ng/internal/config"
+	"github.com/SUSE/connect-ng/internal/logging"
+	"github.com/SUSE/connect-ng/internal/utils"
 )
 
 const (
@@ -40,11 +41,11 @@ func (c Credentials) String() string {
 }
 
 func systemCredentialsFile() string {
-	return filepath.Join(CFG.FsRoot, globalCredentialsFile)
+	return filepath.Join(config.CFG.FsRoot, globalCredentialsFile)
 }
 
 func serviceCredentialsFile(service string) string {
-	return filepath.Join(CFG.FsRoot, defaulCredentialsDir, service)
+	return filepath.Join(config.CFG.FsRoot, defaulCredentialsDir, service)
 }
 
 func curlrcCredentialsFile() string {
@@ -64,8 +65,8 @@ func getCredentials() (Credentials, error) {
 // ReadCredentials returns the credentials from path
 func ReadCredentials(path string) (Credentials, error) {
 	logging.Debug.Print("Reading credentials: ", path)
-    if !utils.FileExists(path) {
-		return Credentials{}, ErrMissingCredentialsFile
+	if !utils.FileExists(path) {
+		return Credentials{}, utils.ErrMissingCredentialsFile
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -90,7 +91,7 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 	pMatch := passMatch.FindStringSubmatch(string(content))
 	tMatch := systemTokenMatch.FindStringSubmatch(string(content))
 	if len(uMatch) != 2 || len(pMatch) != 2 {
-		return Credentials{}, ErrMalformedSccCredFile
+		return Credentials{}, utils.ErrMalformedSccCredFile
 	}
 	token := ""
 	if len(tMatch) == 2 {
@@ -104,10 +105,10 @@ func (c Credentials) write() error {
 	logging.Debug.Print("Writing credentials: ", c)
 	path := c.Filename
 	if !filepath.IsAbs(path) {
-		path = filepath.Join(CFG.FsRoot, defaulCredentialsDir, path)
+		path = filepath.Join(config.CFG.FsRoot, defaulCredentialsDir, path)
 	}
 	dir := filepath.Dir(path)
-    if !utils.FileExists(dir) {
+	if !utils.FileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
@@ -183,7 +184,7 @@ func parseCurlrcCredentials(r io.Reader) (Credentials, error) {
 			return Credentials{Username: match[1], Password: match[2]}, nil
 		}
 	}
-	return Credentials{}, ErrNoProxyCredentials
+	return Credentials{}, utils.ErrNoProxyCredentials
 }
 
 // ReadCurlrcCredentials reads proxy credentials from default path

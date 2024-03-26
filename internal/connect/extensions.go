@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/SUSE/connect-ng/internal/scc"
 )
 
 var (
@@ -19,8 +21,8 @@ var (
 	// test method overwrites
 	localIsRegistered      = IsRegistered
 	localBaseProduct       = baseProduct
-	localShowProduct       = showProduct
-	localSystemActivations = systemActivations
+	localShowProduct       = scc.ShowProduct
+	localSystemActivations = scc.SystemActivations
 	localRootWritable      = isRootFSWritable
 )
 

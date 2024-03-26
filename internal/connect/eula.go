@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 const eulaIndex = "directory.yast"
@@ -121,7 +123,7 @@ func printEULA(text []byte) {
 
 // Returns the text of the EULA to be shown to the user, or nothing if there was
 // an error.
-func fetchEULAFrom(extension Product) ([]byte, error) {
+func fetchEULAFrom(extension models.Product) ([]byte, error) {
 	eulas, err := downloadEULAIndex(extension.EULAURL)
 	if err != nil {
 		return nil, err

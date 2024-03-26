@@ -15,7 +15,7 @@ type Activation struct {
 	Service   Service   `json:"service"`
 }
 
-func (a Activation) toTriplet() string {
+func (a Activation) ToTriplet() string {
 	p := a.Service.Product
 	return p.Name + "/" + p.Version + "/" + p.Arch
 }

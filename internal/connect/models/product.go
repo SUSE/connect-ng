@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"regexp"
 	"strings"
@@ -33,14 +34,14 @@ type Product struct {
 	Extensions []Product `json:"extensions,omitempty"`
 
 	// these are used by YaST
-	ID           int    `json:"-"` // handled by custom unmarshaller/marshaller
-	Description  string `xml:"description" json:"description,omitempty"`
-	EULAURL      string `json:"eula_url,omitempty"`
-	FormerName   string `json:"former_identifier,omitempty"`
-	ProductType  string `json:"product_type,omitempty"`
-	ShortName    string `json:"shortname,omitempty"`
-	LongName     string `json:"name,omitempty"`
-	ReleaseStage string `json:"release_stage,omitempty"`
+	ID           int          `json:"-"` // handled by custom unmarshaller/marshaller
+	Description  string       `xml:"description" json:"description,omitempty"`
+	EULAURL      string       `json:"eula_url,omitempty"`
+	FormerName   string       `json:"former_identifier,omitempty"`
+	ProductType  string       `json:"product_type,omitempty"`
+	ShortName    string       `json:"shortname,omitempty"`
+	LongName     string       `json:"name,omitempty"`
+	ReleaseStage string       `json:"release_stage,omitempty"`
 	Repositories []Repository `json:"repositories,omitempty"`
 }
 
@@ -120,7 +121,7 @@ func (p Product) Edition() string {
 	return p.Version + "-" + p.Release
 }
 
-func (p Product) isEmpty() bool {
+func (p Product) IsEmpty() bool {
 	return p.Name == "" || p.Version == "" || p.Arch == ""
 }
 
@@ -138,7 +139,7 @@ func SplitTriplet(p string) (Product, error) {
 	return Product{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }
 
-func (p Product) toQuery() map[string]string {
+func (p Product) ToQuery() map[string]string {
 	return map[string]string{
 		"identifier":   p.Name,
 		"version":      p.Version,
@@ -189,7 +190,7 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 	}
 	// override ProductType with OEM value if defined
 	for i, p := range products.Products {
-		if oemValue, err := oemReleaseType(p.ProductLine); err == nil {
+		if oemValue, err := zypper.OemReleaseType(p.ProductLine); err == nil {
 			products.Products[i].ReleaseType = oemValue
 		}
 	}
@@ -198,13 +199,12 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 
 // installedProducts returns installed products
 func InstalledProducts() ([]Product, error) {
-    xml, err := zypper.GetInstalledProductsXML()
+	xml, err := zypper.GetInstalledProductsXML()
 	if err != nil {
 		return []Product{}, err
 	}
 	return parseProductsXML(xml)
 }
-
 
 // from package_search.go
 // SearchPackageProduct represents product reference in package search result

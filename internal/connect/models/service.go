@@ -1,6 +1,8 @@
 package models
 
 // Service represents an installed service or service information from API
+// Stage 2 suggestion : Create two separate service structs - one for SCC_Service and Zypper_Sevice
+// so the source is explicit
 type Service struct {
 	ID            int     `json:"id"`
 	URL           string  `xml:"url,attr" json:"url"`

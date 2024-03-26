@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 type RegisterOut struct {
@@ -14,8 +16,8 @@ type RegisterOut struct {
 }
 
 type ProductService struct {
-	Product ProductOut `json:"product"`
-	Service ServiceOut `json:"service"`
+	Product models.ProductOut `json:"product"`
+	Service models.ServiceOut `json:"service"`
 }
 
 var (
@@ -47,13 +49,13 @@ func Register(jsonOutput bool) error {
 
 	if service, err := registerProduct(product, installReleasePkg, jsonOutput); err == nil {
 		out.Products = append(out.Products, ProductService{
-			Product: ProductOut{
+			Product: models.ProductOut{
 				Name:       product.LongName,
 				Identifier: product.Name,
 				Version:    product.Version,
 				Arch:       product.Arch,
 			},
-			Service: ServiceOut{
+			Service: models.ServiceOut{
 				Id:   service.ID,
 				Name: service.Name,
 				Url:  service.URL,
@@ -87,7 +89,7 @@ func Register(jsonOutput bool) error {
 }
 
 // registerProduct activates the product, adds the service and installs the release package
-func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
+func registerProduct(product models.Product, installReleasePkg bool, jsonOutput bool) (models.Service, error) {
 	if jsonOutput {
 		Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	} else {
@@ -127,18 +129,18 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) error {
+func registerProductTree(product models.Product, jsonOutput bool, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
 			if service, err := registerProduct(extension, true, jsonOutput); err == nil {
 				out.Products = append(out.Products, ProductService{
-					Product: ProductOut{
+					Product: models.ProductOut{
 						Name:       product.LongName,
 						Identifier: product.Name,
 						Version:    product.Version,
 						Arch:       product.Arch,
 					},
-					Service: ServiceOut{
+					Service: models.ServiceOut{
 						Id:   service.ID,
 						Name: service.Name,
 						Url:  service.URL,
@@ -240,7 +242,7 @@ func Deregister(jsonOutput bool) error {
 	return nil
 }
 
-func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error {
+func deregisterProduct(product models.Product, jsonOutput bool, out *RegisterOut) error {
 	base, err := baseProduct()
 	if err != nil {
 		return err
@@ -285,7 +287,7 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 
 // SMT provides one service for all products, removing it would remove all repositories.
 // Refreshing the service instead to remove the repos of deregistered product.
-func removeOrRefreshService(service Service, jsonOutput bool) error {
+func removeOrRefreshService(service models.Service, jsonOutput bool) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
 		if !jsonOutput {
 			Info.Print("-> Refreshing service ...")
@@ -435,23 +437,23 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 }
 
 // ProductMigrations returns the online migration paths for the installed products
-func ProductMigrations(installed []Product) ([]MigrationPath, error) {
+func ProductMigrations(installed []models.Product) ([]MigrationPath, error) {
 	return productMigrations(installed)
 }
 
 // OfflineProductMigrations returns the offline migration paths for the installed products and target
-func OfflineProductMigrations(installed []Product, targetBaseProduct Product) ([]MigrationPath, error) {
+func OfflineProductMigrations(installed []models.Product, targetBaseProduct models.Product) ([]MigrationPath, error) {
 	return offlineProductMigrations(installed, targetBaseProduct)
 }
 
 // UpgradeProduct upgades the records for given product in SCC/SMT
 // The service record for new product is returned
-func UpgradeProduct(product Product) (Service, error) {
+func UpgradeProduct(product models.Product) (models.Service, error) {
 	return upgradeProduct(product)
 }
 
 // SearchPackage returns packages which are available in the extensions tree for given base product
-func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error) {
+func SearchPackage(query string, baseProd models.Product) ([]models.SearchPackageResult, error) {
 	// default to system base product if empty product passed
 	if baseProd.isEmpty() {
 		var err error
@@ -464,13 +466,13 @@ func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error
 }
 
 // ShowProduct fetches product details from SCC/SMT
-func ShowProduct(productQuery Product) (Product, error) {
+func ShowProduct(productQuery models.Product) (models.Product, error) {
 	return showProduct(productQuery)
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT
-func ActivatedProducts() ([]Product, error) {
-	var products []Product
+func ActivatedProducts() ([]models.Product, error) {
+	var products []models.Product
 	activations, err := systemActivations()
 	if err != nil {
 		return products, err
@@ -483,18 +485,18 @@ func ActivatedProducts() ([]Product, error) {
 
 // ActivateProduct activates given product in SMT/SCC
 // returns Service to be added to zypper
-func ActivateProduct(product Product, email string) (Service, error) {
+func ActivateProduct(product models.Product, email string) (models.Service, error) {
 	return activateProduct(product, email)
 }
 
 // SystemActivations returns a map keyed by "Identifier/Version/Arch"
-func SystemActivations() (map[string]Activation, error) {
+func SystemActivations() (map[string]models.Activation, error) {
 	return systemActivations()
 }
 
 // DeactivateProduct deactivates given product in SMT/SCC
 // returns Service to be removed from zypper
-func DeactivateProduct(product Product) (Service, error) {
+func DeactivateProduct(product models.Product) (models.Service, error) {
 	return deactivateProduct(product)
 }
 
@@ -504,11 +506,11 @@ func DeregisterSystem() error {
 }
 
 // InstallerUpdates returns an array of Installer-Updates repositories for the given product
-func InstallerUpdates(product Product) ([]Repo, error) {
+func InstallerUpdates(product models.Product) ([]models.Repository, error) {
 	return installerUpdates(product)
 }
 
 // SyncProducts synchronizes activated system products to the registration server
-func SyncProducts(products []Product) ([]Product, error) {
+func SyncProducts(products []models.Product) ([]models.Product, error) {
 	return syncProducts(products)
 }

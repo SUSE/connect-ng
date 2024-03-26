@@ -2,10 +2,12 @@ package connect
 
 import (
 	"path/filepath"
+
+	"github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 // MigrationPath holds a list of products
-type MigrationPath []Product
+type MigrationPath []models.Product
 
 // Rollback restores system state to before failed migration
 func Rollback() error {
