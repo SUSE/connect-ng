@@ -1,10 +1,12 @@
-package models
+package connect
 
 import (
 	"bytes"
 	_ "embed" //golint
 	"encoding/json"
 	"text/template"
+
+	"github.com/SUSE/connect-ng/internal/connect/models"
 )
 
 const (
@@ -55,7 +57,7 @@ func GetProductStatuses(format string) (string, error) {
 }
 
 func getStatuses() ([]Status, error) {
-	products, err := installedProducts()
+	products, err := models.InstalledProducts()
 	if err != nil {
 		return nil, err
 	}
@@ -109,33 +111,4 @@ func getStatusText(statuses []Status) (string, error) {
 		return "", err
 	}
 	return output.String(), nil
-}
-
-// SystemProducts returns sum of installed and activated products
-// Products from zypper have priority over products from
-// activations as they have summary field which is missing
-// in the latter.
-func SystemProducts() ([]Product, error) {
-	products, err := installedProducts()
-	if err != nil {
-		return products, err
-	}
-	installedIDs := NewStringSet()
-	for _, prod := range products {
-		installedIDs.Add(prod.ToTriplet())
-	}
-	if !IsRegistered() {
-		return products, nil
-	}
-	activations, err := systemActivations()
-	if err != nil {
-		return products, err
-	}
-	for _, a := range activations {
-		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
-			products = append(products, a.Service.Product)
-		}
-	}
-
-	return products, nil
 }
