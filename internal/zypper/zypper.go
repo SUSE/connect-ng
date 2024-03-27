@@ -61,7 +61,7 @@ type ZypperService struct {
 }
 
 // FIXME: see how we cna do this better
-var zypperFilesystemRoot = ""
+var zypperFilesystemRoot = "/"
 
 func SetFilesystemRoot(arg string) {
 	zypperFilesystemRoot = arg
@@ -73,7 +73,7 @@ func GetFilesystemRoot() string {
 
 func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 	cmd := []string{zypperPath}
-	if zypperFilesystemRoot != "" {
+	if zypperFilesystemRoot != "/" {
 		cmd = append(cmd, "--root", zypperFilesystemRoot)
 	}
 	cmd = append(cmd, args...)
@@ -284,7 +284,7 @@ func RemoveReleasePackage(identifier string) error {
 	return err
 }
 
-func setReleaseVersion(version string) error {
+func SetReleaseVersion(version string) error {
 	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
@@ -386,8 +386,7 @@ func PatchCheck(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool)
 	// zypperInfoUpdateNeeded or zypperInfoSecUpdateNeeded exit codes indicate
 	// pending patches. return clear error
 	validExitCodes := []int{zypperInfoUpdateNeeded, zypperInfoSecUpdateNeeded}
-	exitCode := err.(ZypperError).ExitCode
-	if err != nil && slices.Contains(validExitCodes, exitCode) {
+	if err != nil && slices.Contains(validExitCodes, err.(ZypperError).ExitCode) {
 		return true, nil
 	}
 	return false, err
