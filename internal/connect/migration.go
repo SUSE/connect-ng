@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 // MigrationPath holds a list of products
@@ -13,13 +14,13 @@ type MigrationPath []Product
 func Rollback() error {
 	util.Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
-	base, err := baseProduct()
+	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
 	}
 
 	// First rollback the base_product
-	service, err := downgradeProduct(base)
+	service, err := downgradeProduct(zypperProductToProduct(base))
 	if err != nil {
 		return err
 	}
@@ -28,7 +29,7 @@ func Rollback() error {
 	}
 
 	// Fetch the product tree
-	installed, err := installedProducts()
+	installed, err := zypper.InstalledProducts()
 	if err != nil {
 		return err
 	}
@@ -37,7 +38,7 @@ func Rollback() error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := showProduct(base)
+	tree, err := showProduct(zypperProductToProduct(base))
 	if err != nil {
 		return err
 	}
@@ -62,30 +63,30 @@ func Rollback() error {
 	}
 
 	// Synchronize installed products with SCC activations (removes obsolete activations)
-	if _, err := syncProducts(installed); err != nil {
+	if _, err := syncProducts(zypperProductListToProductList(installed)); err != nil {
 		return err
 	}
 
 	// Set releasever to the new baseproduct version
-	return setReleaseVersion(base.Version)
+	return zypper.SetReleaseVersion(base.Version)
 }
 
 // MigrationAddService adds zypper service in migration context
 func MigrationAddService(URL string, serviceName string) error {
 	// don't try to add the service if the plugin with the same name exists (bsc#1128969)
-	if fileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
+	if util.FileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
 		return nil
 	}
-	return addService(URL, serviceName, true)
+	return zypper.AddService(URL, serviceName, true, CFG.Insecure)
 }
 
 // MigrationRemoveService removes zypper service in migration context
 func MigrationRemoveService(serviceName string) error {
 	// don't try to remove the service if the plugin with the same name exists (bsc#1128969)
-	if fileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
+	if util.FileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
 		return nil
 	}
-	return removeService(serviceName)
+	return zypper.RemoveService(serviceName)
 }
 
 func migrationRefreshService(service Service) error {

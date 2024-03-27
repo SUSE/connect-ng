@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
 )
 
 func TestAnnounceSystem(t *testing.T) {
@@ -30,7 +32,7 @@ func TestAnnounceSystem(t *testing.T) {
 	}
 
 	// System token should have been updated.
-	creds, err := GetCredentials()
+	creds, err := credentials.ReadCredentials(credentials.SystemCredentialsPath(CFG.FsRoot))
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}

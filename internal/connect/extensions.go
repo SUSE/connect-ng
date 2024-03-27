@@ -77,7 +77,7 @@ func RenderExtensionTree(outputJson bool) (string, error) {
 		return "", err
 	}
 
-	product, err := localShowProduct(base)
+	product, err := localShowProduct(zypperProductToProduct(base))
 	if err != nil {
 		return "", err
 	}

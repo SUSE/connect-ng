@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 const eulaIndex = "directory.yast"
@@ -196,7 +197,7 @@ func AcceptEULA() error {
 	}
 
 	// Fetch list of extensions and search for requested product
-	base, err := baseProduct()
+	base, err := zypper.BaseProduct()
 	if err != nil {
 		return nil
 	}
@@ -204,12 +205,12 @@ func AcceptEULA() error {
 	// Skip if we can not fetch the product information and thus the EULA since there
 	// might be no registration in place right now.
 	// See bsc#1218649 and bsc#1217961
-	prod, err := showProduct(base)
+	product, err := showProduct(zypperProductToProduct(base))
 	if err != nil {
 		util.Debug.Print("Cannot load base product details for EULA.")
 		return nil
 	}
-	extension, _ := prod.findExtension(CFG.Product)
+	extension, _ := product.findExtension(CFG.Product)
 
 	// No EULA or product not found (handle in registration code)
 	if strings.TrimSpace(extension.EULAURL) == "" {

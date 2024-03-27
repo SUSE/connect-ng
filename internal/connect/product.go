@@ -94,6 +94,14 @@ func zypperProductToProduct(zypProd zypper.ZypperProduct) Product {
 	}
 }
 
+func zypperProductListToProductList(zypProdList []zypper.ZypperProduct) []Product {
+	var productList []Product
+	for _, zypProd := range zypProdList {
+		productList = append(productList, zypperProductToProduct(zypProd))
+	}
+	return productList
+}
+
 // findID decodes the "id" field from data
 func findID(data []byte) int {
 	// Try to decode as an int first. SCC/RMT case.

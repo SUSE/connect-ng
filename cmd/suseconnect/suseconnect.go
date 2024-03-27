@@ -13,6 +13,8 @@ import (
 	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -106,10 +108,10 @@ func main() {
 		os.Exit(1)
 	}
 	if debug {
-		connect.EnableDebug()
+		util.EnableDebug()
 	}
-	connect.util.Debug.Println("cmd line:", os.Args)
-	connect.util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
+	util.Debug.Println("cmd line:", os.Args)
+	util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
@@ -177,7 +179,7 @@ func main() {
 	// Rollback *must* be allowed because is used as a synchonization mechanism
 	// in the transactional-update toolkit.
 	if deRegister || cleanup {
-		if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
+		if err := util.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
 			exitOnError(err)
 		}
 	}
@@ -254,7 +256,7 @@ func main() {
 			// exitOnError(err)
 
 			// we need a read-write filesystem to install release packages
-			if err := connect.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
+			if err := util.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
 				exitOnError(err)
 			}
 
@@ -289,7 +291,7 @@ func exitOnError(err error) {
 	if err == nil {
 		return
 	}
-	if ze, ok := err.(connect.ZypperError); ok {
+	if ze, ok := err.(zypper.ZypperError); ok {
 		fmt.Println(ze)
 		os.Exit(ze.ExitCode)
 	}

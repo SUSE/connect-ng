@@ -112,7 +112,7 @@ func cpuinfoS390(hw *hwinfo) error {
 }
 
 func arch() (string, error) {
-	output, err := execute([]string{"uname", "-i"}, nil)
+	output, err := util.Execute([]string{"uname", "-i"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +120,7 @@ func arch() (string, error) {
 }
 
 func lscpu() (map[string]string, error) {
-	output, err := execute([]string{"lscpu"}, nil)
+	output, err := util.Execute([]string{"lscpu"}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func lscpu2map(b []byte) map[string]string {
 }
 
 func cloudProvider() string {
-	output, err := execute([]string{"dmidecode", "-t", "system"}, nil)
+	output, err := util.Execute([]string{"dmidecode", "-t", "system"}, nil)
 	if err != nil {
 		return ""
 	}
@@ -162,7 +162,7 @@ func findCloudProvider(b []byte) string {
 }
 
 func hypervisor() (string, error) {
-	output, err := execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
+	output, err := util.Execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
 	if err != nil {
 		return "", err
 	}
@@ -174,14 +174,14 @@ func hypervisor() (string, error) {
 
 // uuid returns the system uuid on x86 and arm
 func uuid() (string, error) {
-	if fileExists("/sys/hypervisor/uuid") {
+	if util.FileExists("/sys/hypervisor/uuid") {
 		content, err := os.ReadFile("/sys/hypervisor/uuid")
 		if err != nil {
 			return "", err
 		}
 		return string(content), nil
 	}
-	output, err := execute([]string{"dmidecode", "-s", "system-uuid"}, nil)
+	output, err := util.Execute([]string{"dmidecode", "-s", "system-uuid"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -256,7 +256,7 @@ func hostname() string {
 
 // readValues calls read_values from SUSE/s390-tools
 func readValues(arg string) ([]byte, error) {
-	output, err := execute([]string{"read_values", arg}, nil)
+	output, err := util.Execute([]string{"read_values", arg}, nil)
 	if err != nil {
 		return nil, err
 	}

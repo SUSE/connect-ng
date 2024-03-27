@@ -21,7 +21,7 @@ func EnableDebug() {
 	Debug.SetOutput(os.Stderr)
 }
 
-func isLoggerEnabled(l *log.Logger) bool {
+func IsLoggerEnabled(l *log.Logger) bool {
 	return l.Writer() != io.Discard
 }
 

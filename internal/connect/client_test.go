@@ -4,7 +4,7 @@ import "testing"
 
 func mockAddServiceCalled(t *testing.T, expected bool) {
 	counter := 0
-	localAddService = func(string, string, bool) error {
+	localAddService = func(string, string, bool, bool) error {
 		counter += 1
 		return nil
 	}
@@ -18,7 +18,7 @@ func mockAddServiceCalled(t *testing.T, expected bool) {
 
 func mockInstallReleasePackage(t *testing.T, expected bool) {
 	counter := 0
-	localInstallReleasePackage = func(string) error {
+	localInstallReleasePackage = func(string, bool) error {
 		counter += 1
 		return nil
 	}

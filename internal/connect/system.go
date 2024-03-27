@@ -3,13 +3,15 @@ package connect
 import (
 	"strings"
 
+	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 // Cleanup removes system credentials and installed services
 func Cleanup() error {
-	err := removeSystemCredentials()
+	systemCredPath := credentials.SystemCredentialsPath(CFG.FsRoot)
+	err := util.RemoveFile(systemCredPath)
 	if err != nil {
 		return err
 	}

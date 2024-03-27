@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
 )
 
 func readTestFile(name string, t *testing.T) []byte {
@@ -25,7 +27,7 @@ func createTestCredentials(username, password string, t *testing.T) {
 		password = "test"
 	}
 	CFG.FsRoot = t.TempDir()
-	err := writeSystemCredentials(username, password, "")
+	err := credentials.CreateCredentials(username, password, "", credentials.SystemCredentialsPath(CFG.FsRoot))
 	if err != nil {
 		t.Fatal(err)
 	}

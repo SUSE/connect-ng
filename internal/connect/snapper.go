@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"strconv"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -15,8 +17,8 @@ func createSnapshot(snapshotType, desc string, args []string) (int, error) {
 		"--cleanup-algorithm", "number", "--print-number",
 		"--userdata", "important=yes", "--description", desc}
 	cmd = append(cmd, args...)
-	QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
-	output, err := execute(cmd, []int{0})
+	util.QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
+	output, err := util.Execute(cmd, []int{0})
 	if err != nil {
 		return 0, err
 	}
@@ -36,7 +38,7 @@ func CreatePostSnapshot(preSnapshot int) (int, error) {
 
 // IsSnapperConfigured checks if snapper is properly configured
 func IsSnapperConfigured() bool {
-	output, err := execute([]string{snapperPath, "--no-dbus", "list-configs"}, []int{0})
+	output, err := util.Execute([]string{snapperPath, "--no-dbus", "list-configs"}, []int{0})
 	if err != nil {
 		return false
 	}

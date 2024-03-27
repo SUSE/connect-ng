@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func TestParseCredentials(t *testing.T) {
@@ -48,7 +50,7 @@ func TestWriteReadDeleteSystem(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 	path := systemCredentialsFile()
-	if fileExists(path) {
+	if util.FileExists(path) {
 		t.Error("File was not deleted: ", path)
 	}
 }
@@ -98,7 +100,7 @@ func TestWriteReadDeleteService(t *testing.T) {
 	if err := removeServiceCredentials("service1"); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if fileExists(path) {
+	if util.FileExists(path) {
 		t.Error("File was not deleted: ", path)
 	}
 }

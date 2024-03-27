@@ -31,7 +31,7 @@ func parseReposXML(xmlDoc []byte) ([]Repository, error) {
 }
 
 // Repos returns repositories configured on the system
-func Repos() ([]Repository, error) {
+func Repositories() ([]Repository, error) {
 	args := []string{"--xmlout", "--non-interactive", "repos", "-d"}
 	// Don't fail when zypper exits with 6 (no repositories)
 	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})

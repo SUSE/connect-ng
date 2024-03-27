@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 func mockIsRegistered(isRegistered bool) {
@@ -21,8 +23,8 @@ func mockProductSetup(t *testing.T) {
 		t.Fatalf("Could not read extensions.json: '%s'", err)
 	}
 
-	localBaseProduct = func() (Product, error) {
-		return Product{
+	localBaseProduct = func() (zypper.ZypperProduct, error) {
+		return zypper.ZypperProduct{
 			Name:    "SLES",
 			Version: "15.4",
 			Release: "0",
