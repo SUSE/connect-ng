@@ -27,11 +27,10 @@ var (
 
 // Credentials stores the SCC or service credentials
 type Credentials struct {
-	Filename     string `json:"file"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	SystemToken  string `json:"system_token"`
-	absolutePath string ``
+	Filename    string `json:"file"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	SystemToken string `json:"system_token"`
 }
 
 func (c Credentials) String() string {
