@@ -1,19 +1,23 @@
 package collectors
 
-import "testing"
+import (
+	"testing"
 
-type FakeCollector struct {}
-func(collector *FakeCollector) run() (Result, error) {
+	"github.com/stretchr/testify/assert"
+)
+
+type FakeCollector struct{}
+
+func (collector *FakeCollector) run(arch Architecture) (Result, error) {
 	return nil, nil
 }
 
 func TestCollectInformationRunAllCollectors(t *testing.T) {
-	collectors := []Collector {
+	assert := assert.New(t)
+	collectors := []Collector{
 		&FakeCollector{},
 	}
 
 	_, err := CollectInformation("x86_64", collectors)
-	if err != nil {
-		t.Errorf("fail")
-	}
+	assert.NoError(err)
 }
