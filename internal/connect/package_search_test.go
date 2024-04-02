@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func TestSearchPackage(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(readTestFile("package_search.json", t))
+		w.Write(util.ReadTestFile("package_search.json", t))
 	}))
 	defer ts.Close()
 

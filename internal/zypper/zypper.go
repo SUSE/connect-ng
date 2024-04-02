@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -401,4 +402,18 @@ func Patch(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) erro
 	}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
+}
+
+// ToTriplet returns <name>/<version>/<arch> string for product
+func (zp ZypperProduct) ToTriplet() string {
+	return zp.Name + "/" + zp.Version + "/" + zp.Arch
+}
+
+// SplitTriplet returns a product from given or error for invalid input
+func SplitTriplet(p string) (ZypperProduct, error) {
+	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, p); !match {
+		return ZypperProduct{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
+	}
+	parts := strings.Split(p, "/")
+	return ZypperProduct{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }

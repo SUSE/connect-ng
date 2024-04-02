@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -33,7 +35,7 @@ func mockReadFile(t *testing.T, samplefile string) {
 		testPathMatches(t, path)
 
 		samplePath := filepath.Join("registry_auth", samplefile)
-		return readTestFile(samplePath, t), nil
+		return util.ReadTestFile(samplePath, t), nil
 	}
 }
 
@@ -42,9 +44,9 @@ func mockWriteFile(t *testing.T, matcherfile string) {
 		testPathMatches(t, path)
 
 		matcherPath := filepath.Join("registry_auth", matcherfile)
-		expected := strings.Trim(string(readTestFile(matcherPath, t)), "\n")
+		expected := strings.Trim(string(util.ReadTestFile(matcherPath, t)), "\n")
 
-		testContentMatches(t, expected, string(content))
+		util.TestContentMatches(t, expected, string(content))
 		return nil
 	}
 

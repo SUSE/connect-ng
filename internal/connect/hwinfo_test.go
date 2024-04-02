@@ -5,12 +5,14 @@ import (
 	"flag"
 	"net"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var testHwinfo = flag.Bool("test-hwinfo", false, "")
 
 func TestLscpu2mapPhysical(t *testing.T) {
-	m := lscpu2map(readTestFile("lscpu_phys.txt", t))
+	m := lscpu2map(util.ReadTestFile("lscpu_phys.txt", t))
 
 	if m["CPU(s)"] != "8" {
 		t.Errorf("Found %s CPU(s), expected 8", m["CPU(s)"])
@@ -24,7 +26,7 @@ func TestLscpu2mapPhysical(t *testing.T) {
 }
 
 func TestLscpu2mapVirtual(t *testing.T) {
-	m := lscpu2map(readTestFile("lscpu_virt.txt", t))
+	m := lscpu2map(util.ReadTestFile("lscpu_virt.txt", t))
 
 	if m["CPU(s)"] != "1" {
 		t.Errorf("Found %s CPU(s), expected 1", m["CPU(s)"])
@@ -38,35 +40,35 @@ func TestLscpu2mapVirtual(t *testing.T) {
 }
 
 func TestFindCloudProviderAWS(t *testing.T) {
-	got := findCloudProvider(readTestFile("dmidecode_aws.txt", t))
+	got := findCloudProvider(util.ReadTestFile("dmidecode_aws.txt", t))
 	if got != "amazon" {
 		t.Errorf("findCloudProvider()==%s, expected amazon", got)
 	}
 }
 
 func TestFindCloudProviderAWSLarge(t *testing.T) {
-	got := findCloudProvider(readTestFile("dmidecode_aws_large.txt", t))
+	got := findCloudProvider(util.ReadTestFile("dmidecode_aws_large.txt", t))
 	if got != "Amazon" {
 		t.Errorf("findCloudProvider()==%s, expected Amazon", got)
 	}
 }
 
 func TestFindCloudProviderAzure(t *testing.T) {
-	got := findCloudProvider(readTestFile("dmidecode_azure.txt", t))
+	got := findCloudProvider(util.ReadTestFile("dmidecode_azure.txt", t))
 	if got != "Microsoft" {
 		t.Errorf("findCloudProvider()==%s, expected Microsoft", got)
 	}
 }
 
 func TestFindCloudProviderGoogle(t *testing.T) {
-	got := findCloudProvider(readTestFile("dmidecode_google.txt", t))
+	got := findCloudProvider(util.ReadTestFile("dmidecode_google.txt", t))
 	if got != "Google" {
 		t.Errorf("findCloudProvider()==%s, expected Google", got)
 	}
 }
 
 func TestFindCloudProviderNoCloud(t *testing.T) {
-	got := findCloudProvider(readTestFile("dmidecode_qemu.txt", t))
+	got := findCloudProvider(util.ReadTestFile("dmidecode_qemu.txt", t))
 	if got != "" {
 		t.Errorf("findCloudProvider()==%s, expected \"\"", got)
 	}
@@ -111,7 +113,7 @@ func TestPrivateIP(t *testing.T) {
 }
 
 func TestReadValues2map(t *testing.T) {
-	m := readValues2map(readTestFile("read_values_s.txt", t))
+	m := readValues2map(util.ReadTestFile("read_values_s.txt", t))
 	expect := map[string]string{
 		"VM00 CPUs Total":      "1",
 		"LPAR CPUs Total":      "6",

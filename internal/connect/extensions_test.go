@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
@@ -18,7 +19,7 @@ func mockIsRegistered(isRegistered bool) {
 func mockProductSetup(t *testing.T) {
 	extensions := []Product{}
 
-	data := readTestFile("extensions.json", t)
+	data := util.ReadTestFile("extensions.json", t)
 	if err := json.Unmarshal(data, &extensions); err != nil {
 		t.Fatalf("Could not read extensions.json: '%s'", err)
 	}

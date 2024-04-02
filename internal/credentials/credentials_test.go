@@ -30,38 +30,40 @@ func TestParseCredentials(t *testing.T) {
 }
 
 func TestWriteReadDeleteSystem(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
-	_, err := GetCredentials()
+	fsRoot := t.TempDir()
+	sysCredsPath := SystemCredentialsPath(fsRoot)
+	_, err := ReadCredentials(sysCredsPath)
 	if err != ErrMissingCredentialsFile {
 		t.Fatalf("Expected [%s], got [%s]", ErrMissingCredentialsFile, err)
 	}
-	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
+	if err := CreateCredentials("user1", "pass1", "1234", sysCredsPath); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	c, err := GetCredentials()
+	c, err := ReadCredentials(sysCredsPath)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	if c.Username != "user1" || c.Password != "pass1" || c.SystemToken != "1234" {
-		t.Errorf("Unexpected user1 and pass1. Got: %s and %s",
+		t.Errorf("Expected user1 and pass1. Got: %s and %s",
 			c.Username, c.Password)
 	}
-	if err := removeSystemCredentials(); err != nil {
+	if err := util.RemoveFile(sysCredsPath); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	path := systemCredentialsFile()
-	if util.FileExists(path) {
-		t.Error("File was not deleted: ", path)
+	// TODO : Move to util package
+	if util.FileExists(sysCredsPath) {
+		t.Error("File was not deleted: ", sysCredsPath)
 	}
 }
 
 func TestWriteCredentials(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
+	fsRoot := t.TempDir()
+	sysCredsPath := SystemCredentialsPath(fsRoot)
+	if err := CreateCredentials("user1", "pass1", "1234", sysCredsPath); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	expected := "username=user1\npassword=pass1\nsystem_token=1234\n"
-	contents, _ := os.ReadFile(systemCredentialsFile())
+	contents, _ := os.ReadFile(sysCredsPath)
 	got := string(contents)
 	if got != expected {
 		t.Errorf("Expected %#v, got %#v", expected, got)
@@ -69,12 +71,13 @@ func TestWriteCredentials(t *testing.T) {
 }
 
 func TestWriteCredentialsEmptyToken(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1", ""); err != nil {
+	fsRoot := t.TempDir()
+	sysCredsPath := SystemCredentialsPath(fsRoot)
+	if err := CreateCredentials("user1", "pass1", "", sysCredsPath); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	expected := "username=user1\npassword=pass1\n"
-	contents, _ := os.ReadFile(systemCredentialsFile())
+	contents, _ := os.ReadFile(sysCredsPath)
 	got := string(contents)
 	if got != expected {
 		t.Errorf("Expected %#v, got %#v", expected, got)
@@ -82,26 +85,32 @@ func TestWriteCredentialsEmptyToken(t *testing.T) {
 }
 
 func TestWriteReadDeleteService(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
-	if err := writeSystemCredentials("user1", "pass1", "1234"); err != nil {
+	fsRoot := t.TempDir()
+	sysCredsPath := SystemCredentialsPath(fsRoot)
+	if err := CreateCredentials("user1", "pass1", "1234", sysCredsPath); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	if err := writeServiceCredentials("service1"); err != nil {
+	systemCreds, err := ReadCredentials(sysCredsPath)
+	if err != nil {
+		t.Fatalf("Unable to read system credentials: %s", err)
+	}
+	serviceCredPath := ServiceCredentialsPath("service1", fsRoot)
+	if err := CreateCredentials(systemCreds.Username, systemCreds.Password, "", serviceCredPath); err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
-	path := serviceCredentialsFile("service1")
-	rc, err := ReadCredentials(path)
+	rc, err := ReadCredentials(serviceCredPath)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
 	if rc.Username != "user1" || rc.Password != "pass1" || rc.SystemToken != "" {
 		t.Errorf("Got: %s, %s, %s. Expected user1, pass1, \"\"", rc.Username, rc.Password, rc.SystemToken)
 	}
-	if err := removeServiceCredentials("service1"); err != nil {
+	if err := util.RemoveFile(serviceCredPath); err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
-	if util.FileExists(path) {
-		t.Error("File was not deleted: ", path)
+	// TODO : Move to util package
+	if util.FileExists(serviceCredPath) {
+		t.Error("File was not deleted: ", serviceCredPath)
 	}
 }
 
