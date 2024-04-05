@@ -1,6 +1,8 @@
 package collectors
 
 import (
+	"encoding/json"
+	"fmt"
 	"maps"
 )
 
@@ -50,9 +52,9 @@ type Collector interface {
 // }
 
 var MandatoryCollectors = []Collector{
-	// &CpuInformation{},
+	CpuInformation{},
 	// &HostnameInformation{},
-	&ArchitectureInformation{},
+	// &ArchitectureInformation{},
 	// &SocketInformation{},
 	// &MemoryInformation{},
 	// &UUIDInformation{},
@@ -68,7 +70,28 @@ func CollectInformation(architecture Architecture, collectors []Collector) (Resu
 			return nil, err
 		}
 		// obj[collector.get_key()] = res[collector.get_key()]
+
+		//DEBUG LOG
+		fmt.Println("result from collector : ", res)
 		maps.Copy(obj, res)
 	}
+	//DEBUG LOG
+	fmt.Println("final blob : ", obj)
 	return obj, nil
 }
+
+// TODO: write this method more nicely
+// this is more of a placeholder for the final method - just to test marshalling
+func finalJson(architecture Architecture, collectors []Collector) ([]byte, error) {
+	finalRes, _ := CollectInformation(architecture, collectors)
+	jsonVal, err := json.Marshal(finalRes)
+	if err != nil {
+		return nil, err
+	}
+	//DEBUG LOG
+	fmt.Println("final json : ", string(jsonVal))
+	return jsonVal, nil
+}
+
+// To do: Json stuff is kinda working for CPU. But make sure it works with multiple collectors
+// and aggregates the json values with the proper nested structure

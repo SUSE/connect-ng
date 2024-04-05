@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,4 +37,18 @@ func TestCollectInformationRunAllCollectors(t *testing.T) {
 	if assert.NoError(err) {
 		assert.Equal(res, expected)
 	}
+}
+
+func TestFinalJsonWithMandatoryCollectors(t *testing.T) {
+	assert := assert.New(t)
+	cpu := make(map[string]interface{})
+	cpu["cpu"] = CpuInformation{Count: 2, Socket: 2}
+	expected, err := json.Marshal(cpu)
+	if err != nil {
+		t.Errorf("Json marshalling failed : %s", err)
+	}
+
+	res, _ := finalJson(ARCHITECTURE_X86_64, MandatoryCollectors)
+	assert.Equal(expected, res, "Result mismatch")
+
 }

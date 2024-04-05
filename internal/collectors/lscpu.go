@@ -8,15 +8,15 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 )
 
-func lscpu() (int, error) {
+func lscpu() (map[string]string, error) {
 	output, err := util.Execute([]string{"lscpu"}, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return getCPUCount(output), nil
+	return lscpu2map(output), nil
 }
 
-func getCPUCount(b []byte) int {
+func lscpu2map(b []byte) map[string]string {
 	m := make(map[string]string)
 	scanner := bufio.NewScanner(bytes.NewReader(b))
 	for scanner.Scan() {
@@ -29,5 +29,5 @@ func getCPUCount(b []byte) int {
 		key, val := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
 		m[key] = val
 	}
-	return 0
+	return m
 }
