@@ -53,7 +53,7 @@ type Collector interface {
 
 var MandatoryCollectors = []Collector{
 	CpuInformation{},
-	// &HostnameInformation{},
+	HostnameInformation{},
 	// &ArchitectureInformation{},
 	// &SocketInformation{},
 	// &MemoryInformation{},

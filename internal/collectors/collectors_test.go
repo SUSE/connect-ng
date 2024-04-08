@@ -23,7 +23,7 @@ func TestCollectInformationRunAllCollectors(t *testing.T) {
 	assert := assert.New(t)
 	arch := "x86_64"
 	m := Result{"arch": arch}
-	expected := map[string]interface{}{"arch": arch}
+	expected := Result{"arch": arch}
 	testObj := new(FakeCollector)
 
 	// set up expectations
@@ -41,8 +41,7 @@ func TestCollectInformationRunAllCollectors(t *testing.T) {
 
 func TestFinalJsonWithMandatoryCollectors(t *testing.T) {
 	assert := assert.New(t)
-	cpu := make(map[string]interface{})
-	cpu["cpu"] = CpuInformation{Count: 2, Socket: 2}
+	cpu := Result{"cpus": 2, "sockets": 2}
 	expected, err := json.Marshal(cpu)
 	if err != nil {
 		t.Errorf("Json marshalling failed : %s", err)

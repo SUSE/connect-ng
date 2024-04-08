@@ -29,6 +29,8 @@ func SetSystemEcho(v bool) bool {
 	return prev
 }
 
+type ExecuteFunc func(cmd []string, validExitCodes []int) ([]byte, error)
+
 // Assign function for running external commands to a variable so it can be mocked by tests.
 var Execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
 	Debug.Print("Executing: ", cmd)
