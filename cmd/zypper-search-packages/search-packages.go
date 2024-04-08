@@ -73,7 +73,7 @@ func (sr searchResult) MarshalXML(e *xml.Encoder, start xml.StartElement) error 
 	return e.EncodeElement(p, start)
 }
 
-func searchPackagesMain() {
+func main() {
 	var (
 		matchExact    bool
 		caseSensitive bool

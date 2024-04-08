@@ -16,7 +16,7 @@ ARTIFACT_DIR=${ARTIFACT_DIR:-$SOURCE/artifacts}
 # Current version we are working with
 function get_version {
   pushd "$SOURCE" &> /dev/null
-    cat suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'
+    cat build/packaging/suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'
   popd &> /dev/null
 }
 VERSION=${VERSION:-$(get_version)}
@@ -54,9 +54,9 @@ group "prepare source tarball"
 pushd "$SOURCE"
     make dist
     mv "$TARBALL" "$ARTIFACT_DIR"
-    cp suseconnect-ng-rpmlintrc "$ARTIFACT_DIR"
-    cp suseconnect-ng.changes "$ARTIFACT_DIR"
-    cp suseconnect-ng.spec "$ARTIFACT_DIR"
+    cp build/packaging/suseconnect-ng-rpmlintrc "$ARTIFACT_DIR"
+    cp build/packaging/suseconnect-ng.changes "$ARTIFACT_DIR"
+    cp build/packaging/suseconnect-ng.spec "$ARTIFACT_DIR"
 popd
 groupend
 
