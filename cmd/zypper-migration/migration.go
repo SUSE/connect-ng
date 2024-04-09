@@ -47,7 +47,7 @@ func (a *multiArg) Set(v string) error {
 	return nil
 }
 
-func migrationMain() {
+func main() {
 	var (
 		debug                    bool
 		verbose                  bool

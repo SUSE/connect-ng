@@ -45,8 +45,8 @@ export IMAGE="registry.suse.com/bci/golang:1.21-openssl"
 $ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE
 
 # To build the connect-ng rpms within the container use:
-$ docker run --rm -it -v $(pwd):/usr/src/connect-ng $IMAGE 'ci/build-rpm'
+$ docker run --rm -it -v $(pwd):/usr/src/connect-ng $IMAGE 'build/ci/build-rpm'
 
 # Run feature tests in the container
-$ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE bash -c 'ci/build-rpm && ci/configure && ci/run-feature-tests'
+$ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE bash -c 'build/ci/build-rpm && build/ci/configure && build/ci/run-feature-tests'
 ```

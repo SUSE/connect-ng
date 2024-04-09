@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -20,18 +19,6 @@ var (
 	//go:embed connectUsage.txt
 	connectUsageText string
 )
-
-// multi-call entry points
-func main() {
-	switch filepath.Base(os.Args[0]) {
-	case "zypper-migration":
-		migrationMain()
-	case "zypper-search-packages":
-		searchPackagesMain()
-	default:
-		connectMain()
-	}
-}
 
 // singleStringFlag cannot be set more than once.
 // e.g. `cmd -p abc -p def` will give a parse error.
@@ -53,7 +40,7 @@ func (p *singleStringFlag) Set(value string) error {
 	return nil
 }
 
-func connectMain() {
+func main() {
 	var (
 		status                bool
 		keepAlive             bool
