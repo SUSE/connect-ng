@@ -280,7 +280,7 @@ func RefreshRepos(version string, force, quiet, verbose, nonInteractive bool) er
 		args = append(args, "-f")
 	}
 	if CFG.AutoImportRepoKeys {
-		args = append(args, "--gpg-auto-import-keys")
+		args = append([]string{"--gpg-auto-import-keys"}, args...)
 	}
 	args = append(flags, args...)
 	_, err := zypperRun(args, []int{zypperOK})
