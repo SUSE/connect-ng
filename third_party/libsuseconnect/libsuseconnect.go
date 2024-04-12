@@ -16,6 +16,8 @@ import (
 	"unsafe"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	cred "github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 // log level
@@ -47,7 +49,7 @@ var logFun C.logLineFunc
 func set_log_callback(logCallback C.logLineFunc) {
 	logFun = logCallback
 	// NOTE: Debug is not redirected here as it is disabled by default
-	connect.Info.SetOutput(callbackWriter{llInfo})
+	util.Info.SetOutput(callbackWriter{llInfo})
 	// TODO: add other levels?
 }
 
@@ -98,7 +100,7 @@ func deactivate_system(clientParams *C.char) *C.char {
 
 //export credentials
 func credentials(path *C.char) *C.char {
-	creds, err := connect.ReadCredentials(C.GoString(path))
+	creds, err := cred.ReadCredentials(C.GoString(path))
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -108,7 +110,7 @@ func credentials(path *C.char) *C.char {
 
 //export create_credentials_file
 func create_credentials_file(login, password, token, path *C.char) *C.char {
-	err := connect.CreateCredentials(
+	err := cred.CreateCredentials(
 		C.GoString(login), C.GoString(password), C.GoString(token), C.GoString(path))
 	if err != nil {
 		return C.CString(errorToJSON(err))
@@ -119,7 +121,7 @@ func create_credentials_file(login, password, token, path *C.char) *C.char {
 //export curlrc_credentials
 func curlrc_credentials() *C.char {
 	// NOTE: errors are ignored to match original
-	creds, _ := connect.ReadCurlrcCredentials()
+	creds, _ := cred.ReadCurlrcCredentials()
 	jsn, _ := json.Marshal(&creds)
 	return C.CString(string(jsn))
 }
@@ -229,7 +231,7 @@ func loadConfig(clientParams string) {
 	json.Unmarshal([]byte(clientParams), &extConfig)
 	// enable debug output if "debug" was set in json
 	if v, _ := strconv.ParseBool(extConfig.Debug); v {
-		connect.Debug.SetOutput(callbackWriter{llDebug})
+		util.Debug.SetOutput(callbackWriter{llDebug})
 	}
 	connect.CFG.Load()
 	connect.CFG.MergeJSON(clientParams)
@@ -287,7 +289,7 @@ func errorToJSON(err error) string {
 			s.ErrType = "NetError"
 			s.Message = ierr.Error()
 		} else {
-			connect.Debug.Printf("url.Error: %T: %v", ierr, err)
+			util.Debug.Printf("url.Error: %T: %v", ierr, err)
 			s.Message = err.Error()
 		}
 	} else if je, ok := err.(connect.JSONError); ok {
@@ -295,12 +297,12 @@ func errorToJSON(err error) string {
 		s.Message = errors.Unwrap(je).Error()
 	} else {
 		switch err {
-		case connect.ErrMalformedSccCredFile:
+		case cred.ErrMalformedSccCredFile:
 			s.ErrType = "MalformedSccCredentialsFile"
-		case connect.ErrMissingCredentialsFile:
+		case cred.ErrMissingCredentialsFile:
 			s.ErrType = "MissingCredentialsFile"
 		}
-		connect.Debug.Printf("Error: %T: %v", err, err)
+		util.Debug.Printf("Error: %T: %v", err, err)
 		s.Message = err.Error()
 	}
 

@@ -3,47 +3,15 @@ package connect
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // export errors that package main needs
 var (
-	ErrMalformedSccCredFile       = errors.New("Cannot parse credentials file")
-	ErrMissingCredentialsFile     = errors.New("Credentials file is missing")
 	ErrSystemNotRegistered        = errors.New("System not registered")
 	ErrPingFromUnregistered       = errors.New("Keepalive ping not allowed from unregistered system.")
 	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
-	ErrCannotDetectBaseProduct    = errors.New("Unable to detect base product")
 	ErrListExtensionsUnregistered = errors.New("System not registered")
-	ErrNoProxyCredentials         = errors.New("Unable to read proxy credentials")
 )
-
-// ExecuteError is returned from execute() on error
-type ExecuteError struct {
-	Commmand []string
-	ExitCode int
-	Output   []byte
-	Err      error
-}
-
-func (ee ExecuteError) Error() string {
-	return fmt.Sprintf(
-		"ExecuteError: Cmd: %s, RC: %d, Error: %s, Output: %s",
-		ee.Commmand, ee.ExitCode, ee.Err, ee.Output)
-}
-
-// ZypperError is returned by zypperRun on error
-type ZypperError struct {
-	Commmand []string
-	ExitCode int
-	Output   []byte
-	Err      error
-}
-
-func (ze ZypperError) Error() string {
-	return fmt.Sprintf("command '%s' failed\nError: zypper returned %d with '%s' (%s)",
-		strings.Join(ze.Commmand, " "), ze.ExitCode, ze.Output, ze.Err)
-}
 
 // APIError is returned on failed HTTP requests
 type APIError struct {

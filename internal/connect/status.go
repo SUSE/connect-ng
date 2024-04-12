@@ -5,6 +5,8 @@ import (
 	_ "embed" //golint
 	"encoding/json"
 	"text/template"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 const (
@@ -55,7 +57,7 @@ func GetProductStatuses(format string) (string, error) {
 }
 
 func getStatuses() ([]Status, error) {
-	products, err := installedProducts()
+	installed, err := zypper.InstalledProducts()
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +69,8 @@ func getStatuses() ([]Status, error) {
 			return nil, err
 		}
 	}
-	statuses := buildStatuses(products, activations)
+	installedProducts := zypperProductListToProductList(installed)
+	statuses := buildStatuses(installedProducts, activations)
 	return statuses, nil
 }
 
@@ -116,7 +119,8 @@ func getStatusText(statuses []Status) (string, error) {
 // activations as they have summary field which is missing
 // in the latter.
 func SystemProducts() ([]Product, error) {
-	products, err := installedProducts()
+	installed, err := zypper.InstalledProducts()
+	products := zypperProductListToProductList(installed)
 	if err != nil {
 		return products, err
 	}

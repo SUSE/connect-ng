@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -103,14 +105,14 @@ func cpuinfoS390(hw *hwinfo) error {
 		subs := strings.Fields(hypervisor)
 		hw.Hypervisor = strings.Join(subs, " ")
 	} else {
-		Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
+		util.Debug.Print("Unable to find 'VM00 Control Program'. This system probably runs on an LPAR.")
 	}
 
 	return nil
 }
 
 func arch() (string, error) {
-	output, err := execute([]string{"uname", "-i"}, nil)
+	output, err := util.Execute([]string{"uname", "-i"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +120,7 @@ func arch() (string, error) {
 }
 
 func lscpu() (map[string]string, error) {
-	output, err := execute([]string{"lscpu"}, nil)
+	output, err := util.Execute([]string{"lscpu"}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +143,7 @@ func lscpu2map(b []byte) map[string]string {
 }
 
 func cloudProvider() string {
-	output, err := execute([]string{"dmidecode", "-t", "system"}, nil)
+	output, err := util.Execute([]string{"dmidecode", "-t", "system"}, nil)
 	if err != nil {
 		return ""
 	}
@@ -160,7 +162,7 @@ func findCloudProvider(b []byte) string {
 }
 
 func hypervisor() (string, error) {
-	output, err := execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
+	output, err := util.Execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
 	if err != nil {
 		return "", err
 	}
@@ -172,14 +174,14 @@ func hypervisor() (string, error) {
 
 // uuid returns the system uuid on x86 and arm
 func uuid() (string, error) {
-	if fileExists("/sys/hypervisor/uuid") {
+	if util.FileExists("/sys/hypervisor/uuid") {
 		content, err := os.ReadFile("/sys/hypervisor/uuid")
 		if err != nil {
 			return "", err
 		}
 		return string(content), nil
 	}
-	output, err := execute([]string{"dmidecode", "-s", "system-uuid"}, nil)
+	output, err := util.Execute([]string{"dmidecode", "-s", "system-uuid"}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +202,7 @@ func uuidS390() string {
 	if isUUID(uuid) {
 		return uuid
 	}
-	Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
+	util.Debug.Print("Not implemented. Unable to determine UUID for s390x. Set to \"\"")
 	return ""
 }
 
@@ -243,10 +245,10 @@ func hostname() string {
 	if err == nil && name != "" && name != "(none)" {
 		return name
 	}
-	Debug.Print(err)
+	util.Debug.Print(err)
 	ip, err := getPrivateIPAddr()
 	if err != nil {
-		Debug.Print(err)
+		util.Debug.Print(err)
 		return ""
 	}
 	return ip
@@ -254,7 +256,7 @@ func hostname() string {
 
 // readValues calls read_values from SUSE/s390-tools
 func readValues(arg string) ([]byte, error) {
-	output, err := execute([]string{"read_values", arg}, nil)
+	output, err := util.Execute([]string{"read_values", arg}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -290,13 +292,13 @@ func parseMeminfo(file io.Reader) int {
 
 		val, err := strconv.Atoi(fields[1])
 		if err != nil {
-			Debug.Printf("could not obtain memory information for this system: %v", err)
+			util.Debug.Printf("could not obtain memory information for this system: %v", err)
 			return 0
 		}
 		return val / 1024
 	}
 
-	Debug.Print("could not obtain memory information for this system")
+	util.Debug.Print("could not obtain memory information for this system")
 	return 0
 }
 
@@ -306,7 +308,7 @@ func parseMeminfo(file io.Reader) int {
 func systemMemory() int {
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {
-		Debug.Print("'/proc/meminfo' could not be read!")
+		util.Debug.Print("'/proc/meminfo' could not be read!")
 		return 0
 	}
 	defer file.Close()

@@ -5,11 +5,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func TestCallHTTPSecure(t *testing.T) {
 	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-	ts.Config.ErrorLog = Debug
+	ts.Config.ErrorLog = util.Debug
 	ts.StartTLS()
 	defer ts.Close()
 

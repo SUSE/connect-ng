@@ -12,6 +12,9 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	cred "github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -57,7 +60,7 @@ func addHeaders(req *http.Request) {
 	req.Header.Add("User-Agent", appName+"/"+GetShortenedVersion())
 
 	// Pass the current system token.
-	creds, err := getCredentials()
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
 	token := ""
 	if err == nil {
 		token = creds.SystemToken
@@ -68,7 +71,7 @@ func addHeaders(req *http.Request) {
 func addAuthHeader(req *http.Request, auth authType) error {
 	switch auth {
 	case authSystem:
-		c, err := getCredentials()
+		c, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
 		if err != nil {
 			return err
 		}
@@ -106,7 +109,7 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 		return proxyURL, err
 	}
 	// add or replace proxy credentials if configured
-	if c, err := readCurlrcCredentials(curlrcCredentialsFile()); err == nil {
+	if c, err := cred.ReadCurlrcCredentials(); err == nil {
 		proxyURL.User = url.UserPassword(c.Username, c.Password)
 	}
 	return proxyURL, nil
@@ -141,9 +144,9 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 	req.URL.RawQuery = values.Encode()
 
-	if isLoggerEnabled(Debug) {
+	if util.IsLoggerEnabled(util.Debug) {
 		reqBlob, _ := httputil.DumpRequestOut(req, true)
-		Debug.Printf("%s\n", reqBlob)
+		util.Debug.Printf("%s\n", reqBlob)
 	}
 
 	resp, err := httpclient.Do(req)
@@ -155,13 +158,13 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	// For each request SCC might update the System token for a given system.
 	// This will be given through the `System-Token` header, so we have to grab
 	// this here and store it for the next request.
-	if err := handleSystemToken(resp.Header.Get("System-Token")); err != nil {
-		Debug.Printf("system-token: %s\n", err)
+	if err := cred.HandleSystemToken(resp.Header.Get("System-Token"), CFG.FsRoot); err != nil {
+		util.Debug.Printf("system-token: %s\n", err)
 	}
 
-	if isLoggerEnabled(Debug) {
+	if util.IsLoggerEnabled(util.Debug) {
 		respBlob, _ := httputil.DumpResponse(resp, true)
-		Debug.Printf("%s\n", respBlob)
+		util.Debug.Printf("%s\n", respBlob)
 	}
 
 	if !successCode(resp.StatusCode) {
@@ -173,23 +176,6 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 		return nil, err
 	}
 	return resBody, nil
-}
-
-// handleSystemToken stores the given token into the system credentials file
-// unless it's blank.
-func handleSystemToken(token string) error {
-	token = strings.TrimSpace(token)
-	if token == "" {
-		return nil
-	}
-
-	creds, err := getCredentials()
-	if err != nil {
-		return err
-	}
-
-	creds.SystemToken = token
-	return creds.write()
 }
 
 // ReloadCertPool triggers reload of internals CA cert pool

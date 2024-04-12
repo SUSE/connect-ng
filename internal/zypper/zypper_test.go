@@ -1,13 +1,15 @@
-package connect
+package zypper
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func TestParseProductsXML(t *testing.T) {
-	products, err := parseProductsXML(readTestFile("products.xml", t))
+	products, err := parseProductsXML(util.ReadTestFile("products.xml", t))
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -20,10 +22,10 @@ func TestParseProductsXML(t *testing.T) {
 }
 
 func TestParseProductsXML_ReleaseType(t *testing.T) {
-	CFG.FsRoot = t.TempDir()
+	zypperFilesystemRoot = t.TempDir()
 	// write test OEM file
 	testRT := "SLES-OEM-TEST"
-	oemDir := filepath.Join(CFG.FsRoot, oemPath)
+	oemDir := filepath.Join(zypperFilesystemRoot, oemPath)
 	if err := os.MkdirAll(oemDir, 0755); err != nil {
 		t.Fatalf("Error creating OEM dir: %v", err)
 	}
@@ -31,7 +33,7 @@ func TestParseProductsXML_ReleaseType(t *testing.T) {
 		t.Fatalf("Error writing OEM file: %v", err)
 	}
 
-	products, err := parseProductsXML(readTestFile("products-rt.xml", t))
+	products, err := parseProductsXML(util.ReadTestFile("products-rt.xml", t))
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -54,7 +56,7 @@ func TestParseProductsXML_ReleaseType(t *testing.T) {
 }
 
 func TestParseServicesXML(t *testing.T) {
-	services, err := parseServicesXML(readTestFile("services.xml", t))
+	services, err := parseServicesXML(util.ReadTestFile("services.xml", t))
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -67,7 +69,7 @@ func TestParseServicesXML(t *testing.T) {
 }
 
 func TestParseReposXML(t *testing.T) {
-	repos, err := parseReposXML(readTestFile("repos.xml", t))
+	repos, err := parseReposXML(util.ReadTestFile("repos.xml", t))
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -92,11 +94,11 @@ func TestParseReposXML(t *testing.T) {
 }
 
 func TestInstalledProducts(t *testing.T) {
-	execute = func(_ []string, _ []int) ([]byte, error) {
-		return readTestFile("products.xml", t), nil
+	util.Execute = func(_ []string, _ []int) ([]byte, error) {
+		return util.ReadTestFile("products.xml", t), nil
 	}
 
-	products, err := installedProducts()
+	products, err := InstalledProducts()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -109,11 +111,11 @@ func TestInstalledProducts(t *testing.T) {
 }
 
 func TestBaseProduct(t *testing.T) {
-	execute = func(_ []string, _ []int) ([]byte, error) {
-		return readTestFile("products.xml", t), nil
+	util.Execute = func(_ []string, _ []int) ([]byte, error) {
+		return util.ReadTestFile("products.xml", t), nil
 	}
 
-	base, err := baseProduct()
+	base, err := BaseProduct()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -123,17 +125,17 @@ func TestBaseProduct(t *testing.T) {
 }
 
 func TestBaseProductError(t *testing.T) {
-	execute = func(_ []string, _ []int) ([]byte, error) {
-		return readTestFile("products-no-base.xml", t), nil
+	util.Execute = func(_ []string, _ []int) ([]byte, error) {
+		return util.ReadTestFile("products-no-base.xml", t), nil
 	}
-	_, err := baseProduct()
+	_, err := BaseProduct()
 	if err != ErrCannotDetectBaseProduct {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }
 
 func TestParseSearchResultXML(t *testing.T) {
-	packages, err := parseSearchResultXML(readTestFile("product-search.xml", t))
+	packages, err := parseSearchResultXML(util.ReadTestFile("product-search.xml", t))
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}

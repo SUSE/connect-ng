@@ -5,10 +5,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func TestAnnounceSystem(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -30,7 +33,7 @@ func TestAnnounceSystem(t *testing.T) {
 	}
 
 	// System token should have been updated.
-	creds, err := getCredentials()
+	creds, err := credentials.ReadCredentials(credentials.SystemCredentialsPath(CFG.FsRoot))
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -40,8 +43,8 @@ func TestAnnounceSystem(t *testing.T) {
 }
 
 func TestGetActivations(t *testing.T) {
-	response := readTestFile("activations.json", t)
-	createTestCredentials("", "", t)
+	response := util.ReadTestFile("activations.json", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -70,7 +73,7 @@ func TestGetActivationsRequest(t *testing.T) {
 		url        = "/connect/systems/activations"
 		gotRequest *http.Request
 	)
-	createTestCredentials(user, password, t)
+	credentials.CreateTestCredentials(user, password, CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r // make request available outside this func after call
@@ -92,7 +95,7 @@ func TestGetActivationsRequest(t *testing.T) {
 }
 
 func TestGetActivationsError(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
@@ -118,10 +121,10 @@ func TestUpToDateOkay(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(readTestFile("product.json", t))
+		w.Write(util.ReadTestFile("product.json", t))
 	}))
 	defer ts.Close()
 
@@ -141,7 +144,7 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestGetProductError(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
@@ -159,10 +162,10 @@ func TestGetProductError(t *testing.T) {
 }
 
 func TestUpgradeProduct(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(readTestFile("service.json", t))
+		w.Write(util.ReadTestFile("service.json", t))
 	}))
 	defer ts.Close()
 
@@ -182,7 +185,7 @@ func TestUpgradeProduct(t *testing.T) {
 }
 
 func TestUpgradeProductError(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
@@ -200,10 +203,10 @@ func TestUpgradeProductError(t *testing.T) {
 }
 
 func TestDeactivateProduct(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(readTestFile("service_inactive.json", t))
+		w.Write(util.ReadTestFile("service_inactive.json", t))
 	}))
 	defer ts.Close()
 
@@ -223,10 +226,10 @@ func TestDeactivateProduct(t *testing.T) {
 }
 
 func TestDeactivateProductSMT(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(readTestFile("service_inactive_smt.json", t))
+		w.Write(util.ReadTestFile("service_inactive_smt.json", t))
 	}))
 	defer ts.Close()
 
@@ -246,7 +249,7 @@ func TestDeactivateProductSMT(t *testing.T) {
 }
 
 func TestDeactivateProductError(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
@@ -264,9 +267,9 @@ func TestDeactivateProductError(t *testing.T) {
 }
 
 func TestProductMigrations(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(readTestFile("migrations.json", t))
+		w.Write(util.ReadTestFile("migrations.json", t))
 	}))
 	defer ts.Close()
 	CFG.BaseURL = ts.URL
@@ -281,9 +284,9 @@ func TestProductMigrations(t *testing.T) {
 }
 
 func TestProductMigrationsSMT(t *testing.T) {
-	createTestCredentials("", "", t)
+	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(readTestFile("migrations-smt.json", t))
+		w.Write(util.ReadTestFile("migrations-smt.json", t))
 	}))
 	defer ts.Close()
 	CFG.BaseURL = ts.URL

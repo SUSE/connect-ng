@@ -1,4 +1,4 @@
-package connect
+package credentials
 
 import (
 	"bufio"
@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -36,15 +38,15 @@ func (c Credentials) String() string {
 		c.Filename, c.Username, c.SystemToken)
 }
 
-func systemCredentialsFile() string {
-	return filepath.Join(CFG.FsRoot, globalCredentialsFile)
+func SystemCredentialsPath(fsRoot string) string {
+	return filepath.Join(fsRoot, globalCredentialsFile)
 }
 
-func serviceCredentialsFile(service string) string {
-	return filepath.Join(CFG.FsRoot, defaulCredentialsDir, service)
+func ServiceCredentialsPath(service string, fsRoot string) string {
+	return filepath.Join(fsRoot, defaulCredentialsDir, service)
 }
 
-func curlrcCredentialsFile() string {
+func CurlrcCredentialsPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		// TODO: handle error? log?
@@ -53,15 +55,10 @@ func curlrcCredentialsFile() string {
 	return filepath.Join(home, curlrcUserFile)
 }
 
-// getCredentials reads the system credentials from the SCCcredentials file
-func getCredentials() (Credentials, error) {
-	return ReadCredentials(systemCredentialsFile())
-}
-
 // ReadCredentials returns the credentials from path
 func ReadCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading credentials: ", path)
-	if !fileExists(path) {
+	util.Debug.Print("Reading credentials: ", path)
+	if !util.FileExists(path) {
 		return Credentials{}, ErrMissingCredentialsFile
 	}
 	f, err := os.Open(path)
@@ -74,7 +71,7 @@ func ReadCredentials(path string) (Credentials, error) {
 		return Credentials{}, err
 	}
 	creds.Filename = path
-	Debug.Print("Credentials read: ", creds)
+	util.Debug.Print("Credentials read: ", creds)
 	return creds, nil
 }
 
@@ -98,13 +95,10 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 }
 
 func (c Credentials) write() error {
-	Debug.Print("Writing credentials: ", c)
+	util.Debug.Print("Writing credentials: ", c)
 	path := c.Filename
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(CFG.FsRoot, defaulCredentialsDir, path)
-	}
 	dir := filepath.Dir(path)
-	if !fileExists(dir) {
+	if !util.FileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
@@ -129,34 +123,8 @@ func CreateCredentials(login, password, systemToken, path string) error {
 	return c.write()
 }
 
-func writeSystemCredentials(login, password, systemToken string) error {
-	path := systemCredentialsFile()
-	return CreateCredentials(login, password, systemToken, path)
-}
-
-func writeServiceCredentials(serviceName string) error {
-	c, err := getCredentials()
-	if err != nil {
-		return err
-	}
-	path := serviceCredentialsFile(serviceName)
-	// the SystemToken is not written to service credential files
-	return CreateCredentials(c.Username, c.Password, "", path)
-}
-
-func removeSystemCredentials() error {
-	path := systemCredentialsFile()
-	return removeFile(path)
-}
-
-func removeServiceCredentials(serviceName string) error {
-	Debug.Print("Removing service credentials for: ", serviceName)
-	path := serviceCredentialsFile(serviceName)
-	return removeFile(path)
-}
-
 func readCurlrcCredentials(path string) (Credentials, error) {
-	Debug.Print("Reading proxy credentials: ", path)
+	util.Debug.Print("Reading proxy credentials: ", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return Credentials{}, err
@@ -167,7 +135,7 @@ func readCurlrcCredentials(path string) (Credentials, error) {
 		return Credentials{}, err
 	}
 	creds.Filename = path
-	Debug.Print("Proxy credentials read: ", creds)
+	util.Debug.Print("Proxy credentials read: ", creds)
 	return creds, nil
 }
 
@@ -185,5 +153,5 @@ func parseCurlrcCredentials(r io.Reader) (Credentials, error) {
 
 // ReadCurlrcCredentials reads proxy credentials from default path
 func ReadCurlrcCredentials() (Credentials, error) {
-	return readCurlrcCredentials(curlrcCredentialsFile())
+	return readCurlrcCredentials(CurlrcCredentialsPath())
 }

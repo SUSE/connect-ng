@@ -16,6 +16,8 @@ import (
 	"syscall"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -30,8 +32,8 @@ var (
 
 // logger shortcuts
 var (
-	Debug      *log.Logger = connect.Debug
-	QuietOut   *log.Logger = connect.QuietOut
+	Debug      *log.Logger = util.Debug
+	QuietOut   *log.Logger = util.QuietOut
 	VerboseOut             = log.New(io.Discard, "", 0)
 )
 
@@ -66,6 +68,7 @@ func main() {
 		from                     multiArg
 		repo                     multiArg
 		download                 multiArg // using multiArg here to make flags simpler to visit
+		autoImportRepoKeys       bool
 	)
 
 	flag.Usage = func() {
@@ -89,7 +92,7 @@ func main() {
 	flag.BoolVar(&disableRepos, "disable-repos", false, "")
 	flag.BoolVar(&autoAgreeLicenses, "l", false, "")
 	flag.BoolVar(&autoAgreeLicenses, "auto-agree-with-licenses", false, "")
-	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&autoImportRepoKeys, "gpg-auto-import-keys", false, "")
 	flag.BoolVar(&failDupOnlyOnFatalErrors, "strict-errors-dist-migration", false, "")
 	flag.IntVar(&migrationNum, "migration", 0, "")
 	flag.StringVar(&fsRoot, "root", "", "")
@@ -124,7 +127,7 @@ func main() {
 	}
 
 	if debug {
-		connect.EnableDebug()
+		util.EnableDebug()
 	}
 
 	if !quiet {
@@ -136,6 +139,7 @@ func main() {
 	// pass root to connect config
 	if fsRoot != "" {
 		connect.CFG.FsRoot = fsRoot
+		zypper.SetFilesystemRoot(fsRoot)
 		// if we update a chroot system, we cannot create snapshots of it
 		noSnapshots = true
 	}
@@ -154,19 +158,19 @@ func main() {
 		// reset root (if set) as the update stack can be outside of
 		// the to be updated system
 		connect.CFG.FsRoot = ""
-		echo := connect.SetSystemEcho(true)
-		if pending, err := connect.PatchCheck(true, quiet, verbose, nonInteractive, false); err != nil {
+		echo := util.SetSystemEcho(true)
+		if pending, err := zypper.PatchCheck(true, quiet, verbose, nonInteractive, false); err != nil {
 			fmt.Printf("patch pre-check failed: %v\n", err)
 			os.Exit(1)
 		} else if pending {
 			// install pending updates and restart
-			if err := connect.Patch(true, quiet, verbose, nonInteractive, true); err != nil {
+			if err := zypper.Patch(true, quiet, verbose, nonInteractive, true); err != nil {
 				fmt.Printf("patch failed: %v\n", err)
 				os.Exit(1)
 			}
 			// stop infinite restarting
 			// check that the patches were really installed
-			if pending, err := connect.PatchCheck(true, true, false, true, true); pending || err != nil {
+			if pending, err := zypper.PatchCheck(true, true, false, true, true); pending || err != nil {
 				if pending {
 					fmt.Println("there are still some patches pending")
 				}
@@ -184,7 +188,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		connect.SetSystemEcho(echo)
+		util.SetSystemEcho(echo)
 		// restore root if needed
 		if fsRoot != "" {
 			connect.CFG.FsRoot = fsRoot
@@ -193,14 +197,14 @@ func main() {
 	QuietOut.Print("\n")
 
 	// This is only necessary, if we run with --root option
-	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos("", false, quiet, verbose, nonInteractive); err != nil {
+	echo := util.SetSystemEcho(true)
+	if err := zypper.RefreshRepos("", false, quiet, verbose, nonInteractive, autoImportRepoKeys); err != nil {
 		fmt.Println("repository refresh failed, exiting")
 		os.Exit(1)
 	}
-	connect.SetSystemEcho(echo)
+	util.SetSystemEcho(echo)
 
-	systemProducts, err := checkSystemProducts(true)
+	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -308,13 +312,13 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		Debug.Printf("Signal received: %v", sig)
+		util.Debug.Printf("Signal received: %v", sig)
 		interrupted = true
 	}()
 
 	dupArgs := zypperDupArgs()
 	fsInconsistent, err := applyMigration(migration, systemProducts,
-		quiet, verbose, nonInteractive, disableRepos, autoAgreeLicenses,
+		quiet, verbose, nonInteractive, disableRepos, autoAgreeLicenses, autoImportRepoKeys,
 		failDupOnlyOnFatalErrors, dupArgs)
 
 	if err != nil {
@@ -346,7 +350,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false)
+		_, err := checkSystemProducts(false, autoImportRepoKeys)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -359,7 +363,7 @@ func main() {
 		QuietOut.Print("\nPerforming repository rollback...\n")
 
 		// restore repo configuration from backup file
-		if err := connect.ZypperRestore(); err != nil {
+		if err := zypper.Restore(); err != nil {
 			// NOTE: original ignores failures of this command
 			fmt.Printf("Zypper restore failed: %v\n", err)
 		}
@@ -373,7 +377,7 @@ func main() {
 	}
 }
 
-func checkSystemProducts(rollbackOnFailure bool) ([]connect.Product, error) {
+func checkSystemProducts(rollbackOnFailure bool, autoImportRepoKeys bool) ([]connect.Product, error) {
 	systemProducts, err := connect.SystemProducts()
 	if err != nil {
 		return systemProducts, err
@@ -382,7 +386,7 @@ func checkSystemProducts(rollbackOnFailure bool) ([]connect.Product, error) {
 	releasePackageMissing := false
 	for _, p := range systemProducts {
 		// if a release package for registered product is missing -> try install it
-		err := connect.InstallReleasePackage(p.Name)
+		err := zypper.InstallReleasePackage(p.Name, autoImportRepoKeys)
 		if err != nil {
 			releasePackageMissing = true
 			QuietOut.Printf("Can't install release package for registered product %s\n", p.Name)
@@ -494,11 +498,11 @@ func compareEditions(left, right string) int {
 }
 
 func cleanupProductRepos(p connect.Product, force bool) error {
-	productPackages, err := connect.FindProductPackages(p.Name)
+	productPackages, err := zypper.FindProductPackages(p.Name)
 	if err != nil {
 		return err
 	}
-	repos, err := connect.Repos()
+	repos, err := zypper.Repositories()
 	if err != nil {
 		return err
 	}
@@ -521,7 +525,7 @@ func cleanupProductRepos(p connect.Product, force bool) error {
 		QuietOut.Printf("Found obsolete repository %s", availableProduct.Repo)
 		if force {
 			QuietOut.Println("... disabling.")
-			connect.DisableRepo(availableProduct.Repo)
+			zypper.DisableRepo(availableProduct.Repo)
 		} else {
 			for {
 				fmt.Printf("\nDisable obsolete repository %s [y/n] (y): ", availableProduct.Repo)
@@ -539,7 +543,7 @@ func cleanupProductRepos(p connect.Product, force bool) error {
 					break
 				} else if choice == "y" || choice == "" {
 					fmt.Println("... disabling.")
-					connect.DisableRepo(availableProduct.Repo)
+					zypper.DisableRepo(availableProduct.Repo)
 					break
 				}
 			}
@@ -549,7 +553,7 @@ func cleanupProductRepos(p connect.Product, force bool) error {
 }
 
 // checks if given service is provided by SUSE
-func isSUSEService(service connect.Service) bool {
+func isSUSEService(service zypper.ZypperService) bool {
 	return strings.Contains(service.URL, connect.CFG.BaseURL) ||
 		strings.Contains(service.URL, "plugin:/susecloud") ||
 		strings.Contains(service.URL, "plugin:susecloud") ||
@@ -563,7 +567,7 @@ func isSUSEService(service connect.Service) bool {
 func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (string, error) {
 	var baseProductVersion string
 
-	systemServices, _ := connect.InstalledServices()
+	systemServices, _ := zypper.InstalledServices()
 	migratedServices := connect.NewStringSet()
 
 	for _, p := range migration {
@@ -646,12 +650,12 @@ func isFatalZypperError(code int) bool {
 
 // returns fs_inconsistent flag
 func applyMigration(migration connect.MigrationPath, systemProducts []connect.Product,
-	quiet, verbose, nonInteractive, forceDisableRepos, autoAgreeLicenses, failDupOnlyOnFatalErrors bool,
+	quiet, verbose, nonInteractive, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
 	fsInconsistent := false
 
-	if err := connect.ZypperBackup(); err != nil {
+	if err := zypper.Backup(); err != nil {
 		// NOTE: original ignores failures of this command
 		fmt.Printf("Zypper backup failed: %v\n", err)
 	}
@@ -663,13 +667,13 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 	// Disable all old repos in case of Leap -> SLES migration (bsc#1184237)
 	if containsProduct(systemProducts, "Leap") && containsProduct(migration, "SLES") {
 		QuietOut.Println("Migration from Leap to SLES - disabling old repositories")
-		repos, err := connect.Repos()
+		repos, err := zypper.Repositories()
 		if err != nil {
 			return fsInconsistent, err
 		}
 		for _, r := range repos {
 			if r.Enabled {
-				connect.DisableRepo(r.Name)
+				zypper.DisableRepo(r.Name)
 			}
 		}
 	}
@@ -679,18 +683,18 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 		return fsInconsistent, err
 	}
 
-	echo := connect.SetSystemEcho(true)
-	if err := connect.RefreshRepos(baseProductVersion, true, false, false, false); err != nil {
+	echo := util.SetSystemEcho(true)
+	if err := zypper.RefreshRepos(baseProductVersion, true, false, false, false, autoImportRepoKeys); err != nil {
 		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
 	}
 	if interrupted {
 		return fsInconsistent, ErrInterrupted
 	}
 
-	err = connect.DistUpgrade(baseProductVersion, quiet, verbose, autoAgreeLicenses, nonInteractive, dupArgs)
-	connect.SetSystemEcho(echo)
+	err = zypper.DistUpgrade(baseProductVersion, quiet, verbose, autoAgreeLicenses, nonInteractive, dupArgs)
+	util.SetSystemEcho(echo)
 	if err != nil {
-		ze := err.(connect.ZypperError)
+		ze := err.(zypper.ZypperError)
 		// TODO: export connect.zypperErrCommit (8)?
 		if ze.ExitCode == 8 {
 			fsInconsistent = true

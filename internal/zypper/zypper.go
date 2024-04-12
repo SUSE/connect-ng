@@ -1,4 +1,4 @@
-package connect
+package zypper
 
 import (
 	"encoding/xml"
@@ -6,7 +6,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -37,16 +42,46 @@ const (
 	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
 )
 
+type ZypperProduct struct {
+	Name        string `xml:"name,attr"`
+	Version     string `xml:"version,attr"`
+	Arch        string `xml:"arch,attr"`
+	Release     string `xml:"release,attr"`
+	Summary     string `xml:"summary,attr"`
+	IsBase      bool   `xml:"isbase,attr"`
+	ReleaseType string `xml:"registerrelease,attr"`
+	ProductLine string `xml:"productline,attr"`
+
+	// these are used by YaST
+	Description string `xml:"description"`
+}
+
+type ZypperService struct {
+	URL  string `xml:"url,attr"`
+	Name string `xml:"name,attr"`
+}
+
+// FIXME: see how we can do this better
+var zypperFilesystemRoot = "/"
+
+func SetFilesystemRoot(arg string) {
+	zypperFilesystemRoot = arg
+}
+
+func GetFilesystemRoot() string {
+	return zypperFilesystemRoot
+}
+
 func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 	cmd := []string{zypperPath}
-	if CFG.FsRoot != "" {
-		cmd = append(cmd, "--root", CFG.FsRoot)
+	if zypperFilesystemRoot != "/" {
+		cmd = append(cmd, "--root", zypperFilesystemRoot)
 	}
 	cmd = append(cmd, args...)
-	QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
-	output, err := execute(cmd, validExitCodes)
+	util.QuietOut.Printf("\nExecuting '%s'\n\n", strings.Join(cmd, " "))
+	output, err := util.Execute(cmd, validExitCodes)
 	if err != nil {
-		if ee, ok := err.(ExecuteError); ok {
+		if ee, ok := err.(util.ExecuteError); ok {
 			return nil, ZypperError(ee)
 		}
 	}
@@ -54,11 +89,11 @@ func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 }
 
 // installedProducts returns installed products
-func installedProducts() ([]Product, error) {
+func InstalledProducts() ([]ZypperProduct, error) {
 	args := []string{"--disable-repositories", "--xmlout", "--non-interactive", "products", "-i"}
 	output, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
-		return []Product{}, err
+		return []ZypperProduct{}, err
 	}
 	return parseProductsXML(output)
 }
@@ -68,8 +103,8 @@ func oemReleaseType(productLine string) (string, error) {
 	if productLine == "" {
 		return "", fmt.Errorf("empty productline")
 	}
-	oemFile := filepath.Join(CFG.FsRoot, oemPath, productLine)
-	if !fileExists(oemFile) {
+	oemFile := filepath.Join(zypperFilesystemRoot, oemPath, productLine)
+	if !util.FileExists(oemFile) {
 		return "", fmt.Errorf("OEM file not found: %v", oemFile)
 	}
 	data, err := os.ReadFile(oemFile)
@@ -84,12 +119,12 @@ func oemReleaseType(productLine string) (string, error) {
 }
 
 // parseProductsXML returns products parsed from zypper XML
-func parseProductsXML(xmlDoc []byte) ([]Product, error) {
+func parseProductsXML(xmlDoc []byte) ([]ZypperProduct, error) {
 	var products struct {
-		Products []Product `xml:"product-list>product"`
+		Products []ZypperProduct `xml:"product-list>product"`
 	}
 	if err := xml.Unmarshal(xmlDoc, &products); err != nil {
-		return []Product{}, err
+		return []ZypperProduct{}, err
 	}
 	// override ProductType with OEM value if defined
 	for i, p := range products.Products {
@@ -101,41 +136,41 @@ func parseProductsXML(xmlDoc []byte) ([]Product, error) {
 }
 
 // InstalledServices returns list of services installed on the system
-func InstalledServices() ([]Service, error) {
+func InstalledServices() ([]ZypperService, error) {
 	args := []string{"--xmlout", "--non-interactive", "services", "-d"}
 	// Don't fail when zypper exits with 6 (no repositories)
 	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})
 	if err != nil {
-		return []Service{}, err
+		return []ZypperService{}, err
 	}
 	return parseServicesXML(output)
 }
 
-func parseServicesXML(xmlDoc []byte) ([]Service, error) {
+func parseServicesXML(xmlDoc []byte) ([]ZypperService, error) {
 	var services struct {
-		Services []Service `xml:"service-list>service"`
+		Services []ZypperService `xml:"service-list>service"`
 	}
 	if err := xml.Unmarshal(xmlDoc, &services); err != nil {
-		return []Service{}, err
+		return []ZypperService{}, err
 	}
 	return services.Services, nil
 }
 
 // TODO: memoize?
-func baseProduct() (Product, error) {
-	products, err := installedProducts()
+func BaseProduct() (ZypperProduct, error) {
+	products, err := InstalledProducts()
 	if err != nil {
-		return Product{}, err
+		return ZypperProduct{}, err
 	}
 	for _, product := range products {
 		if product.IsBase {
 			return product, nil
 		}
 	}
-	return Product{}, ErrCannotDetectBaseProduct
+	return ZypperProduct{}, ErrCannotDetectBaseProduct
 }
 
-func zypperDistroTarget() (string, error) {
+func DistroTarget() (string, error) {
 	output, err := zypperRun([]string{"targetos"}, []int{zypperOK})
 	if err != nil {
 		return "", err
@@ -143,14 +178,14 @@ func zypperDistroTarget() (string, error) {
 	return string(output), nil
 }
 
-func addService(serviceURL, serviceName string, refresh bool) error {
+func AddService(serviceURL, serviceName string, refresh bool, insecure bool) error {
 	// Remove old service which could be modified by a customer
-	if err := removeService(serviceName); err != nil {
+	if err := RemoveService(serviceName); err != nil {
 		return err
 	}
 	// pass "insecure" setting to zypper via URL
 	// https://en.opensuse.org/openSUSE:Libzypp_URIs
-	if CFG.Insecure {
+	if insecure {
 		u, err := url.Parse(serviceURL)
 		if err != nil {
 			return err
@@ -165,55 +200,60 @@ func addService(serviceURL, serviceName string, refresh bool) error {
 	if err != nil {
 		return err
 	}
-	if err = enableServiceAutorefresh(serviceName); err != nil {
+	if err = EnableServiceAutorefresh(serviceName); err != nil {
 		return err
 	}
-	if err = writeServiceCredentials(serviceName); err != nil {
+	sccCredentials, _ := credentials.ReadCredentials(credentials.SystemCredentialsPath(zypperFilesystemRoot))
+	if err = credentials.CreateCredentials(sccCredentials.Username,
+		sccCredentials.Password,
+		sccCredentials.SystemToken,
+		credentials.ServiceCredentialsPath(serviceName, zypperFilesystemRoot)); err != nil {
 		return err
 	}
 	if refresh {
-		return refreshService(serviceName)
+		return RefreshService(serviceName)
 	}
 	return nil
 }
 
-func removeService(serviceName string) error {
-	Debug.Println("Removing service: ", serviceName)
+func RemoveService(serviceName string) error {
+	util.Debug.Println("Removing service: ", serviceName)
 
 	args := []string{"--non-interactive", "removeservice", serviceName}
 	_, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
 		return err
 	}
-	return removeServiceCredentials(serviceName)
+	// return removeServiceCredentials(serviceName)
+	return util.RemoveFile(credentials.ServiceCredentialsPath(serviceName, zypperFilesystemRoot))
 }
 
-func enableServiceAutorefresh(serviceName string) error {
+func EnableServiceAutorefresh(serviceName string) error {
 	args := []string{"--non-interactive", "modifyservice", "-r", serviceName}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
-func refreshService(serviceName string) error {
+func RefreshService(serviceName string) error {
 	args := []string{"--non-interactive", "refs", serviceName}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
-func refreshAllServices() error {
+func RefreshAllServices() error {
 	args := []string{"--non-interactive", "refs"}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
 }
 
 // InstallReleasePackage ensures the <product-id>-release package is installed.
-func InstallReleasePackage(identifier string) error {
+func InstallReleasePackage(identifier string, autoImportRepoKeys bool) error {
 	if identifier == "" {
 		return nil
 	}
 	// return if the rpm is already installed
 	args := []string{"rpm", "-q", identifier + "-release"}
-	if _, err := execute(args, nil); err == nil {
+	if _, err := util.Execute(args, nil); err == nil {
 		return nil
 	}
 
@@ -228,7 +268,7 @@ func InstallReleasePackage(identifier string) error {
 	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
 		"--auto-agree-with-product-licenses", "-t", "product", identifier}
 
-	if CFG.AutoImportRepoKeys {
+	if autoImportRepoKeys {
 		args = append([]string{"--gpg-auto-import-keys"}, args...)
 	}
 
@@ -236,7 +276,7 @@ func InstallReleasePackage(identifier string) error {
 	return err
 }
 
-func removeReleasePackage(identifier string) error {
+func RemoveReleasePackage(identifier string) error {
 	if identifier == "" {
 		return nil
 	}
@@ -245,7 +285,7 @@ func removeReleasePackage(identifier string) error {
 	return err
 }
 
-func setReleaseVersion(version string) error {
+func SetReleaseVersion(version string) error {
 	args := []string{"--non-interactive", "--releasever", version, "ref", "-f"}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
@@ -273,13 +313,13 @@ func zypperFlags(version string, quiet bool, verbose bool,
 }
 
 // RefreshRepos runs zypper to refresh all repositories
-func RefreshRepos(version string, force, quiet, verbose, nonInteractive bool) error {
+func RefreshRepos(version string, force, quiet, verbose, nonInteractive bool, autoImportRepoKeys bool) error {
 	args := []string{"ref"}
 	flags := zypperFlags(version, quiet, verbose, nonInteractive, false)
 	if force {
 		args = append(args, "-f")
 	}
-	if CFG.AutoImportRepoKeys {
+	if autoImportRepoKeys {
 		args = append(args, "--gpg-auto-import-keys")
 	}
 	args = append(flags, args...)
@@ -297,45 +337,6 @@ func DistUpgrade(version string, quiet, verbose, AutoAgreeLicenses, nonInteracti
 	args = append(args, extraArgs...)
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
-}
-
-// Repo holds repository data as returned by `zypper repos` or "show_product" API
-type Repo struct {
-	// SCC docs say that "id" should be integer but SMT returns string sometimes
-	// not mapping to struct field as it doesn't seem to be used by Connect
-	Name     string `xml:"name,attr" json:"name"`
-	Alias    string `xml:"alias,attr" json:"-"`
-	Type     string `xml:"type,attr" json:"-"`
-	Priority int    `xml:"priority,attr" json:"-"`
-	Enabled  bool   `xml:"enabled,attr" json:"enabled"`
-	URL      string `xml:"url" json:"url"`
-
-	DistroTarget     string   `json:"distro_target,omitempty"`
-	Description      string   `json:"description,omitempty"`
-	AutoRefresh      bool     `json:"autorefresh"`
-	InstallerUpdates bool     `json:"installer_updates"`
-	Arch             []string `json:"arch,omitempty"`
-}
-
-func parseReposXML(xmlDoc []byte) ([]Repo, error) {
-	var repos struct {
-		Repos []Repo `xml:"repo-list>repo"`
-	}
-	if err := xml.Unmarshal(xmlDoc, &repos); err != nil {
-		return []Repo{}, err
-	}
-	return repos.Repos, nil
-}
-
-// Repos returns repositories configured on the system
-func Repos() ([]Repo, error) {
-	args := []string{"--xmlout", "--non-interactive", "repos", "-d"}
-	// Don't fail when zypper exits with 6 (no repositories)
-	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos})
-	if err != nil {
-		return []Repo{}, err
-	}
-	return parseReposXML(output)
 }
 
 // Package holds package info as returned by `zypper search`
@@ -385,9 +386,8 @@ func PatchCheck(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool)
 	_, err := zypperRun(args, []int{zypperOK})
 	// zypperInfoUpdateNeeded or zypperInfoSecUpdateNeeded exit codes indicate
 	// pending patches. return clear error
-	if err != nil && containsInt(
-		[]int{zypperInfoUpdateNeeded, zypperInfoSecUpdateNeeded},
-		err.(ZypperError).ExitCode) {
+	validExitCodes := []int{zypperInfoUpdateNeeded, zypperInfoSecUpdateNeeded}
+	if err != nil && slices.Contains(validExitCodes, err.(ZypperError).ExitCode) {
 		return true, nil
 	}
 	return false, err
@@ -402,4 +402,18 @@ func Patch(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) erro
 	}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
+}
+
+// ToTriplet returns <name>/<version>/<arch> string for product
+func (zp ZypperProduct) ToTriplet() string {
+	return zp.Name + "/" + zp.Version + "/" + zp.Arch
+}
+
+// SplitTriplet returns a product from given or error for invalid input
+func SplitTriplet(p string) (ZypperProduct, error) {
+	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, p); !match {
+		return ZypperProduct{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
+	}
+	parts := strings.Split(p, "/")
+	return ZypperProduct{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }

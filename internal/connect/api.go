@@ -3,6 +3,8 @@ package connect
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 // announceSystem announces a system to SCC
@@ -187,7 +189,7 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte) ([]byt
 		payload.DistroTarget = distroTarget
 	} else {
 		var err error
-		payload.DistroTarget, err = zypperDistroTarget()
+		payload.DistroTarget, err = zypper.DistroTarget()
 		if err != nil {
 			return nil, err
 		}
@@ -247,8 +249,8 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 	return migrations, nil
 }
 
-func installerUpdates(product Product) ([]Repo, error) {
-	repos := make([]Repo, 0)
+func installerUpdates(product Product) ([]zypper.Repository, error) {
+	repos := make([]zypper.Repository, 0)
 	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.toQuery(), authNone)
 	if err != nil {
 		return repos, err
