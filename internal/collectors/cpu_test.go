@@ -23,18 +23,6 @@ func TestCPUCollectorRun(t *testing.T) {
 	assert.Equal(expected, res, "Result mismatch")
 }
 
-// func TestCPUCollectorRunWithInvalidData(t *testing.T) {
-// 	assert := assert.New(t)
-// 	mockLscpu(t, "collectors/lscpu_x86_64_invalid.txt")
-// 	expected := Result{"cpus": 1, "sockets": 1}
-// 	testObj := CpuInformation{}
-// 	res, err := testObj.run(ARCHITECTURE_X86_64)
-// 	if err != nil {
-// 		t.Errorf("Something went wrongg: %s", err)
-// 	}
-// 	assert.Equal(expected, res, "Result mismatch")
-// }
-
 func mockLscpu(t *testing.T, path string) {
 	util.Execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
 		actualCmd := strings.Join(cmd, " ")
