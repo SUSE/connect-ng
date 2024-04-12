@@ -51,6 +51,8 @@ func TestWriteReadDeleteSystem(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 	// TODO : Move to util package
+	// Looks like we're verifying if util.RemoveFile works correctly here.
+	// Instead, we should directly write a test for this method within the util package
 	if util.FileExists(sysCredsPath) {
 		t.Error("File was not deleted: ", sysCredsPath)
 	}
