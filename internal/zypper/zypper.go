@@ -61,7 +61,7 @@ type ZypperService struct {
 	Name string `xml:"name,attr"`
 }
 
-// FIXME: see how we cna do this better
+// FIXME: see how we can do this better
 var zypperFilesystemRoot = "/"
 
 func SetFilesystemRoot(arg string) {

@@ -55,11 +55,6 @@ func CurlrcCredentialsPath() string {
 	return filepath.Join(home, curlrcUserFile)
 }
 
-// // GetCredentials reads the system credentials from the SCCcredentials file
-// func GetCredentials(fsRoot string) (Credentials, error) {
-// 	return ReadCredentials(SystemCredentialsPath(fsRoot))
-// }
-
 // ReadCredentials returns the credentials from path
 func ReadCredentials(path string) (Credentials, error) {
 	util.Debug.Print("Reading credentials: ", path)
@@ -102,10 +97,6 @@ func parseCredentials(r io.Reader) (Credentials, error) {
 func (c Credentials) write() error {
 	util.Debug.Print("Writing credentials: ", c)
 	path := c.Filename
-	// FIXME : Make sure this idn't breaking anything
-	// if !filepath.IsAbs(path) {
-	// 	path = filepath.Join(fsRoot, defaulCredentialsDir, path)
-	// }
 	dir := filepath.Dir(path)
 	if !util.FileExists(dir) {
 		err := os.MkdirAll(dir, 0755)
@@ -131,44 +122,6 @@ func CreateCredentials(login, password, systemToken, path string) error {
 	}
 	return c.write()
 }
-
-//FIXME : make sure this doesn't break anything
-// func writeSystemCredentials(login, password, systemToken string) error {
-// 	path := SystemCredentialsPath()
-// 	return CreateCredentials(login, password, systemToken, path)
-// }
-// INSTEAD USE:
-//  path := credentials.SystemCredentialsPath(CFG.FsRoot)
-//  credentials.CreateCredentials(login, password, systemToken, path)
-
-// func writeServiceCredentials(serviceName string) error {
-// 	c, err := systemCredentialsFile(fsRoot)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	path := serviceCredentialsFile(serviceName)
-// 	// the SystemToken is not written to service credential files
-// 	return CreateCredentials(c.Username, c.Password, "", path)
-// }
-// INSTEAD USE:
-//   systemCredentials, ok := credentials.ReadCredentials(credentials.SystemCredentialsPath(zypperRootFilesystem)
-//   if err != nil {
-//	  return nil, err
-//   }
-//  serviceFile := credentials.ServiceCredentialPath(serviceName, zypperRootFilesystem)
-//  return credentials.CreateCredentials(systemCredentials.Username, systemCredentials.Password, serviceFile)
-//
-
-// func removeSystemCredentials(fsRoot string) error {
-// 	path := systemCredentialsFile(fsRoot)
-// 	return util.RemoveFile(path)
-// }
-
-// func removeServiceCredentials(serviceName string) error {
-// 	util.Debug.Print("Removing service credentials for: ", serviceName)
-// 	path := serviceCredentialsFile(serviceName)
-// 	return util.RemoveFile(path)
-// }
 
 func readCurlrcCredentials(path string) (Credentials, error) {
 	util.Debug.Print("Reading proxy credentials: ", path)

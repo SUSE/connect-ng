@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/SUSE/connect-ng/internal/credentials"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
@@ -384,7 +383,7 @@ func announceOrUpdate(quiet bool) error {
 		return err
 	}
 
-	if err = credentials.CreateCredentials(login, password, "", credentials.SystemCredentialsPath(CFG.FsRoot)); err == nil {
+	if err = cred.CreateCredentials(login, password, "", cred.SystemCredentialsPath(CFG.FsRoot)); err == nil {
 		util.Debug.Print("\nAdding SUSE registry system authentication configuration ...")
 		setupRegistryAuthentication(login, password)
 	}
