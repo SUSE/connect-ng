@@ -17,7 +17,7 @@ func TestCPUCollectorRun(t *testing.T) {
 
 	res, err := testObj.run(ARCHITECTURE_X86_64)
 	if err != nil {
-		t.Errorf("Something went wrongg: %s", err)
+		t.Errorf("Something went wrong: %s", err)
 	}
 
 	assert.Equal(expected, res, "Result mismatch")
