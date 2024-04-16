@@ -31,5 +31,3 @@ func (CPU) cpuInfoDefault() (Result, error) {
 func cpuInfoZ() (Result, error) {
 	return NoResult, nil
 }
-
-// TODO: Set default values for cpu and socket counts to handle invalid output from lscpu(if any) and test it.
