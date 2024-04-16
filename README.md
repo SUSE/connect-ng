@@ -16,7 +16,8 @@ Please visit https://scc.suse.com to see and manage your subscriptions.
 SUSEConnect-ng communicates with SCC over this [REST API](https://github.com/SUSE/connect/blob/master/doc/SCC-API-%28Implemented%29.md).
 
 ### Build
-Requires Go >= 1.16 for [embed](https://pkg.go.dev/embed).
+Requires Go >= 1.21
+
 ```
 make build
 ```
