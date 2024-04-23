@@ -38,7 +38,7 @@ func parseCPUSocket(content string) (int, int) {
 	}
 
 	// We take the last line of the lscpu -p=cpu,socket
-	// output which is indicates the highest count number
+	// output which indicates the highest count number
 	// of available sockets and cpus but lscpu is 0 indexed
 	// Example output:
 	/*
