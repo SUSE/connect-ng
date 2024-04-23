@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
 )
 
@@ -38,11 +39,26 @@ type hwinfo struct {
 }
 
 func getHwinfo() (hwinfo, error) {
-	hw := hwinfo{}
 	var err error
+	hw := hwinfo{}
+
+	mandatory := []collectors.Collector{
+		collectors.CPU{},
+	}
+
 	if hw.Arch, err = arch(); err != nil {
 		return hwinfo{}, err
 	}
+
+	result, err := collectors.CollectInformation(hw.Arch, mandatory)
+
+	if err != nil {
+		return hwinfo{}, err
+	}
+
+	hw.Cpus = result["cpus"].(int)
+	hw.Sockets = result["sockets"].(int)
+
 	hw.Hostname = hostname()
 	hw.CloudProvider = cloudProvider()
 
@@ -56,8 +72,6 @@ func getHwinfo() (hwinfo, error) {
 		if lscpuM, err = lscpu(); err != nil {
 			return hwinfo{}, err
 		}
-		hw.Cpus, _ = strconv.Atoi(lscpuM["CPU(s)"])
-		hw.Sockets, _ = strconv.Atoi(lscpuM["Socket(s)"])
 		hw.UUID, _ = uuid() // ignore error to match original
 	}
 
@@ -87,18 +101,6 @@ func cpuinfoS390(hw *hwinfo) error {
 		return err
 	}
 	rvs := readValues2map(rvsOut)
-
-	if cpus, ok := rvs["VM00 CPUs Total"]; ok {
-		hw.Cpus, _ = strconv.Atoi(cpus)
-	} else if cpus, ok := rvs["LPAR CPUs Total"]; ok {
-		hw.Cpus, _ = strconv.Atoi(cpus)
-	}
-
-	if sockets, ok := rvs["VM00 IFLs"]; ok {
-		hw.Sockets, _ = strconv.Atoi(sockets)
-	} else if sockets, ok := rvs["LPAR CPUs IFL"]; ok {
-		hw.Sockets, _ = strconv.Atoi(sockets)
-	}
 
 	if hypervisor, ok := rvs["VM00 Control Program"]; ok {
 		// Strip and remove recurring whitespaces e.g. " z/VM    6.1.0" => "z/VM 6.1.0"

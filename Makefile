@@ -16,7 +16,7 @@ dist: clean internal/connect/version.txt
 	@cp -r build/packaging/* $(DIST)
 	@tar cfvj $(NAME)-$(VERSION).tar.xz $(NAME)-$(VERSION)/
 	@rm -r $(NAME)-$(VERSION)
-	
+
 out:
 	mkdir -p out
 
@@ -29,7 +29,7 @@ build: out internal/connect/version.txt
 	go build -v -o out/ github.com/SUSE/connect-ng/cmd/zypper-search-packages
 
 test: internal/connect/version.txt
-	go test -v ./internal/connect ./cmd/suseconnect
+	go test -v ./internal/* ./cmd/suseconnect
 
 test-yast: build-so
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast

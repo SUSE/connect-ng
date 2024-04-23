@@ -54,20 +54,18 @@ Requires:       ca-certificates
 %endif
 
 Requires:       coreutils
+Requires:       zypper
+Requires:       util-linux
+Recommends:     systemd
+
+%ifarch s390x
+Requires:       s390-tools
+%endif
+
 # ExclusiveArch from this package
 %ifarch ia64 x86_64 %arm aarch64
 Requires:       dmidecode
 %endif
-# ExclusiveArch from this package
-%ifarch s390x
-Requires:       s390-tools
-%endif
-Requires:       zypper
-# lscpu is only used on those
-%ifarch aarch64
-Requires:       util-linux
-%endif
-Recommends:     systemd
 
 %description
 This package provides a command line tool for connecting a
