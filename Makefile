@@ -5,7 +5,7 @@ DIST          = $(NAME)-$(VERSION)/
 all: test build build-so
 
 dist: clean internal/connect/version.txt
-	@mkdir -p $(DIST)
+	@mkdir -p $(DIST)/build/packaging
 	@cp -r internal $(DIST)
 	@cp -r third_party $(DIST)
 	@cp -r cmd $(DIST)
@@ -13,7 +13,8 @@ dist: clean internal/connect/version.txt
 	@cp go.mod $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)
-	@cp -r build/packaging/* $(DIST)
+	@cp build/packaging/suseconnect-keepalive* $(DIST)/build/packaging
+	@cp -r build/packaging/suseconnect-ng* $(DIST)
 	@tar cfvj $(NAME)-$(VERSION).tar.xz $(NAME)-$(VERSION)/
 	@rm -r $(NAME)-$(VERSION)
 
