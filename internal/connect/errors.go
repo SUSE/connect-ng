@@ -7,10 +7,10 @@ import (
 
 // export errors that package main needs
 var (
-	ErrSystemNotRegistered        = errors.New("System not registered")
-	ErrPingFromUnregistered       = errors.New("Keepalive ping not allowed from unregistered system.")
-	ErrBaseProductDeactivation    = errors.New("Unable to deactivate base product")
-	ErrListExtensionsUnregistered = errors.New("System not registered")
+	ErrSystemNotRegistered        = errors.New("system not registered")
+	ErrPingFromUnregistered       = errors.New("keepalive ping not allowed from unregistered system")
+	ErrBaseProductDeactivation    = errors.New("unable to deactivate base product")
+	ErrListExtensionsUnregistered = errors.New("system not registered")
 )
 
 // APIError is returned on failed HTTP requests

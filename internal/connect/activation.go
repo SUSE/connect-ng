@@ -19,7 +19,3 @@ func (a Activation) toTriplet() string {
 	p := a.Service.Product
 	return p.Name + "/" + p.Version + "/" + p.Arch
 }
-
-func (a Activation) isFree() bool {
-	return a.Service.Product.Free
-}

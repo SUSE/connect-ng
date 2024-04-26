@@ -117,7 +117,7 @@ func (cfg *RegistryAuthConfig) Set(registry string, login string, password strin
 }
 
 func (cfg *RegistryAuthConfig) Get(registry string) (string, string, bool) {
-	if cfg.isConfigured(registry) == false {
+	if !cfg.isConfigured(registry) {
 		return "", "", false
 	}
 	auth := cfg.AuthConfigs[registry].Auth
@@ -181,7 +181,7 @@ func removeRegistryAuthentication(login string, password string) {
 		// Make sure to only delete if the credentials actually match,
 		// to not accidentially remove registry configuration which was
 		// manually added
-		if found == true && login == l && password == p {
+		if found && login == l && password == p {
 			config.Remove(DEFAULT_SUSE_REGISTRY)
 
 			if err := config.SaveTo(path); err != nil {

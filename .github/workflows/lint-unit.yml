@@ -35,8 +35,13 @@ jobs:
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
 
-      - name: run golang linting
-        run: make check-format
+      - name: install dependencies
+        run: |
+          cat /etc/os-release
+
+      - uses: dominikh/staticcheck-action@v1
+        with:
+          version: "latest"
 
       - name: run unit tests
         run: make test

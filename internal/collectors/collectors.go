@@ -58,9 +58,9 @@ func CollectInformation(architecture string, collectors []Collector) (Result, er
 // result set or is of different type
 func FromResult[R any](result Result, key string, def R) R {
 	if value, ok := result[key]; ok {
-		switch value.(type) {
+		switch val := value.(type) {
 		case R:
-			return value.(R)
+			return val
 		default:
 			return def
 		}

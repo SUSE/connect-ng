@@ -127,7 +127,7 @@ func ReadOnlyFilesystem(root string) error {
 	}
 	statfs := &syscall.Statfs_t{}
 	if err := syscall.Statfs(path, statfs); err != nil {
-		return fmt.Errorf("Checking whether %v is mounted read-only failed: %v", path, err)
+		return fmt.Errorf("checking whether %v is mounted read-only failed: %v", path, err)
 	}
 
 	if (statfs.Flags & ST_RDONLY) == ST_RDONLY {
@@ -139,7 +139,7 @@ func ReadOnlyFilesystem(root string) error {
 			// `transactional-update` calling SUSEConnect but rather a user
 			// directly which is dicouraged.
 			if root == "" {
-				return errors.New("This is a transactional system, please use `transactional-update register` to manage your product activations")
+				return errors.New("this is a transactional system, please use `transactional-update register` to manage your product activations")
 			}
 
 			return nil

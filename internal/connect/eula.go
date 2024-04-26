@@ -133,7 +133,7 @@ func fetchEULAFrom(extension Product) ([]byte, error) {
 
 	// This should happen only if there are no license files in index
 	if lang == "" {
-		return nil, fmt.Errorf("No EULAs found at: %s", extension.EULAURL)
+		return nil, fmt.Errorf("no EULAs found at: %s", extension.EULAURL)
 	}
 
 	// Download EULA text
@@ -172,7 +172,7 @@ func promptUser(text []byte, extensionName string) error {
 		answer, err := reader.ReadString('\n')
 		if err != nil {
 			return fmt.Errorf("\nStandard input seems to be closed, please restart " +
-				"the operation in interactive mode or use '--auto-agree-with-licenses' option.")
+				"the operation in interactive mode or use '--auto-agree-with-licenses' option")
 		}
 
 		answer = strings.ToLower(strings.TrimSpace(answer))

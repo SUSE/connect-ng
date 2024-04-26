@@ -9,10 +9,9 @@ import (
 )
 
 type MockDirEntry struct {
-	name     string
-	isDir    bool
-	fullPath string
-	info     os.FileInfo
+	name  string
+	isDir bool
+	info  os.FileInfo
 }
 
 func (m MockDirEntry) Name() string {

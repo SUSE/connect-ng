@@ -201,5 +201,5 @@ func (p Product) findExtension(query Product) (Product, error) {
 			}
 		}
 	}
-	return Product{}, fmt.Errorf("Extension not found")
+	return Product{}, fmt.Errorf("extension not found")
 }

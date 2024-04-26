@@ -36,7 +36,7 @@ func (p *singleStringFlag) String() string {
 
 func (p *singleStringFlag) Set(value string) error {
 	if p.isSet {
-		return fmt.Errorf("this flag can only be specified once\n")
+		return fmt.Errorf("this flag can only be specified once")
 	}
 	p.value = value
 	p.isSet = true
@@ -127,7 +127,7 @@ func main() {
 	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
-			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
+			fmt.Printf("URL \"%s\" not valid: %s.\n", baseURL, err)
 			os.Exit(1)
 		}
 		connect.CFG.BaseURL = baseURL
@@ -293,8 +293,8 @@ func main() {
 
 func maybeBrokenSMTError() error {
 	if !connect.URLDefault() && !connect.UpToDate() {
-		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
-			"Please update it and try again.")
+		return fmt.Errorf("your Registration Proxy server doesn't support this function. " +
+			"Please update it and try again")
 	}
 	return nil
 }
@@ -313,7 +313,7 @@ func exitOnError(err error) {
 	}
 	if je, ok := err.(connect.JSONError); ok {
 		if err := maybeBrokenSMTError(); err != nil {
-			fmt.Println(err)
+			fmt.Printf("%v.", err.Error())
 		} else {
 			fmt.Print("Error: Cannot parse response from server\n")
 			fmt.Println(je)
@@ -363,7 +363,7 @@ func validateURL(s string) error {
 		return err
 	}
 	if u.Scheme == "" || u.Host == "" {
-		return fmt.Errorf("Missing scheme or host")
+		return fmt.Errorf("missing scheme or host")
 	}
 	return nil
 }
