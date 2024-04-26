@@ -34,3 +34,4 @@ This will create a `out/suseconnect` binary on the host.
 
 Run the unit tests: `make test`
 Run selected unit tests, eg: `go test ./internal/collectors/`
+Run linters: `make lint` (requires `go vet` and `staticcheck`)

@@ -72,6 +72,11 @@ feature-tests:
 test-yast: build-so
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
 
+lint: internal/connect/version.txt
+	@gofmt -l internal/* cmd/*
+	@go vet ./...
+	@staticcheck ./...
+
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
 # OBS.
 build-arm: out internal/connect/version.txt
