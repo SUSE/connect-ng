@@ -21,19 +21,23 @@ func createTarball(tarballPath, root string, paths []string) error {
 	// So we have to check this before.
 	var existingPaths []string
 	for _, p := range paths {
-		if !util.FileExists(p) {
+		// remove leading "/" from paths to allow using them from different root
+		candidatePath := strings.TrimLeft(p, "/")
+
+		// need to check for existence of the path under the specified root
+		rootedPath := path.Join(root, candidatePath)
+		if !util.FileExists(rootedPath) {
 			continue
 		}
-		// remove leading "/" from paths to allow using them from different root
-		existingPaths = append(existingPaths, strings.TrimLeft(p, "/"))
+		existingPaths = append(existingPaths, candidatePath)
 	}
 
 	// make tarball path relative to root
 	tarballPath = strings.TrimLeft(tarballPath, "/")
 	tarballPathWithRoot := path.Join(root, tarballPath)
 
-	// ensure directory exists
-	if err := os.MkdirAll(path.Dir(tarballPathWithRoot), os.ModeDir); err != nil {
+	// ensure directory exists, with at least user access permissions
+	if err := os.MkdirAll(path.Dir(tarballPathWithRoot), 0o700); err != nil {
 		return err
 	}
 
@@ -99,6 +103,7 @@ func Backup() error {
 		"/etc/zypp/repos.d",
 		"/etc/zypp/credentials.d",
 		"/etc/zypp/services.d",
+		"/etc/products.d", // also backup products.d
 	}
 	tarballPath := "/var/adm/backup/system-upgrade/repos.tar.gz"
 	if err := createTarball(tarballPath, root, paths); err != nil {
