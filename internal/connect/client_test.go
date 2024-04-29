@@ -1,6 +1,12 @@
 package connect
 
-import "testing"
+import (
+	"io"
+	"log"
+	"testing"
+
+	"github.com/SUSE/connect-ng/internal/util"
+)
 
 func mockAddServiceCalled(t *testing.T, expected bool) {
 	counter := 0
@@ -45,7 +51,17 @@ func mockRemoveOrRefreshService(t *testing.T, expected bool) {
 
 }
 
+// NOTE: This needs to be reworked.
+// The current implementation of logging does not really allow any useful
+// testing mechanics and is overly complicated. Refactor this!
+func disableOutput() {
+	util.Info = log.New(io.Discard, "", 0)
+	util.Debug = log.New(io.Discard, "", 0)
+}
+
 func TestClientRegisterWithServiceInstallSkipSuccessful(t *testing.T) {
+	disableOutput()
+
 	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
 	CFG.SkipServiceInstall = true
 	mockAddServiceCalled(t, false)
@@ -54,6 +70,8 @@ func TestClientRegisterWithServiceInstallSkipSuccessful(t *testing.T) {
 }
 
 func TestClientRegisterWithoutServiceInstallSkipSuccessful(t *testing.T) {
+	disableOutput()
+
 	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
 	CFG.SkipServiceInstall = false
 	mockAddServiceCalled(t, true)
@@ -62,6 +80,8 @@ func TestClientRegisterWithoutServiceInstallSkipSuccessful(t *testing.T) {
 }
 
 func TestClientDeregistrationWithServiceInstallSkipSuccessful(t *testing.T) {
+	disableOutput()
+
 	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
 	CFG.SkipServiceInstall = true
 	mockAddServiceCalled(t, false)
@@ -70,6 +90,8 @@ func TestClientDeregistrationWithServiceInstallSkipSuccessful(t *testing.T) {
 }
 
 func TestClientDeregistrationWithoutServiceInstallSkipSuccessful(t *testing.T) {
+	disableOutput()
+
 	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
 	CFG.SkipServiceInstall = false
 	mockAddServiceCalled(t, true)
