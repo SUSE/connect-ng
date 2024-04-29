@@ -59,14 +59,15 @@ func getHwinfo() (hwinfo, error) {
 		return hwinfo{}, err
 	}
 
+	// TODO: Handle errors when type casting from interface{}
 	hw.Cpus = result["cpus"].(int)
 	hw.Sockets = result["sockets"].(int)
-
 	hw.Hostname = result["hostname"].(string)
+
 	hw.CloudProvider = cloudProvider()
 
 	// Include memory information if possible.
-
+	// TODO: Handle errors when type casting from interface{}
 	hw.MemTotal = result["mem_total"].(int)
 
 	var lscpuM map[string]string
@@ -75,6 +76,7 @@ func getHwinfo() (hwinfo, error) {
 			return hwinfo{}, err
 		}
 	}
+	// TODO: Handle errors when type casting from interface{}
 	hw.UUID = result["uuid"].(string) // ignore error to match original
 
 	if hw.Arch == archX86 || hw.Arch == archPPC {
