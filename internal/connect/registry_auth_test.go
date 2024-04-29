@@ -54,7 +54,7 @@ func mockWriteFile(t *testing.T, matcherfile string) {
 
 func mockMkDirAll(t *testing.T) {
 	mkDirAll = func(_ string, perm os.FileMode) error {
-		if perm != 0777 {
+		if perm != 0775 {
 			t.Log(fmt.Sprintf("mkdir: %s is unlikely the right directory permission. Are you sure?", perm))
 		}
 		return nil
