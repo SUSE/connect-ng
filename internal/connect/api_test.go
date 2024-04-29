@@ -8,9 +8,24 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/stretchr/testify/assert"
 )
 
+// NOTE: Until there is a better implementation of the credentials package
+//
+//	we need to set the file creation path for SCCCredentials to /tmp
+//	to allow creating these files in this test.
+//	This is not nice but creating stubs with this current implemented
+//	API is almost impossible since you need mock the whole object, resulting
+//	in a complete rewrite.
+func setRootToTmp() {
+	CFG.FsRoot = "/tmp"
+}
+
 func TestAnnounceSystem(t *testing.T) {
+	assert := assert.New(t)
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -19,31 +34,24 @@ func TestAnnounceSystem(t *testing.T) {
 		io.WriteString(w, `{"login":"test-user","password":"test-password"}`)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
+
 	user, password, err := announceSystem(nil)
-	if err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
-	if user != "test-user" {
-		t.Errorf("Expected user: \"test-user\", got: \"%s\"", user)
-	}
-	if password != "test-password" {
-		t.Errorf("Expected password: \"test-password\", got: \"%s\"", password)
-	}
+	assert.NoError(err)
+	assert.Equal("test-user", user)
+	assert.Equal("test-password", password)
 
 	// System token should have been updated.
 	creds, err := credentials.ReadCredentials(credentials.SystemCredentialsPath(CFG.FsRoot))
-	if err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
-	if creds.SystemToken != "token" {
-		t.Fatalf("Unexpected token '%v', should have been 'token'", creds.SystemToken)
-	}
+	assert.NoError(err)
+	assert.Equal("token", creds.SystemToken, "system token mismatch")
 }
 
 func TestGetActivations(t *testing.T) {
+	assert := assert.New(t)
 	response := util.ReadTestFile("activations.json", t)
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,29 +59,24 @@ func TestGetActivations(t *testing.T) {
 		w.Write(response)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
+
 	activations, err := systemActivations()
-	if err != nil {
-		t.Errorf("%s", err)
-	}
-	if l := len(activations); l != 1 {
-		t.Errorf("len(activations) == %d, expected 1", l)
-	}
-	key := "SUSE-MicroOS/5.0/x86_64"
-	if _, ok := activations[key]; !ok {
-		t.Errorf("activations map missing key [%s]", key)
-	}
+	assert.NoError(err)
+	assert.Len(activations, 1, "expected 1 activation")
+	assert.Contains(activations, "SUSE-MicroOS/5.0/x86_64")
 }
 
 func TestGetActivationsRequest(t *testing.T) {
-	var (
-		user       = "testuser"
-		password   = "testpassword"
-		url        = "/connect/systems/activations"
-		gotRequest *http.Request
-	)
-	credentials.CreateTestCredentials(user, password, CFG.FsRoot, t)
+	var gotRequest *http.Request
+
+	assert := assert.New(t)
+	expectedUser := "test-user"
+	expectedPassword := "test-password"
+	expectedURL := "/connect/systems/activations"
+
+	setRootToTmp()
+	credentials.CreateTestCredentials(expectedUser, expectedPassword, CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotRequest = r // make request available outside this func after call
@@ -81,193 +84,193 @@ func TestGetActivationsRequest(t *testing.T) {
 		io.WriteString(w, "[]")
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	if _, err := systemActivations(); err != nil {
-		t.Fatalf("Unexpected error [%s]", err)
-	}
 
-	gotURL := gotRequest.URL.String()
-	u, p, ok := gotRequest.BasicAuth()
-	if !ok || u != user || p != password || gotURL != url {
-		t.Errorf("Server got request with %s, %s, %s. Expected %s, %s, %s", u, p, gotURL, user, password, url)
-	}
+	_, err := systemActivations()
+	assert.NoError(err)
+
+	actualURL := gotRequest.URL.String()
+	user, password, ok := gotRequest.BasicAuth()
+
+	assert.True(ok)
+	assert.Equal(expectedUser, user)
+	assert.Equal(expectedPassword, password)
+	assert.Equal(expectedURL, actualURL)
 }
 
 func TestGetActivationsError(t *testing.T) {
+	assert := assert.New(t)
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	if _, err := systemActivations(); err == nil {
-		t.Error("Expecting error. Got none.")
-	}
+
+	_, err := systemActivations()
+	assert.ErrorContains(err, "(500)")
 }
 
 func TestUpToDateOkay(t *testing.T) {
+	assert := assert.New(t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusUnprocessableEntity)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	if !UpToDate() {
-		t.Error("Expecting UpToDate()==true, got false")
-	}
+
+	assert.True(UpToDate())
 }
 
 func TestGetProduct(t *testing.T) {
+	assert := assert.New(t)
+	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(util.ReadTestFile("product.json", t))
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
-	product, err := showProduct(productQuery)
-	if err != nil {
-		t.Fatalf("%s", err)
-	}
-	if l := len(product.Extensions); l != 1 {
-		t.Fatalf("len(product.Extensions) == %d, expected 1", l)
-	}
-	if l := len(product.Extensions[0].Extensions); l != 8 {
-		t.Fatalf("len(product.Extensions[0].Extensions) == %d, expected 8", l)
-	}
 
+	product, err := showProduct(productQuery)
+	assert.NoError(err)
+	assert.Len(product.Extensions, 1)
+	assert.Len(product.Extensions[0].Extensions, 8)
 }
 
 func TestGetProductError(t *testing.T) {
+	assert := assert.New(t)
+	productQuery := Product{Name: "Dummy"}
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	productQuery := Product{Name: "Dummy"}
+
 	_, err := showProduct(productQuery)
-	if ae, ok := err.(APIError); ok {
-		if ae.Code != http.StatusUnprocessableEntity {
-			t.Fatalf("Expecting APIError(422). Got %s", err)
-		}
-	}
+	assert.ErrorContains(err, "(422)", "expected status 422")
 }
 
 func TestUpgradeProduct(t *testing.T) {
+	assert := assert.New(t)
+	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	expectedName := "SUSE_Linux_Enterprise_Micro_5.0_x86_64"
+	expectedTriplet := product.ToTriplet()
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(util.ReadTestFile("service.json", t))
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+
 	service, err := upgradeProduct(product)
-	if err != nil {
-		t.Fatalf("%s", err)
-	}
-	name := "SUSE_Linux_Enterprise_Micro_5.0_x86_64"
-	if service.Name != name {
-		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
-	}
-	if service.Product.ToTriplet() != product.ToTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
-	}
+	assert.NoError(err)
+	assert.Equal(expectedName, service.Name)
+	assert.Equal(expectedTriplet, service.Product.ToTriplet())
 }
 
 func TestUpgradeProductError(t *testing.T) {
+	assert := assert.New(t)
+	product := Product{Name: "Dummy"}
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "Dummy"}
+
 	_, err := upgradeProduct(product)
-	if ae, ok := err.(APIError); ok {
-		if ae.Code != http.StatusUnprocessableEntity {
-			t.Fatalf("Expecting APIError(422). Got %s", err)
-		}
-	}
+	assert.ErrorContains(err, "(422)", "expected status 422")
 }
 
 func TestDeactivateProduct(t *testing.T) {
+	assert := assert.New(t)
+	product := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+	expectedName := "Basesystem_Module_15_SP2_x86_64"
+	expectedTriplet := product.ToTriplet()
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(util.ReadTestFile("service_inactive.json", t))
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
+
 	service, err := deactivateProduct(product)
-	if err != nil {
-		t.Fatalf("%s", err)
-	}
-	name := "Basesystem_Module_15_SP2_x86_64"
-	if service.Name != name {
-		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
-	}
-	if service.Product.ToTriplet() != product.ToTriplet() {
-		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
-	}
+	assert.NoError(err)
+	assert.Equal(expectedName, service.Name)
+	assert.Equal(expectedTriplet, service.Product.ToTriplet())
 }
 
 func TestDeactivateProductSMT(t *testing.T) {
+	assert := assert.New(t)
+	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+	expectedName := "SMT_DUMMY_NOREMOVE_SERVICE"
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(util.ReadTestFile("service_inactive_smt.json", t))
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
+
 	service, err := deactivateProduct(product)
-	if err != nil {
-		t.Fatalf("%s", err)
-	}
-	name := "SMT_DUMMY_NOREMOVE_SERVICE"
-	if service.Name != name {
-		t.Fatalf("Expecting service name %s. Got %s", name, service.Name)
-	}
-	if !service.Product.isEmpty() {
-		t.Fatalf("Unexpected product %s", service.Product.ToTriplet())
-	}
+	assert.NoError(err)
+	assert.Equal(expectedName, service.Name)
+	assert.True(service.Product.isEmpty(), "expected no product")
 }
 
 func TestDeactivateProductError(t *testing.T) {
+	assert := assert.New(t)
+	product := Product{Name: "Dummy"}
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errMsg := "{\"status\":422,\"error\":\"No product specified\",\"type\":\"error\",\"localized_error\":\"No product specified\"}"
 		http.Error(w, errMsg, http.StatusUnprocessableEntity)
 	}))
 	defer ts.Close()
-
 	CFG.BaseURL = ts.URL
-	product := Product{Name: "Dummy"}
+
 	_, err := deactivateProduct(product)
-	if ae, ok := err.(APIError); ok {
-		if ae.Code != http.StatusUnprocessableEntity {
-			t.Fatalf("Expecting APIError(422). Got %s", err)
-		}
-	}
+	assert.ErrorContains(err, "(422)", "expected status 422")
 }
 
 func TestProductMigrations(t *testing.T) {
+	assert := assert.New(t)
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write(util.ReadTestFile("migrations.json", t))
 	}))
@@ -275,16 +278,17 @@ func TestProductMigrations(t *testing.T) {
 	CFG.BaseURL = ts.URL
 
 	migrations, err := productMigrations(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(migrations) != 2 {
-		t.Fatalf("len(migrations) == %d, expected 2", len(migrations))
-	}
+	assert.NoError(err)
+	assert.Len(migrations, 2, "migrations")
 }
 
 func TestProductMigrationsSMT(t *testing.T) {
+	assert := assert.New(t)
+	expectedID := 101361
+
+	setRootToTmp()
 	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write(util.ReadTestFile("migrations-smt.json", t))
 	}))
@@ -292,15 +296,7 @@ func TestProductMigrationsSMT(t *testing.T) {
 	CFG.BaseURL = ts.URL
 
 	migrations, err := productMigrations(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(migrations) != 1 {
-		t.Fatalf("len(migrations) == %d, expected 1", len(migrations))
-	}
-	gotID := migrations[0][0].ID
-	expectedID := 101361
-	if gotID != expectedID {
-		t.Fatalf("Got ID: %d, expected: %d", gotID, expectedID)
-	}
+	assert.NoError(err)
+	assert.Len(migrations, 1, "migrations")
+	assert.Equal(expectedID, migrations[0][0].ID)
 }
