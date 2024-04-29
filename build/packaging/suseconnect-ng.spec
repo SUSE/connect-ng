@@ -135,8 +135,8 @@ install -D -m 644 docs/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zyp
 install -D -m 644 SUSEConnect.example %{buildroot}%{_sysconfdir}/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
-install -D -m 644 suseconnect-keepalive.timer %{buildroot}/%{_unitdir}/suseconnect-keepalive.timer
-install -D -m 644 suseconnect-keepalive.service %{buildroot}/%{_unitdir}/suseconnect-keepalive.service
+install -D -m 644 build/packaging/suseconnect-keepalive.timer %{buildroot}/%{_unitdir}/suseconnect-keepalive.timer
+install -D -m 644 build/packaging/suseconnect-keepalive.service %{buildroot}/%{_unitdir}/suseconnect-keepalive.service
 ln -sf service %{buildroot}/%{_sbindir}/rcsuseconnect-keepalive
 
 # we currently do not ship the source for any go module
