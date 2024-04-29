@@ -4,13 +4,14 @@ DIST          = $(NAME)-$(VERSION)/
 
 all: test build build-so
 
-dist: clean internal/connect/version.txt
+dist: download_deps clean internal/connect/version.txt
 	@mkdir -p $(DIST)
 	@cp -r internal $(DIST)
 	@cp -r third_party $(DIST)
 	@cp -r cmd $(DIST)
 	@cp -r docs $(DIST)
 	@cp go.mod $(DIST)
+	@cp go.sum $(DIST)
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)
 	@cp -r build/packaging/* $(DIST)
@@ -43,6 +44,9 @@ connect-ruby:
 
 gofmt:
 	@if [ ! -z "$$(gofmt -l ./)" ]; then echo "Formatting errors..."; gofmt -d ./; exit 1; fi
+
+download_deps:
+	go mod download
 
 build-so: out internal/connect/version.txt
 	go build -v -buildmode=c-shared -o out/libsuseconnect.so github.com/SUSE/connect-ng/third_party/libsuseconnect
