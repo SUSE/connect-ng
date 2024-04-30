@@ -19,4 +19,4 @@ func (ze ZypperError) Error() string {
 		strings.Join(ze.Commmand, " "), ze.ExitCode, ze.Output, ze.Err)
 }
 
-var ErrCannotDetectBaseProduct = errors.New("Unable to detect base product")
+var ErrCannotDetectBaseProduct = errors.New("unable to detect base product")
