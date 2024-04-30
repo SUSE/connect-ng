@@ -45,4 +45,4 @@ jobs:
         run: |
           # We need to make sure git trusts us here. mark the directory as safe playground
           git config --global --add safe.directory /__w/connect-ng/connect-ng
-          make build build-so
+          make vendor build

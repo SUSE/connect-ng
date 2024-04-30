@@ -14,11 +14,11 @@ ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
 
-.PHONY: dist build clean ci-env build-rpm feature-tests format
+.PHONY: dist build clean ci-env build-rpm feature-tests format vendor
 
 all: clean build test
 
-dist: clean internal/connect/version.txt
+dist: clean internal/connect/version.txt vendor
 	@mkdir -p $(DIST)/build/packaging
 	@cp -r internal $(DIST)
 	@cp -r third_party $(DIST)
@@ -31,14 +31,16 @@ dist: clean internal/connect/version.txt
 	@cp build/packaging/suseconnect-keepalive* $(DIST)/build/packaging
 	@cp -r build/packaging/suseconnect-ng* $(DIST)
 
-	$(GO) mod download
-	$(GO) mod verify
-	$(GO) mod vendor
-
 	@tar cfvj vendor.tar.xz vendor
 	@tar cfvj $(NAME)-$(VERSION).tar.xz $(NAME)-$(VERSION)/
 
 	@rm -r $(NAME)-$(VERSION)
+
+
+vendor:
+	@$(GO) mod download
+	@$(GO) mod verify
+	@$(GO) mod vendor
 
 out:
 	mkdir -p out
