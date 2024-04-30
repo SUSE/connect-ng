@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -55,7 +56,7 @@ func uuidS390() (string, error) {
 		return "", err
 	}
 
-	u, err := uuid.Parse(string(out))
+	u, err := uuid.Parse(string(bytes.TrimSpace(out)))
 	if err != nil {
 		return "", fmt.Errorf("Unable to determine UUID for s390x: %v", err)
 	}
