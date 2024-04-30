@@ -44,6 +44,9 @@ func getHwinfo() (hwinfo, error) {
 
 	mandatory := []collectors.Collector{
 		collectors.CPU{},
+		collectors.Hostname{},
+		collectors.Memory{},
+		collectors.UUID{},
 	}
 
 	if hw.Arch, err = arch(); err != nil {
@@ -56,24 +59,25 @@ func getHwinfo() (hwinfo, error) {
 		return hwinfo{}, err
 	}
 
+	// TODO: Handle errors when type casting from interface{}
 	hw.Cpus = result["cpus"].(int)
 	hw.Sockets = result["sockets"].(int)
+	hw.Hostname = result["hostname"].(string)
 
-	hw.Hostname = hostname()
 	hw.CloudProvider = cloudProvider()
 
 	// Include memory information if possible.
-	if mem := systemMemory(); mem > 0 {
-		hw.MemTotal = mem
-	}
+	// TODO: Handle errors when type casting from interface{}
+	hw.MemTotal = result["mem_total"].(int)
 
 	var lscpuM map[string]string
 	if hw.Arch == archX86 || hw.Arch == archARM || hw.Arch == archPPC {
 		if lscpuM, err = lscpu(); err != nil {
 			return hwinfo{}, err
 		}
-		hw.UUID, _ = uuid() // ignore error to match original
 	}
+	// TODO: Handle errors when type casting from interface{}
+	hw.UUID = result["uuid"].(string) // ignore error to match original
 
 	if hw.Arch == archX86 || hw.Arch == archPPC {
 		hw.Hypervisor = lscpuM["Hypervisor vendor"]
@@ -83,13 +87,6 @@ func getHwinfo() (hwinfo, error) {
 		hw.Clusters, _ = strconv.Atoi(lscpuM["Cluster(s)"])
 		// ignore errors to avoid failing on systems without systemd
 		hw.Hypervisor, _ = hypervisor()
-	}
-
-	if hw.Arch == archS390 {
-		if err := cpuinfoS390(&hw); err != nil {
-			return hwinfo{}, err
-		}
-		hw.UUID = uuidS390()
 	}
 
 	return hw, nil
