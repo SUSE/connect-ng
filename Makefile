@@ -14,9 +14,9 @@ ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
 
-.PHONY        = dist build clean ci-env build-rpm feature-tests
+.PHONY: dist build clean ci-env build-rpm feature-tests format
 
-all: test build
+all: clean build test
 
 dist: clean internal/connect/version.txt
 	@mkdir -p $(DIST)/build/packaging
@@ -57,6 +57,9 @@ test: internal/connect/version.txt
 
 ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
+
+check-format:
+	@gofmt -l internal/* cmd/*
 
 build-rpm:
 	$(CRM) $(MOUNT) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm'

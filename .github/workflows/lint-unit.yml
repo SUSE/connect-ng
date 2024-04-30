@@ -36,7 +36,7 @@ jobs:
           cp -r $GITHUB_WORKSPACE $SOURCE
 
       - name: run golang linting
-        run: make gofmt
+        run: make check-format
 
       - name: run unit tests
         run: make test
