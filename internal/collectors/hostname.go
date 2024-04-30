@@ -1,13 +1,19 @@
 package collectors
 
-import "os"
+import (
+	"os"
+
+	"github.com/SUSE/connect-ng/internal/util"
+)
 
 type Hostname struct {
 }
 
 func (Hostname) run(arch Architecture) (Result, error) {
 	name, err := os.Hostname()
-	if err != nil {
+
+	if err != nil || name == "" {
+		util.Debug.Printf("Couldn't fetch hostname: %s", err)
 		return NoResult, err
 	}
 
