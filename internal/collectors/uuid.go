@@ -57,7 +57,7 @@ func uuidS390() (string, error) {
 
 	u, err := uuid.Parse(string(out))
 	if err != nil {
-		return "", fmt.Errorf("not implemented. Unable to determine UUID for s390x. Set to \"\"")
+		return "", fmt.Errorf("Unable to determine UUID for s390x: %v", err)
 	}
 
 	return u.String(), nil
