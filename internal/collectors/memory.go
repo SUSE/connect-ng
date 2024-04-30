@@ -45,8 +45,8 @@ func parseMeminfo(file io.Reader) int {
 		return val / 1024
 	}
 
-	if scanner.Err() != nil {
-		util.Debug.Printf("could not obtain memory information for this system: %v", scanner.Err())
+	if err := scanner.Err(); err != nil {
+		util.Debug.Printf("could not obtain memory information for this system: %v", err)
 		return 0
 	}
 
