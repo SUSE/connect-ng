@@ -4,6 +4,7 @@ Thu Apr 25 15:39:00 UTC 2024 - Felix Schnizlein <fschnizlein@suse.com>
 - 1.9.0 (unreleased)
   * Build zypper-migration and zypper-packages-search as standalone
     binaries rather then one single binary
+  * Add --gpg-auto-import-keys flag before action in zypper command (bsc#1219004)
 
 -------------------------------------------------------------------
 Wed Mar 13 12:37:29 UTC 2024 - José Gómez <1josegomezr@gmail.com>
