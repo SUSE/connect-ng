@@ -152,7 +152,7 @@ func setupRegistryAuthentication(login string, password string) {
 		}
 		config.Set(DEFAULT_SUSE_REGISTRY, login, password)
 
-		if err := mkDirAll(dir, 0775); err != nil {
+		if err := mkDirAll(dir, 0755); err != nil {
 			util.Debug.Printf("Could not create directory `%s`: %s", dir, err)
 			return
 		}

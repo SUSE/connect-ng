@@ -67,7 +67,7 @@ var Execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
 	return out, nil
 }
 
-func FileExists(path string) bool {
+var FileExists = func(path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
