@@ -13,7 +13,9 @@ import (
 	"errors"
 	"net"
 	"net/url"
-	"strconv"
+	"path/filepath"
+	"slices"
+  "strconv"
 	"unsafe"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -240,6 +242,15 @@ func certToPEM(cert *x509.Certificate) string {
 	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 }
 
+func certsToPEM(certs []*x509.Certificate) string {
+	slices.Reverse(certs)
+	var pemString string
+	for _, cert := range certs {
+		pemString += certToPEM(cert)
+	}
+	return pemString
+}
+
 func errorToJSON(err error) string {
 	var s struct {
 		ErrType string `json:"err_type"`
@@ -283,7 +294,7 @@ func errorToJSON(err error) string {
 			// starting with go1.20, we receive this error (https://go.dev/doc/go1.20#crypto/tls)
 			s.ErrType = "SSLError"
 			s.Message = ierr.Error()
-			s.Data = certToPEM(ce.UnverifiedCertificates[1])
+			s.Data = certsToPEM(ce.UnverifiedCertificates)
 			// this could be:
 			// 18 (X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
 			// 19 (X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) or
