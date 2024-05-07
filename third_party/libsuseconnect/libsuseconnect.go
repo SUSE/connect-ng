@@ -6,6 +6,7 @@ package main
 import "C"
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -15,7 +16,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"unsafe"
-	"crypto/tls"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
@@ -289,14 +289,15 @@ func errorToJSON(err error) string {
 			// 20 (X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
 			s.Code = 19 // this seems to best match original behavior
 		} else if ce, ok := ierr.(*tls.CertificateVerificationError); ok {
-		  s.ErrType = "SSLError"
-		  s.Message = ierr.Error()
-		  s.Data = certToPEM(ce.UnverifiedCertificates[0])
-		  // this could be:
-		  // 18 (X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
-		  // 19 (X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) or
-		  // 20 (X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
-		  s.Code = 19 // this seems to best match original behavior
+			// starting with go1.20, we receive this error (https://go.dev/doc/go1.20#crypto/tls)
+			s.ErrType = "SSLError"
+			s.Message = ierr.Error()
+			s.Data = certToPEM(ce.UnverifiedCertificates[1])
+			// this could be:
+			// 18 (X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
+			// 19 (X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) or
+			// 20 (X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
+			s.Code = 19 // this seems to best match original behavior
 		} else if ce, ok := ierr.(x509.HostnameError); ok {
 			s.ErrType = "SSLError"
 			s.Message = ierr.Error()
