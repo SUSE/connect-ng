@@ -25,7 +25,7 @@ $ osc build SLE_15_SP3 x86_64 --no-verify
 
 ### Testing the package locally
 
-First of all, you need to create an updated tar file. In order to do this, you
+First of all, you need to create an updated .tar.xz file. In order to do this, you
 need to checkout the package and run the service that fetches the code (change
 the `revision` parameter in `_service` to build the tar from another branch/sha
 than `main`):
@@ -35,8 +35,8 @@ $ mkdir obs; cd obs; osc co systemsmanagement:SCC suseconnect-ng -o .
 $ osc service manualrun
 ```
 
-This will create a `connect-ng` directory with the latest changes from git's
-`main` branch. After this, you can apply whatever changes you want inside of
+This will create a `connect-ng` directory with the latest changes from the specified
+branch. After this, you can apply whatever changes you want inside of
 the `connect-ng` and commit it.
 
 If you have the source code somewhere else, you have two ways to go. First of
@@ -53,6 +53,10 @@ manualrun` and `osc build ...` in order to test multiple iterations of your
 development branch.
 
 Either way you will give get an RPM that you can install locally.
+
+To use a different version than the current latest tag, use the `version` param and
+comment out the `match-tag`, `versionrewrite-pattern`, `versionrewrite-replacement`
+and `versionformat` params from `_service`.
 
 ## Step 3. Update package in OBS devel project
 
