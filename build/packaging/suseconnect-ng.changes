@@ -7,6 +7,8 @@ Thu Apr 25 15:39:00 UTC 2024 - Felix Schnizlein <fschnizlein@suse.com>
   * Add --gpg-auto-import-keys flag before action in zypper command (bsc#1219004)
   * Include /etc/products.d in directories whose content are backed
     up and restored if a zypper-migration rollback happens. (bsc#1219004)
+  * Fix certificate import for Yast when using a registration proxy with
+    self-signed SSL certificate (bsc#1223107)
 
 
 -------------------------------------------------------------------
