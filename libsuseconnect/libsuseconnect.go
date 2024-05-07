@@ -13,7 +13,6 @@ import (
 	"errors"
 	"net"
 	"net/url"
-	"path/filepath"
 	"slices"
   "strconv"
 	"unsafe"
