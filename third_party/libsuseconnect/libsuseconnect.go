@@ -12,6 +12,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"unsafe"
 	"crypto/tls"
@@ -111,8 +112,14 @@ func credentials(path *C.char) *C.char {
 
 //export create_credentials_file
 func create_credentials_file(login, password, token, path *C.char) *C.char {
+	credPath := C.GoString(path)
+
+	if !filepath.IsAbs(credPath) {
+		credPath = filepath.Join(cred.DefaultCredentialsDir, credPath)
+	}
+
 	err := cred.CreateCredentials(
-		C.GoString(login), C.GoString(password), C.GoString(token), C.GoString(path))
+		C.GoString(login), C.GoString(password), C.GoString(token), credPath)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
