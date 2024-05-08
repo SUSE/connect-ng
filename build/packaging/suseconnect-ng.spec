@@ -18,7 +18,7 @@
 %global project github.com/SUSE/connect-ng
 
 Name:           suseconnect-ng
-Version:        1.9.0
+Version:        1.10.0
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later
@@ -42,6 +42,7 @@ ExcludeArch:    %ix86 s390 ppc64
 
 Obsoletes:      SUSEConnect < 1.1.0
 Provides:       SUSEConnect = %version
+Provides:       suseconnect = %version
 Obsoletes:      zypper-migration-plugin < 0.99
 Provides:       zypper-migration-plugin = 0.99
 Obsoletes:      zypper-search-packages-plugin < 0.99
@@ -78,7 +79,7 @@ replaced SUSEConnect.
 Summary:        C interface to suseconnect-ng
 Group:          System/Management
 # the CLI is not used by libsuseconnect but it has the same dependencies and it's easier to keep one list above
-Requires:       suseconnect-ng
+Requires:       suseconnect-ng = %version
 
 %description -n libsuseconnect
 This package contains library which provides C interface to selected
@@ -87,7 +88,7 @@ suseconnect-ng functions.
 %package -n suseconnect-ruby-bindings
 Summary:        Ruby bindings for libsuseconnect library
 Group:          System/Management
-Requires:       libsuseconnect
+Requires:       libsuseconnect = %version
 # Adding the rubygem provides, to work as a drop-in replacement for Ruby SUSEConnect on SLE15<SP4
 %if (0%{?sle_version} > 0 && 0%{?sle_version} < 150400)
 Provides:       rubygem(ruby:2.5.0:suse-connect)

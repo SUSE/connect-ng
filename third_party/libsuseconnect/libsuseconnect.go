@@ -6,12 +6,15 @@ package main
 import "C"
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"net"
 	"net/url"
+	"path/filepath"
+	"slices"
 	"strconv"
 	"unsafe"
 
@@ -110,8 +113,14 @@ func credentials(path *C.char) *C.char {
 
 //export create_credentials_file
 func create_credentials_file(login, password, token, path *C.char) *C.char {
+	credPath := C.GoString(path)
+
+	if !filepath.IsAbs(credPath) {
+		credPath = filepath.Join(cred.DefaultCredentialsDir, credPath)
+	}
+
 	err := cred.CreateCredentials(
-		C.GoString(login), C.GoString(password), C.GoString(token), C.GoString(path))
+		C.GoString(login), C.GoString(password), C.GoString(token), credPath)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -241,6 +250,15 @@ func certToPEM(cert *x509.Certificate) string {
 	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 }
 
+func certsToPEM(certs []*x509.Certificate) string {
+	slices.Reverse(certs)
+	var pemString string
+	for _, cert := range certs {
+		pemString += certToPEM(cert)
+	}
+	return pemString
+}
+
 func errorToJSON(err error) string {
 	var s struct {
 		ErrType string `json:"err_type"`
@@ -275,6 +293,16 @@ func errorToJSON(err error) string {
 			s.ErrType = "SSLError"
 			s.Message = ierr.Error()
 			s.Data = certToPEM(ce.Cert)
+			// this could be:
+			// 18 (X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
+			// 19 (X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) or
+			// 20 (X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
+			s.Code = 19 // this seems to best match original behavior
+		} else if ce, ok := ierr.(*tls.CertificateVerificationError); ok {
+			// starting with go1.20, we receive this error (https://go.dev/doc/go1.20#crypto/tls)
+			s.ErrType = "SSLError"
+			s.Message = ierr.Error()
+			s.Data = certsToPEM(ce.UnverifiedCertificates)
 			// this could be:
 			// 18 (X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
 			// 19 (X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN) or
