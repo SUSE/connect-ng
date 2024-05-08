@@ -74,6 +74,11 @@ var FileExists = func(path string) bool {
 	return true
 }
 
+var ExecutableExists = func(path string) bool {
+	_, err := exec.LookPath(path)
+	return err == nil
+}
+
 func RemoveFile(path string) error {
 	Debug.Print("Removing file: ", path)
 	if !FileExists(path) {
