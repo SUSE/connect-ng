@@ -26,6 +26,7 @@ Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         suseconnect-ng-%{version}.tar.xz
 Source1:        %{name}-rpmlintrc
+Source2:        vendor.tar.xz
 
 # Build against latest golang in Tumbleweed and
 # go1.21-openssl on all other distributions
@@ -98,18 +99,18 @@ Provides:       rubygem(ruby:2.5.0:suse-connect)
 This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
 %prep
-%autosetup -p 1 -n %{name}-%{version}
+%autosetup -p1 -a2 -n%{name}-%{version}
 
 %build
 # the binary
 echo %{version} > internal/connect/version.txt
-go build -v -ldflags "-s -w" -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
-go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
-go build -v -ldflags "-s -w" -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
+go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
+go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
+go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
 
 # the library
 mkdir -p %_builddir/go/lib
-go build -v -ldflags "-s -w" -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
+go build -v -ldflags "-s -w" -mod=vendor -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
 
 %install
 # Install binary + symlinks
