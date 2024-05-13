@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	defaulCredentialsDir  = "/etc/zypp/credentials.d"
-	globalCredentialsFile = "/etc/zypp/credentials.d/SCCcredentials"
-	curlrcUserFile        = ".curlrc"
+	DefaultCredentialsDir = "/etc/zypp/credentials.d"
+	GlobalCredentialsFile = "/etc/zypp/credentials.d/SCCcredentials"
+	CurlrcUserFile        = ".curlrc"
 )
 
 var (
@@ -39,11 +39,11 @@ func (c Credentials) String() string {
 }
 
 func SystemCredentialsPath(fsRoot string) string {
-	return filepath.Join(fsRoot, globalCredentialsFile)
+	return filepath.Join(fsRoot, GlobalCredentialsFile)
 }
 
 func ServiceCredentialsPath(service string, fsRoot string) string {
-	return filepath.Join(fsRoot, defaulCredentialsDir, service)
+	return filepath.Join(fsRoot, DefaultCredentialsDir, service)
 }
 
 func CurlrcCredentialsPath() string {
@@ -52,7 +52,7 @@ func CurlrcCredentialsPath() string {
 		// TODO: handle error? log?
 		return ""
 	}
-	return filepath.Join(home, curlrcUserFile)
+	return filepath.Join(home, CurlrcUserFile)
 }
 
 // ReadCredentials returns the credentials from path
