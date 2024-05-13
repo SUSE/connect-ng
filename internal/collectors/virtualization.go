@@ -28,7 +28,7 @@ func (Virtualization) run(arch Architecture) (Result, error) {
 		return Result{"hypervisor": nil}, nil
 	}
 
-	// Historicly SCC API expects virtualization information with the key `hypervisor`. Use it!
+	// Historically SCC API expects virtualization information with the key `hypervisor`. Use it!
 	// Check: https://scc.suse.com/connect/v4/documentation#/organizations/put_organizations_systems
 	return Result{"hypervisor": string(output)}, nil
 }
