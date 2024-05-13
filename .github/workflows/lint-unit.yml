@@ -36,7 +36,7 @@ jobs:
           cp -r $GITHUB_WORKSPACE $SOURCE
 
       - name: run golang linting
-        run: make gofmt
+        run: make check-format
 
       - name: run unit tests
         run: make test
@@ -45,4 +45,4 @@ jobs:
         run: |
           # We need to make sure git trusts us here. mark the directory as safe playground
           git config --global --add safe.directory /__w/connect-ng/connect-ng
-          make build build-so
+          make vendor build
