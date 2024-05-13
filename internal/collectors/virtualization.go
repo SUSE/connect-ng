@@ -6,6 +6,8 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 )
 
+const systemdDetectVirtExecutable = "systemd-detect-virt"
+
 type Virtualization struct{}
 
 func (Virtualization) run(arch Architecture) (Result, error) {
@@ -14,11 +16,11 @@ func (Virtualization) run(arch Architecture) (Result, error) {
 	// there might be the possibility to run on a system without systemd installed (e.g. containers).
 	// This tool can detect a lot different hypervisors:
 	// https://github.com/systemd/systemd/blob/main/src/basic/virt.c#L1046
-	if !util.ExecutableExists("systemd-detect-virt") {
-		return NoResult, fmt.Errorf("can not detect virtualization: `system-detect-virt` executable not found")
+	if !util.ExecutableExists(systemdDetectVirtExecutable) {
+		return NoResult, fmt.Errorf("can not detect virtualization: `%s` executable not found", systemdDetectVirtExecutable)
 	}
 
-	output, err := util.Execute([]string{"systemd-detect-virt", "-v"}, []int{0, 1})
+	output, err := util.Execute([]string{systemdDetectVirtExecutable, "-v"}, []int{0, 1})
 
 	if err != nil {
 		return NoResult, err
