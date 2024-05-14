@@ -8,6 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func mockLscpu(t *testing.T, path string) {
+	util.Execute = func(cmd []string, _ []int) ([]byte, error) {
+		actualCmd := strings.Join(cmd, " ")
+		testData := util.ReadTestFile(path, t)
+
+		assert.Equal(t, "lscpu -p=cpu,socket", actualCmd, "Wrong command called")
+
+		return testData, nil
+	}
+}
+
 func TestCPUCollectorRun(t *testing.T) {
 	assert := assert.New(t)
 	expected := Result{"cpus": 8, "sockets": 2}
@@ -35,15 +46,4 @@ func TestCPUCollectorRunInvalidCPU(t *testing.T) {
 
 	assert.NoError(err)
 	assert.Equal(expected, res, "Result mismatch")
-}
-
-func mockLscpu(t *testing.T, path string) {
-	util.Execute = func(cmd []string, validExitCodes []int) ([]byte, error) {
-		actualCmd := strings.Join(cmd, " ")
-		testData := util.ReadTestFile(path, t)
-
-		assert.Equal(t, "lscpu -p=cpu,socket", actualCmd, "Wrong command called")
-
-		return testData, nil
-	}
 }
