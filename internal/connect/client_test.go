@@ -51,6 +51,15 @@ func mockRemoveOrRefreshService(t *testing.T, expected bool) {
 
 }
 
+func mockMakeSysInfoBody(t *testing.T, expectedIncludeUptimeLog bool) {
+	localMakeSysInfoBody = func(distroTarget, namespace string, instanceData []byte, includeUptimeLog bool) ([]byte, error) {
+		if includeUptimeLog != expectedIncludeUptimeLog {
+			t.Errorf("Expected includeUptimeLog to be %v\n", expectedIncludeUptimeLog)
+		}
+		return nil, nil
+	}
+}
+
 // NOTE: This needs to be reworked.
 // The current implementation of logging does not really allow any useful
 // testing mechanics and is overly complicated. Refactor this!
@@ -97,4 +106,33 @@ func TestClientDeregistrationWithoutServiceInstallSkipSuccessful(t *testing.T) {
 	mockAddServiceCalled(t, true)
 	mockInstallReleasePackage(t, true)
 	Deregister(false)
+}
+
+func TestDefaultSystemUptimeTrackingDisable(t *testing.T) {
+	localUpdateSystem = func(body []byte) error {
+		// we don't care about updating the system for unit test
+		return nil
+	}
+	mockMakeSysInfoBody(t, false)
+	UpdateSystem("", "", false, true)
+}
+
+func TestSystemUptimeTrackingEnable(t *testing.T) {
+	CFG.EnableSystemUptimeTracking = true
+	localUpdateSystem = func(body []byte) error {
+		// we don't care about updating the system for unit test
+		return nil
+	}
+	mockMakeSysInfoBody(t, true)
+	UpdateSystem("", "", false, true)
+}
+
+func TestSystemUptimeTrackingEnableNotKeepalive(t *testing.T) {
+	CFG.EnableSystemUptimeTracking = true
+	localUpdateSystem = func(body []byte) error {
+		// we don't care about updating the system for unit test
+		return nil
+	}
+	mockMakeSysInfoBody(t, false)
+	UpdateSystem("", "", false, false)
 }

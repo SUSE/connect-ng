@@ -19,25 +19,27 @@ var (
 )
 
 const (
-	defaultConfigPath = "/etc/SUSEConnect"
-	defaultBaseURL    = "https://scc.suse.com"
-	defaultInsecure   = false
-	defaultSkip       = false
+	defaultConfigPath                 = "/etc/SUSEConnect"
+	defaultBaseURL                    = "https://scc.suse.com"
+	defaultInsecure                   = false
+	defaultSkip                       = false
+	defaultEnableSystemUptimeTracking = false
 )
 
 // Config holds the config!
 type Config struct {
-	Path             string
-	BaseURL          string `json:"url"`
-	Language         string `json:"language"`
-	Insecure         bool   `json:"insecure"`
-	Namespace        string `json:"namespace"`
-	FsRoot           string
-	Token            string
-	Product          Product
-	InstanceDataFile string
-	Email            string `json:"email"`
-	AutoAgreeEULA    bool
+	Path                       string
+	BaseURL                    string `json:"url"`
+	Language                   string `json:"language"`
+	Insecure                   bool   `json:"insecure"`
+	Namespace                  string `json:"namespace"`
+	FsRoot                     string
+	Token                      string
+	Product                    Product
+	InstanceDataFile           string
+	Email                      string `json:"email"`
+	AutoAgreeEULA              bool
+	EnableSystemUptimeTracking bool
 
 	NoZypperRefresh    bool
 	AutoImportRepoKeys bool
@@ -47,10 +49,11 @@ type Config struct {
 // NewConfig returns a Config with defaults
 func NewConfig() Config {
 	return Config{
-		Path:               defaultConfigPath,
-		BaseURL:            defaultBaseURL,
-		Insecure:           defaultInsecure,
-		SkipServiceInstall: defaultSkip,
+		Path:                       defaultConfigPath,
+		BaseURL:                    defaultBaseURL,
+		Insecure:                   defaultInsecure,
+		SkipServiceInstall:         defaultSkip,
+		EnableSystemUptimeTracking: defaultEnableSystemUptimeTracking,
 	}
 }
 
@@ -66,6 +69,7 @@ func (c Config) toYAML() []byte {
 		fmt.Fprintf(&buf, "namespace: %s\n", c.Namespace)
 	}
 	fmt.Fprintf(&buf, "auto_agree_with_licenses: %v\n", c.AutoAgreeEULA)
+	fmt.Fprintf(&buf, "enable_system_uptime_tracking: %v\n", c.EnableSystemUptimeTracking)
 	return buf.Bytes()
 }
 
@@ -113,6 +117,8 @@ func parseConfig(r io.Reader, c *Config) {
 			c.NoZypperRefresh, _ = strconv.ParseBool(val)
 		case "auto_agree_with_licenses":
 			c.AutoAgreeEULA, _ = strconv.ParseBool(val)
+		case "enable_system_uptime_tracking":
+			c.EnableSystemUptimeTracking, _ = strconv.ParseBool(val)
 		default:
 			util.Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}

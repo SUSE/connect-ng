@@ -39,6 +39,8 @@ var (
 	localAddService             = zypper.AddService
 	localInstallReleasePackage  = zypper.InstallReleasePackage
 	localRemoveOrRefreshService = removeOrRefreshService
+	localMakeSysInfoBody        = makeSysInfoBody
+	localUpdateSystem           = updateSystem
 )
 
 // Register announces the system, activates the
@@ -331,7 +333,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (stri
 	if err != nil {
 		return "", "", err
 	}
-	sysInfoBody, err := makeSysInfoBody(distroTgt, CFG.Namespace, instanceData)
+	sysInfoBody, err := localMakeSysInfoBody(distroTgt, CFG.Namespace, instanceData, false)
 	if err != nil {
 		return "", "", err
 	}
@@ -339,7 +341,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (stri
 }
 
 // UpdateSystem resend the system's hardware details on SCC
-func UpdateSystem(distroTarget, instanceDataFile string, quiet bool) error {
+func UpdateSystem(distroTarget, instanceDataFile string, quiet bool, keepalive bool) error {
 	if !quiet {
 		util.Info.Printf(util.Bold("\nUpdating system details on %s ..."), CFG.BaseURL)
 	}
@@ -347,11 +349,12 @@ func UpdateSystem(distroTarget, instanceDataFile string, quiet bool) error {
 	if err != nil {
 		return err
 	}
-	sysInfoBody, err := makeSysInfoBody(distroTarget, CFG.Namespace, instanceData)
+	includeUptimeLog := keepalive && CFG.EnableSystemUptimeTracking
+	sysInfoBody, err := localMakeSysInfoBody(distroTarget, CFG.Namespace, instanceData, includeUptimeLog)
 	if err != nil {
 		return err
 	}
-	return updateSystem(sysInfoBody)
+	return localUpdateSystem(sysInfoBody)
 }
 
 // SendKeepAlivePing updates the system information on the server
@@ -359,7 +362,7 @@ func SendKeepAlivePing() error {
 	if !IsRegistered() {
 		return ErrPingFromUnregistered
 	}
-	err := UpdateSystem("", "", false)
+	err := UpdateSystem("", "", false, true)
 	if err == nil {
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	}
@@ -371,7 +374,7 @@ func SendKeepAlivePing() error {
 // to the server. The output is not shown on stdout if `quiet` is set to true.
 func announceOrUpdate(quiet bool) error {
 	if IsRegistered() {
-		return UpdateSystem("", "", quiet)
+		return UpdateSystem("", "", quiet, false)
 	}
 
 	distroTgt := ""

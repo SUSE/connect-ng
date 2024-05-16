@@ -12,7 +12,8 @@ insecure: false
 url: https://smt-azure.susecloud.net
 language: en_US.UTF-8
 no_zypper_refs: true
-auto_agree_with_licenses: true`
+auto_agree_with_licenses: true
+enable_system_uptime_tracking: false`
 
 var cfg2 = `---
  insecure: true
