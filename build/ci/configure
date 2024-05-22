@@ -16,6 +16,7 @@ fail() { echo "::error::$1"; exit 1; }
 group "install suseconnect"
 pushd "$BUILD_DIR/RPMS/${ARCH}"
   zypper --non-interactive --no-refresh install --allow-unsigned-rpm *.rpm
+  zypper --non-interactive --no-refresh install systemd
 popd
 groupend
 

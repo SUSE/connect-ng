@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: registry.suse.com/bci/golang:1.21-openssl
-      options: --user root
+      options: --user root --privileged
 
     steps:
       - uses: actions/checkout@v4
