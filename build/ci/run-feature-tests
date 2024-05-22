@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Where the connect-ng source is located within the container
 SOURCE=${SOURCE:-/usr/src/connect-ng}
