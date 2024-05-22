@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/stretchr/testify/assert"
@@ -347,4 +349,29 @@ func TestReadUptimeLogFile(t *testing.T) {
 	if len(uptimeLog) != 2 {
 		t.Fatalf("Expected two entries in uptime log, got %#v instead", len(uptimeLog))
 	}
+}
+
+func mockDetectArchitecture() {
+	collectors.DetectArchitecture = func() (string, error) {
+		return "x86_64", nil
+	}
+}
+
+func TestMakeSysInfoBody(t *testing.T) {
+	assert := assert.New(t)
+	expectedBody := strings.TrimSpace(string(util.ReadTestFile("api/system_information_body.json", t)))
+
+	// lets overwrite the collectors here to not really call any detection in unit tests
+	mandatoryCollectors = []collectors.Collector{
+		collectors.FakeCollectorNew("hostname", "localhost"),
+		collectors.FakeCollectorNew("cpus", 2),
+		collectors.FakeCollectorNew("sockets", 2),
+		collectors.FakeCollectorNew("mem_total", 1337),
+	}
+	mockDetectArchitecture()
+
+	body, err := makeSysInfoBody("sle-15-x86_64", "test", []byte{}, false)
+
+	assert.NoError(err)
+	assert.Equal(expectedBody, string(body))
 }
