@@ -41,7 +41,6 @@ func TestVirtualizationCollectorRun(t *testing.T) {
 func TestVirtualizationCollectorRunNoVirtualization(t *testing.T) {
 	assert := assert.New(t)
 	testObj := Virtualization{}
-	expected := Result{"hypervisor": nil}
 
 	mockSystemdDetectVirtExists(true)
 	mockSystemdDetectVirt(t, "none")
@@ -49,7 +48,7 @@ func TestVirtualizationCollectorRunNoVirtualization(t *testing.T) {
 	result, err := testObj.run(ARCHITECTURE_X86_64)
 
 	assert.NoError(err)
-	assert.Equal(expected, result)
+	assert.Equal(NoResult, result)
 }
 
 func TestVirtualizationCollectorRunBinaryMissing(t *testing.T) {

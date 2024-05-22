@@ -22,12 +22,8 @@ func (Virtualization) run(arch string) (Result, error) {
 
 	output, err := util.Execute([]string{systemdDetectVirtExecutable, "-v"}, []int{0, 1})
 
-	if err != nil {
+	if err != nil || string(output) == "none" {
 		return NoResult, err
-	}
-
-	if string(output) == "none" {
-		return Result{"hypervisor": nil}, nil
 	}
 
 	// Historically SCC API expects virtualization information with the key `hypervisor`. Use it!
