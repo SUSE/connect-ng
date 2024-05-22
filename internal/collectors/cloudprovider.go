@@ -28,7 +28,7 @@ const dmidecodeExecutable = "dmidecode"
 
 type CloudProvider struct{}
 
-func (CloudProvider) run(_ Architecture) (Result, error) {
+func (CloudProvider) run(_ string) (Result, error) {
 	if !util.ExecutableExists(dmidecodeExecutable) {
 		return NoResult, fmt.Errorf("can not detect cloud environment: `%s` executable not found", dmidecodeExecutable)
 	}

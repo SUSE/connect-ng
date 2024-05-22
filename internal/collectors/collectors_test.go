@@ -2,43 +2,26 @@ package collectors
 
 import (
 	"errors"
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type FakeCollector struct {
-	mock.Mock
-}
-
-func (m *FakeCollector) run(arch Architecture) (Result, error) {
-	args := m.Called(arch)
-
-	return args.Get(0).(Result), args.Error(1)
-}
 
 func TestCollectInformationRunAllCollectors(t *testing.T) {
 	assert := assert.New(t)
 
-	resultCollector1 := Result{"metric1": "value1"}
-	resultCollector2 := Result{"metric2": "value2"}
-
-	collector1 := FakeCollector{}
-	collector2 := FakeCollector{}
+	collector1 := FakeCollectorNew("metric1", "value1")
+	collector2 := FakeCollectorNew("metric2", "value2")
 
 	expected := Result{
 		"metric1": "value1",
 		"metric2": "value2",
 	}
 
-	// set up expectations
-	collector1.On("run", ARCHITECTURE_X86_64).Return(resultCollector1, nil)
-	collector2.On("run", ARCHITECTURE_X86_64).Return(resultCollector2, nil)
-
 	collectors := []Collector{
-		&collector1,
-		&collector2,
+		collector1,
+		collector2,
 	}
 
 	result, err := CollectInformation(ARCHITECTURE_X86_64, collectors)
@@ -51,20 +34,38 @@ func TestCollectInformationWithFailingCollector(t *testing.T) {
 	assert := assert.New(t)
 
 	resultCollector1 := Result{"metric1": "value1"}
+	resultCollector3 := Result{"metric3": "value3"}
+
+	expectedResult := Result{}
+	maps.Copy(expectedResult, resultCollector1)
+	maps.Copy(expectedResult, resultCollector3)
 
 	collector1 := FakeCollector{}
 	collector2 := FakeCollector{}
+	collector3 := FakeCollector{}
 
 	// set up expectations
 	collector1.On("run", ARCHITECTURE_X86_64).Return(resultCollector1, nil)
 	collector2.On("run", ARCHITECTURE_X86_64).Return(NoResult, errors.New("I am error"))
+	collector3.On("run", ARCHITECTURE_X86_64).Return(resultCollector3, nil)
 
 	collectors := []Collector{
 		&collector1,
 		&collector2,
+		&collector3,
 	}
 
 	result, err := CollectInformation(ARCHITECTURE_X86_64, collectors)
-	assert.Error(err)
-	assert.Equal(result, NoResult)
+
+	assert.NoError(err)
+	assert.Equal(expectedResult, result)
+}
+
+func TestFromResult(t *testing.T) {
+	assert := assert.New(t)
+	result := Result{"valueA": 8, "valueB": "some string"}
+
+	assert.Equal(8, FromResult(result, "valueA", 0))
+	assert.Equal("some string", FromResult(result, "valueB", "default value"))
+	assert.Equal("default value", FromResult(result, "valueC", "default value"))
 }

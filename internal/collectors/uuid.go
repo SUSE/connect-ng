@@ -15,7 +15,7 @@ var localOsReadfile = os.ReadFile
 
 type UUID struct{}
 
-func (UUID) run(arch Architecture) (Result, error) {
+func (UUID) run(arch string) (Result, error) {
 	var uuid string
 	var err error
 	switch arch {

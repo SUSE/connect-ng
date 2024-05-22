@@ -10,7 +10,7 @@ const systemdDetectVirtExecutable = "systemd-detect-virt"
 
 type Virtualization struct{}
 
-func (Virtualization) run(arch Architecture) (Result, error) {
+func (Virtualization) run(arch string) (Result, error) {
 
 	// We utilize systemd here to fetch the virtualization information. Since we do not hard require systemd
 	// there might be the possibility to run on a system without systemd installed (e.g. containers).

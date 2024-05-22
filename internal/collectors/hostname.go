@@ -9,7 +9,7 @@ import (
 type Hostname struct {
 }
 
-func (Hostname) run(arch Architecture) (Result, error) {
+func (Hostname) run(arch string) (Result, error) {
 	name, err := os.Hostname()
 
 	if err != nil || name == "" {

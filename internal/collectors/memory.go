@@ -15,7 +15,7 @@ type Memory struct{}
 // Returns an integer with the amount of megabytes of total memory (i.e.
 // `MemTotal` in /proc/meminfo). It will return 0 if this information could not
 // be extracted for whatever reason.
-func (Memory) run(arch Architecture) (Result, error) {
+func (Memory) run(arch string) (Result, error) {
 	fileContent, err := localOsReadfile("/proc/meminfo")
 	if err != nil {
 		util.Debug.Print("'/proc/meminfo' could not be read!")
