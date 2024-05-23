@@ -9,7 +9,7 @@ import (
 
 type CPU struct{}
 
-func (cpu CPU) run(arch Architecture) (Result, error) {
+func (cpu CPU) run(arch string) (Result, error) {
 	output, err := util.Execute([]string{"lscpu", "-p=cpu,socket"}, nil)
 
 	if err != nil {

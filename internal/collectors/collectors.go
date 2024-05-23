@@ -20,10 +20,11 @@ package collectors
 
 import (
 	"maps"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 type Result = map[string]interface{}
-type Architecture = string
 
 const (
 	ARCHITECTURE_X86_64 = "x86_64"
@@ -35,19 +36,34 @@ const (
 var NoResult = Result{}
 
 type Collector interface {
-	run(arch Architecture) (Result, error)
+	run(arch string) (Result, error)
 }
 
-func CollectInformation(architecture Architecture, collectors []Collector) (Result, error) {
+func CollectInformation(architecture string, collectors []Collector) (Result, error) {
 	obj := Result{}
 
 	for _, collector := range collectors {
 		res, err := collector.run(architecture)
 		if err != nil {
-			return NoResult, err
+			util.Debug.Printf("Collecting system information failed: %s", err)
 		}
 		maps.Copy(obj, res)
 	}
 
 	return obj, nil
+}
+
+// Extract a value from the already existing result set preserving the existing value type
+// and providing a default value in case the to be extracted key does not existing in the
+// result set or is of different type
+func FromResult[R any](result Result, key string, def R) R {
+	if value, ok := result[key]; ok {
+		switch value.(type) {
+		case R:
+			return value.(R)
+		default:
+			return def
+		}
+	}
+	return def
 }

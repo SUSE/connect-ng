@@ -55,7 +55,7 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 test: internal/connect/version.txt
-	$(GO) test -v ./internal/* ./cmd/suseconnect
+	$(GO) test ./internal/* ./cmd/suseconnect
 
 ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash

@@ -10,7 +10,7 @@ const systemdDetectVirtExecutable = "systemd-detect-virt"
 
 type Virtualization struct{}
 
-func (Virtualization) run(arch Architecture) (Result, error) {
+func (Virtualization) run(arch string) (Result, error) {
 
 	// We utilize systemd here to fetch the virtualization information. Since we do not hard require systemd
 	// there might be the possibility to run on a system without systemd installed (e.g. containers).
@@ -22,12 +22,9 @@ func (Virtualization) run(arch Architecture) (Result, error) {
 
 	output, err := util.Execute([]string{systemdDetectVirtExecutable, "-v"}, []int{0, 1})
 
-	if err != nil {
+	// systemd-virt-detect does return "none" as output if no virtualization is detected
+	if err != nil || string(output) == "none" {
 		return NoResult, err
-	}
-
-	if string(output) == "none" {
-		return Result{"hypervisor": nil}, nil
 	}
 
 	// Historically SCC API expects virtualization information with the key `hypervisor`. Use it!

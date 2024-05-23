@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
 )
@@ -221,12 +222,12 @@ func readUptimeLogFile(uptimeLogFilePath string) ([]string, error) {
 // makeSysInfoBody returns the JSON payload needed for the announce/update system calls
 func makeSysInfoBody(distroTarget, namespace string, instanceData []byte, includeUptimeLog bool) ([]byte, error) {
 	var payload struct {
-		Hostname     string   `json:"hostname"`
-		DistroTarget string   `json:"distro_target"`
-		InstanceData string   `json:"instance_data,omitempty"`
-		Namespace    string   `json:"namespace,omitempty"`
-		Hwinfo       hwinfo   `json:"hwinfo"`
-		OnlineAt     []string `json:"online_at,omitempty"`
+		Hostname     string            `json:"hostname"`
+		DistroTarget string            `json:"distro_target"`
+		InstanceData string            `json:"instance_data,omitempty"`
+		Namespace    string            `json:"namespace,omitempty"`
+		Hwinfo       collectors.Result `json:"hwinfo"`
+		OnlineAt     []string          `json:"online_at,omitempty"`
 	}
 	if distroTarget != "" {
 		payload.DistroTarget = distroTarget
@@ -250,14 +251,34 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte, includ
 		}
 	}
 
-	hw, err := getHwinfo()
+	sysinfo, err := fetchSystemInformation()
 	if err != nil {
 		return nil, err
 	}
-	payload.Hostname = hw.Hostname
-	payload.Hwinfo = hw
+
+	payload.Hwinfo = sysinfo
+	payload.Hostname = collectors.FromResult(sysinfo, "hostname", "")
 
 	return json.Marshal(payload)
+}
+
+var mandatoryCollectors = []collectors.Collector{
+	collectors.CPU{},
+	collectors.Hostname{},
+	collectors.Memory{},
+	collectors.UUID{},
+	collectors.Virtualization{},
+	collectors.CloudProvider{},
+	collectors.Architecture{},
+}
+
+func fetchSystemInformation() (collectors.Result, error) {
+	arch, err := collectors.DetectArchitecture()
+
+	if err != nil {
+		return collectors.NoResult, err
+	}
+	return collectors.CollectInformation(arch, mandatoryCollectors)
 }
 
 func productMigrations(installed []Product) ([]MigrationPath, error) {
