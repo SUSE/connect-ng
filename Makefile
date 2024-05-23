@@ -72,8 +72,10 @@ feature-tests:
 test-yast: build-so
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
 
+# This "arm" means ARM64v8 little endian, the one being delivered currently on
+# OBS.
 build-arm: out internal/connect/version.txt
-	GOOS=linux GOARCH=arm64 GOARM=7 $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
+	GOOS=linux GOARCH=arm64 $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
 build-s390: out internal/connect/version.txt
 	GOOS=linux GOARCH=s390x $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect

@@ -16,6 +16,10 @@ const (
 	ST_RDONLY = 0x1
 
 	// From <linux/magic.h>
+	//
+	// NOTE: this will not work on 32-bit systems (i.e. armv7 in 32-bit mode).
+	// If we ever consider supporting these systems, then we would need to
+	// change this.
 	BTRFS_SUPER_MAGIC = 0x9123683E
 )
 
