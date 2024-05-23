@@ -22,6 +22,7 @@ func (Virtualization) run(arch string) (Result, error) {
 
 	output, err := util.Execute([]string{systemdDetectVirtExecutable, "-v"}, []int{0, 1})
 
+	// systemd-virt-detect does return "none" as output if no virtualization is detected
 	if err != nil || string(output) == "none" {
 		return NoResult, err
 	}

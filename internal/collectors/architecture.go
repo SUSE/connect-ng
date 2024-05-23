@@ -5,8 +5,10 @@ import "github.com/SUSE/connect-ng/internal/util"
 type Architecture struct{}
 
 func (Architecture) run(arch string) (Result, error) {
-	// For now just a playback of the already existing value but in future
-	// this collector can collect architecture specific information such as SoC information
+	// NOTE: For now, just playback the provided architecture value which
+	// is itself gathered by DetectArchitecture method in this module.
+	// In the future this will change since we will collect more architecture
+	// specific information here
 	return Result{"arch": arch}, nil
 }
 
