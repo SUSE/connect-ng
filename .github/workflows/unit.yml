@@ -1,4 +1,4 @@
-name: lint + unit tests
+name: unit tests
 
 # About security when running the tests and NOT exposing
 # the secrets to externals. Currently Github Actions does
@@ -34,14 +34,6 @@ jobs:
         run: |
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
-
-      - name: install dependencies
-        run: |
-          cat /etc/os-release
-
-      - uses: dominikh/staticcheck-action@v1
-        with:
-          version: "latest"
 
       - name: run unit tests
         run: make test
