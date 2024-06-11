@@ -78,6 +78,14 @@ var FileExists = func(path string) bool {
 	return true
 }
 
+var ReadFileString = func(file string) string {
+	if FileExists(file) {
+		b, _ := os.ReadFile(file)
+		return string(b)
+	}
+	return ""
+}
+
 var ExecutableExists = func(path string) bool {
 	_, err := exec.LookPath(path)
 	return err == nil
