@@ -270,6 +270,7 @@ var mandatoryCollectors = []collectors.Collector{
 	collectors.Virtualization{},
 	collectors.CloudProvider{},
 	collectors.Architecture{},
+	collectors.ContainerRuntime{},
 }
 
 func fetchSystemInformation() (collectors.Result, error) {
