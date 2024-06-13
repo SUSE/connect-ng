@@ -1,0 +1,33 @@
+# dmidecode 3.4
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1.1 present.
+
+Handle 0x0004, DMI type 4, 48 bytes
+Processor Information
+	Socket Designation: CPU 1
+	Type: Central Processor
+	Family: ARMv8
+	Manufacturer: AppliedMicro(R)
+	ID: 00 00 00 00 01 00 3F 50
+	Version: Ampere(TM) eMAG
+	Voltage: 0.0 V
+	External Clock: 3000 MHz
+	Max Speed: 3350 MHz
+	Current Speed: 3000 MHz
+	Status: Populated, Enabled
+	Upgrade: None
+	L1 Cache Handle: 0x0005
+	L2 Cache Handle: 0x0006
+	L3 Cache Handle: 0x0007
+	Serial Number: Unknown
+	Asset Tag: Unknown
+	Part Number: Unknown
+	Core Count: 32
+	Core Enabled: 32
+	Thread Count: 1
+	Characteristics:
+		64-bit capable
+		Multi-Core
+		Hardware Thread
+		Execute Protection
+		Enhanced Virtualization

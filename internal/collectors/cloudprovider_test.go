@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -14,10 +15,10 @@ func mockDmidecodeExists(exists bool) {
 	}
 }
 
-func mockDmidecode(t *testing.T, expectedResult []byte) {
+func mockDmidecode(t *testing.T, typ string, expectedResult []byte) {
 	util.Execute = func(cmd []string, _ []int) ([]byte, error) {
 		actualCmd := strings.Join(cmd, " ")
-		assert.Equal(t, "dmidecode -t system", actualCmd, "Wrong command called")
+		assert.Equal(t, fmt.Sprintf("dmidecode -t %v", typ), actualCmd, "Wrong command called")
 
 		return expectedResult, nil
 	}
@@ -39,7 +40,7 @@ func TestCollectorRunCollectorRun(t *testing.T) {
 		data := util.ReadTestFile(path, t)
 		expected := Result{"cloud_provider": expectedProvider}
 
-		mockDmidecode(t, data)
+		mockDmidecode(t, "system", data)
 
 		result, err := testObj.run(ARCHITECTURE_X86_64)
 
@@ -55,7 +56,7 @@ func TestCloudproviderCollectorRunAWSLarge(t *testing.T) {
 	expected := Result{"cloud_provider": "amazon"}
 
 	mockDmidecodeExists(true)
-	mockDmidecode(t, data)
+	mockDmidecode(t, "system", data)
 
 	result, err := testObj.run(ARCHITECTURE_X86_64)
 
@@ -69,7 +70,7 @@ func TestCloudproviderCollectorNonCloudEnvironment(t *testing.T) {
 	data := util.ReadTestFile("collectors/dmidecode_non_cloud.txt", t)
 
 	mockDmidecodeExists(true)
-	mockDmidecode(t, data)
+	mockDmidecode(t, "system", data)
 
 	result, err := testObj.run(ARCHITECTURE_X86_64)
 

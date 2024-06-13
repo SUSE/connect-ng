@@ -1,6 +1,9 @@
 package collectors
 
 import (
+	"bytes"
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -23,7 +26,8 @@ func (cpu CPU) run(arch string) (Result, error) {
 		return Result{"cpus": nil, "sockets": nil}, nil
 	}
 
-	return Result{"cpus": cpus, "sockets": sockets}, nil
+	res := Result{"cpus": cpus, "sockets": sockets}
+	return addArchExtras(arch, res), nil
 }
 
 func parseCPUSocket(content string) (int, int) {
@@ -57,4 +61,57 @@ func parseCPUSocket(content string) (int, int) {
 		7,1
 	*/
 	return cpu + 1, socket + 1
+}
+
+// Add architecture-specific fields into the given result. Note that this could
+// have also been implemented by adding specific `gobuild` tags into
+// architecture-specific files, but this would needlessly complicate testing.
+func addArchExtras(arch string, result Result) Result {
+	if arch == ARCHITECTURE_ARM64 {
+		return addArm64Extras(result)
+	}
+	return result
+}
+
+const deviceTreePath = "/sys/firmware/devicetree/base/compatible"
+
+func exactStringMatch(id string, text []byte) string {
+	re := regexp.MustCompile(fmt.Sprintf("%v: (.*)", id))
+	results := re.FindSubmatch(text)
+	if len(results) != 2 {
+		return ""
+	}
+	return string(results[1])
+}
+
+// Add extra information that we can gather from an ARM64 machine. This will add
+// one extra value to `result`:
+//   - `device_tree` (non-ACPI compatible devices): string.
+//   - `processor_information (ACPI compatiable devices)`: a map with `family`,
+//     `manufacturer` and `signature`.
+//
+// If nothing could be fetched, then nothing is added and the same `result` is
+// returned.
+func addArm64Extras(result Result) Result {
+	b := util.ReadFile(deviceTreePath)
+	if len(b) > 0 {
+		// NOTE: the device tree `compatible` file can be weird and contain
+		// multiple null bytes spread across the given definition. Hence, `Trim`
+		// and friends are not enough and we have to actually replace any
+		// occurrences with empty bytes.
+		result["device_tree"] = string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+	} else {
+		output, _ := util.Execute([]string{"dmidecode", "-t", "processor"}, nil)
+
+		pinfo := make(map[string]string)
+		pinfo["family"] = exactStringMatch("Family", output)
+		pinfo["manufacturer"] = exactStringMatch("Manufacturer", output)
+		pinfo["signature"] = exactStringMatch("Signature", output)
+		if len(pinfo["family"]) == 0 && len(pinfo["manufacturer"]) == 0 && len(pinfo["signature"]) == 0 {
+			return result
+		}
+
+		result["processor_information"] = pinfo
+	}
+	return result
 }
