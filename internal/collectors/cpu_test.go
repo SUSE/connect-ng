@@ -47,3 +47,47 @@ func TestCPUCollectorRunInvalidCPU(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(expected, res, "Result mismatch")
 }
+
+func mockReadFile(t *testing.T, expectedPath string, content []byte) {
+	util.ReadFile = func(path string) []byte {
+		assert.Equal(t, expectedPath, path)
+		return content
+	}
+}
+
+func TestArm64DeviceTree(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	mockReadFile(t, deviceTreePath, util.ReadTestFile("collectors/device_tree_rpi5.txt", t))
+	addArm64Extras(res)
+
+	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", res["device_tree"], "wrong device_tree value")
+}
+
+func TestArm64ACPI(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	mockReadFile(t, deviceTreePath, []byte{})
+	mockDmidecode(t, "processor", util.ReadTestFile("collectors/dmidecode_aarch64_acpi.txt", t))
+	addArm64Extras(res)
+
+	pinfo := res["processor_information"].(map[string]string)
+	assert.NotNil(pinfo)
+
+	assert.Equal("ARMv8", pinfo["family"], "bad processor family")
+	assert.Equal("AppliedMicro(R)", pinfo["manufacturer"], "bad processor manufacturer")
+	assert.Equal(0, len(pinfo["signature"]), "expecting an empty signature")
+}
+
+func TestArm64BadACPI(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	mockReadFile(t, deviceTreePath, []byte{})
+	mockDmidecode(t, "processor", util.ReadTestFile("collectors/dmidecode_aarch64_bad.txt", t))
+	addArm64Extras(res)
+
+	assert.Equal(0, len(res), "unexpected result for bad ARM64 ACPI compatible device")
+}

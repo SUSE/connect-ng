@@ -78,6 +78,14 @@ var FileExists = func(path string) bool {
 	return true
 }
 
+var ReadFile = func(file string) []byte {
+	if FileExists(file) {
+		b, _ := os.ReadFile(file)
+		return b
+	}
+	return []byte{}
+}
+
 var ReadFileString = func(file string) string {
 	if FileExists(file) {
 		b, _ := os.ReadFile(file)
