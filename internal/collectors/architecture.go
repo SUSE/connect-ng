@@ -12,10 +12,21 @@ func (Architecture) run(arch string) (Result, error) {
 	return Result{"arch": arch}, nil
 }
 
-var DetectArchitecture = func() (string, error) {
-	output, err := util.Execute([]string{"uname", "-i"}, nil)
+var Uname = func(flag string) (string, error) {
+	output, err := util.Execute([]string{"uname", flag}, nil)
 	if err != nil {
 		return "", err
 	}
-	return string(output), nil
+	return string(output), err
+}
+
+var DetectArchitecture = func() (string, error) {
+	output, err := Uname("-i")
+	if err != nil {
+		return "", err
+	}
+	if output == "unknown" {
+		return Uname("-m")
+	}
+	return output, nil
 }
