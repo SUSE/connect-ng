@@ -14,42 +14,57 @@ type SAP struct{}
 // systemId and workloadId will be under the main directory
 // eg /usr/sap/AB3/ERS1
 var sapSystemId = regexp.MustCompile("([A-Z][A-Z0-9]{2})")
-var workloadsRegex = regexp.MustCompile("([A-Z]+)([0-9]{2})/")
+var workloadsRegex = regexp.MustCompile("([A-Z]+)[0-9]{2}")
+var localOsReaddir = os.ReadDir
+
+var sapInstallationDir = "/usr/sap"
+
+type SAPDetected struct {
+	systemId      string
+	instanceTypes []string `json: "instanceTypes"`
+}
+
+func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]string, error) {
+	subDirectories, err := localOsReaddir(absolutePath)
+	//go:nocover
+	if err != nil || len(subDirectories) == 0 {
+		return []string{}, err
+	}
+	var match []string
+	for _, subDirectory := range subDirectories {
+		// filter for nil values from FindStringSubmatch
+		matches := matcher.FindStringSubmatch(subDirectory.Name())
+		if len(matches) >= 2 {
+			match = append(match, matches[1])
+		}
+	}
+	return match, nil
+}
+
+func getAbsPath(absolutePath string, relativePath string) string {
+	return fmt.Sprintf("%s/%s", absolutePath, relativePath)
+}
 
 func (sap SAP) run(arch string) (Result, error) {
-	if !util.FileExists("/usr/sap") {
+	if !util.FileExists(sapInstallationDir) {
 		return NoResult, nil
 	}
-
-	sapDirs, err := os.ReadDir("/usr/sap")
-	if err != nil {
-		return NoResult, err
-	}
-	var systemId, instanceType, instanceId string
-
-	// We assume that sapDirs contains only one entry,
-	// that entry is the unique systemId for the machine
-	for _, sapDir := range sapDirs {
-		systemId = sapSystemId.FindStringSubmatch(sapDir.Name())[0]
-	}
-	workloadsPath := fmt.Sprintf("/usr/sap/%s/", systemId)
-
-	workloadsDir, err := os.ReadDir(workloadsPath)
+	systemIds, err := getMatchedSubdirectories(sapInstallationDir, sapSystemId)
 
 	if err != nil {
 		return NoResult, err
 	}
 
-	// TODO: Handle multiple workloads
-	for _, workloadDir := range workloadsDir {
-		matches := workloadsRegex.FindStringSubmatch(workloadDir.Name())
-		instanceType = matches[0]
-		instanceId = matches[1]
+	var detector []SAPDetected
+	for _, systemId := range systemIds {
+		systemPath := getAbsPath(sapInstallationDir, systemId)
+		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
+
+		detector = append(detector, SAPDetected{
+			systemId:      systemIds[0],
+			instanceTypes: workloads,
+		})
 	}
-	sapDetected := map[string]string{
-		"systemId":     systemId,
-		"instanceType": instanceType,
-		"instanceId":   instanceId,
-	}
-	return Result{"sap": sapDetected}, nil
+
+	return Result{"sap": detector}, nil
 }
