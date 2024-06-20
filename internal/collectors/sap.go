@@ -1,8 +1,8 @@
 package collectors
 
 import (
-	"fmt"
 	"os"
+	"path"
 	"regexp"
 
 	"github.com/SUSE/connect-ng/internal/util"
@@ -16,7 +16,6 @@ type SAP struct{}
 var sapSystemId = regexp.MustCompile("([A-Z][A-Z0-9]{2})")
 var workloadsRegex = regexp.MustCompile("([A-Z]+)[0-9]{2}")
 var localOsReaddir = os.ReadDir
-
 var sapInstallationDir = "/usr/sap"
 
 type SAPDetected struct {
@@ -41,10 +40,6 @@ func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]st
 	return match, nil
 }
 
-func getAbsPath(absolutePath string, relativePath string) string {
-	return fmt.Sprintf("%s/%s", absolutePath, relativePath)
-}
-
 func (sap SAP) run(arch string) (Result, error) {
 	if !util.FileExists(sapInstallationDir) {
 		return NoResult, nil
@@ -57,7 +52,7 @@ func (sap SAP) run(arch string) (Result, error) {
 
 	var detector []SAPDetected
 	for _, systemId := range systemIds {
-		systemPath := getAbsPath(sapInstallationDir, systemId)
+		systemPath := path.Join(sapInstallationDir, systemId)
 		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
 
 		detector = append(detector, SAPDetected{
