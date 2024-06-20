@@ -271,7 +271,10 @@ var mandatoryCollectors = []collectors.Collector{
 	collectors.CloudProvider{},
 	collectors.Architecture{},
 	collectors.ContainerRuntime{},
+
+	// Optional collectors
 	collectors.Uname{},
+	collectors.SAP{},
 }
 
 func fetchSystemInformation() (collectors.Result, error) {
