@@ -65,3 +65,20 @@ func TestUUIDRunS390x(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(expectedUUID, result["uuid"])
 }
+
+func TestUUIDRunArmNonACPI(t *testing.T) {
+	assert := assert.New(t)
+	actualUUID := "a85d8326f09347ef9f118da1a74a4dd1"
+	expectedUUID := "a85d8326-f093-47ef-9f11-8da1a74a4dd1"
+	uuid := UUID{}
+
+	util.Execute = func(_ []string, _ []int) ([]byte, error) {
+		return []byte{}, nil
+	}
+	mockUtilFileExists(false)
+	mockLocalOsReadfile(t, "/etc/machine-id", actualUUID)
+
+	result, err := uuid.run(ARCHITECTURE_ARM64)
+	assert.NoError(err)
+	assert.Equal(expectedUUID, result["uuid"])
+}

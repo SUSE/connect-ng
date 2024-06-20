@@ -18,9 +18,20 @@ type UUID struct{}
 func (UUID) run(arch string) (Result, error) {
 	var uuid string
 	var err error
+
 	switch arch {
+	case ARCHITECTURE_ARM64:
+		uuid, err = uuidDefault()
+
+		// This can happen because non-ACPI compliant ARM64 devices will provide
+		// an empty output from `dmidecode` (i.e. just a comment explaining that
+		// it's not supported). In this cases, just fallback to using the
+		// machine-id value as we do for s390x.
+		if err == nil && uuid == "" {
+			uuid, err = machineID()
+		}
 	case ARCHITECTURE_Z:
-		uuid, err = uuidS390()
+		uuid, err = machineID()
 	default:
 		uuid, err = uuidDefault()
 	}
@@ -30,6 +41,7 @@ func (UUID) run(arch string) (Result, error) {
 
 	return Result{"uuid": uuid}, nil
 }
+
 func uuidDefault() (string, error) {
 	if util.FileExists("/sys/hypervisor/uuid") {
 		content, err := localOsReadfile("/sys/hypervisor/uuid")
@@ -49,8 +61,9 @@ func uuidDefault() (string, error) {
 	return out, nil
 }
 
-// uuidS390 returns the system uuid on S390 or "" if it cannot be found
-func uuidS390() (string, error) {
+// Returns the UUID as taken from the `/etc/machine-id` file if possible,
+// otherwise it returns an empty string.
+func machineID() (string, error) {
 	out, err := localOsReadfile("/etc/machine-id")
 	if err != nil {
 		return "", err

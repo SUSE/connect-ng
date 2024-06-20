@@ -1,7 +1,5 @@
 package collectors
 
-import "github.com/SUSE/connect-ng/internal/util"
-
 type Architecture struct{}
 
 func (Architecture) run(arch string) (Result, error) {
@@ -13,9 +11,12 @@ func (Architecture) run(arch string) (Result, error) {
 }
 
 var DetectArchitecture = func() (string, error) {
-	output, err := util.Execute([]string{"uname", "-i"}, nil)
+	output, err := uname([]string{"-i"})
 	if err != nil {
 		return "", err
 	}
-	return string(output), nil
+	if output == "unknown" {
+		return uname([]string{"-m"})
+	}
+	return output, nil
 }
