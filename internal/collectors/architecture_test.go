@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,8 +21,9 @@ func TestArchitectureCollectorsRun(t *testing.T) {
 func TestFallBackToUnameM(t *testing.T) {
 	assert := assert.New(t)
 
-	Uname = func(flag string) (string, error) {
-		if flag == "-i" {
+	uname = func(flags []string) (string, error) {
+		params := strings.Join(flags, " ")
+		if params == "-i" {
 			return "unknown", nil
 		}
 		return "aarch64", nil
