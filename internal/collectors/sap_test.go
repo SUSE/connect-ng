@@ -91,10 +91,10 @@ func TestSapDetectorCollectorRunWithNoSAP(t *testing.T) {
 func TestSAPDetectSingleWorkload(t *testing.T) {
 	assert := assert.New(t)
 	sap := SAP{}
-	expected := Result{"sap": []SAPDetected{
+	expected := Result{"sap": []map[string]interface{}{
 		{
-			systemId:      "DEV",
-			instanceTypes: []string{"ASCS"},
+			"systemId":      "DEV",
+			"instanceTypes": []string{"ASCS"},
 		},
 	}}
 
@@ -113,10 +113,10 @@ func TestSAPDetectSingleWorkload(t *testing.T) {
 func TestSAPRunWithMultipleWorkloads(t *testing.T) {
 	assert := assert.New(t)
 	sap := SAP{}
-	expected := Result{"sap": []SAPDetected{
+	expected := Result{"sap": []map[string]interface{}{
 		{
-			systemId:      "DEV",
-			instanceTypes: []string{"ASCS", "J"},
+			"systemId":      "DEV",
+			"instanceTypes": []string{"ASCS", "J"},
 		},
 	}}
 

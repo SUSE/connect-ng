@@ -18,11 +18,6 @@ var workloadsRegex = regexp.MustCompile("([A-Z]+)[0-9]{2}")
 var localOsReaddir = os.ReadDir
 var sapInstallationDir = "/usr/sap"
 
-type SAPDetected struct {
-	systemId      string
-	instanceTypes []string `json: "instanceTypes"`
-}
-
 func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]string, error) {
 	subDirectories, err := localOsReaddir(absolutePath)
 	//go:nocover
@@ -50,16 +45,14 @@ func (sap SAP) run(arch string) (Result, error) {
 		return NoResult, err
 	}
 
-	var detector []SAPDetected
+	var detector []map[string]interface{}
 	for _, systemId := range systemIds {
 		systemPath := path.Join(sapInstallationDir, systemId)
 		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
-
-		detector = append(detector, SAPDetected{
-			systemId:      systemIds[0],
-			instanceTypes: workloads,
+		detector = append(detector, map[string]interface{}{
+			"systemId":      systemId,
+			"instanceTypes": workloads,
 		})
 	}
-
 	return Result{"sap": detector}, nil
 }
