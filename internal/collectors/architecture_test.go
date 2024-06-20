@@ -20,7 +20,7 @@ func TestArchitectureCollectorsRun(t *testing.T) {
 func TestFallBackToUnameM(t *testing.T) {
 	assert := assert.New(t)
 
-	Uname = func(flag string) (string, error) {
+	uname = func(flag string) (string, error) {
 		if flag == "-i" {
 			return "unknown", nil
 		}
