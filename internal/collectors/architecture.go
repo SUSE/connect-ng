@@ -11,12 +11,12 @@ func (Architecture) run(arch string) (Result, error) {
 }
 
 var DetectArchitecture = func() (string, error) {
-	output, err := uname("-i")
+	output, err := uname([]string{"-i"})
 	if err != nil {
 		return "", err
 	}
 	if output == "unknown" {
-		return uname("-m")
+		return uname([]string{"-m"})
 	}
 	return output, nil
 }
