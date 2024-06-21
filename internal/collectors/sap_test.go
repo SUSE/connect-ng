@@ -93,8 +93,8 @@ func TestSAPDetectSingleWorkload(t *testing.T) {
 	sap := SAP{}
 	expected := Result{"sap": []map[string]interface{}{
 		{
-			"systemId":      "DEV",
-			"instanceTypes": []string{"ASCS"},
+			"system_id":      "DEV",
+			"instance_types": []string{"ASCS"},
 		},
 	}}
 
@@ -115,8 +115,8 @@ func TestSAPRunWithMultipleWorkloads(t *testing.T) {
 	sap := SAP{}
 	expected := Result{"sap": []map[string]interface{}{
 		{
-			"systemId":      "DEV",
-			"instanceTypes": []string{"ASCS", "J"},
+			"system_id":      "DEV",
+			"instance_types": []string{"ASCS", "J"},
 		},
 	}}
 
