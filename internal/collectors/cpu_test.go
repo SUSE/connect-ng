@@ -74,12 +74,12 @@ func TestArm64ACPI(t *testing.T) {
 	mockDmidecode(t, "processor", util.ReadTestFile("collectors/dmidecode_aarch64_acpi.txt", t))
 	addArm64Extras(res)
 
-	pinfo := res["processor_information"].(map[string]string)
-	assert.NotNil(pinfo)
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
 
-	assert.Equal("ARMv8", pinfo["family"], "bad processor family")
-	assert.Equal("AppliedMicro(R)", pinfo["manufacturer"], "bad processor manufacturer")
-	assert.Equal(0, len(pinfo["signature"]), "expecting an empty signature")
+	assert.Equal("ARMv8", specs["family"], "bad processor family")
+	assert.Equal("AppliedMicro(R)", specs["manufacturer"], "bad processor manufacturer")
+	assert.Equal(0, len(specs["signature"]), "expecting an empty signature")
 }
 
 func TestArm64BadACPI(t *testing.T) {
