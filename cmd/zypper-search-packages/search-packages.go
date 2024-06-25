@@ -387,7 +387,7 @@ func checkUnsupportedFlags() error {
 	})
 
 	if reasons.Len() != 0 {
-		return fmt.Errorf("Cannot perform extended package search:\n\n%v", strings.Join(reasons.Strings(), "\n"))
+		return fmt.Errorf("cannot perform extended package search:\n\n%v", strings.Join(reasons.Strings(), "\n"))
 	}
 	return nil
 }
