@@ -5,8 +5,11 @@
 Please describe your change and provide as much context as needed including a link to the reference issue / ticket / Trello card. 
 -->
 
-* How to test the change: <description or reference to the Acceptance Criteria>
 * Related Issue / Ticket / Trello card: <link reference>
+
+## How to test the change
+
+<!-- Please describe the setup + steps to take to verify the change. -->
 
 ## Review
 
