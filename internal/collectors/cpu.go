@@ -112,15 +112,15 @@ func addArm64Extras(result Result) Result {
 	} else {
 		output, _ := util.Execute([]string{"dmidecode", "-t", "processor"}, nil)
 
-		pinfo := make(map[string]string)
-		pinfo["family"] = exactStringMatch("Family", output)
-		pinfo["manufacturer"] = exactStringMatch("Manufacturer", output)
-		pinfo["signature"] = exactStringMatch("Signature", output)
-		if len(pinfo["family"]) == 0 && len(pinfo["manufacturer"]) == 0 && len(pinfo["signature"]) == 0 {
+		specs := make(map[string]string)
+		specs["family"] = exactStringMatch("Family", output)
+		specs["manufacturer"] = exactStringMatch("Manufacturer", output)
+		specs["signature"] = exactStringMatch("Signature", output)
+		if len(specs["family"]) == 0 && len(specs["manufacturer"]) == 0 && len(specs["signature"]) == 0 {
 			return result
 		}
 
-		result["processor_information"] = pinfo
+		result["arch_specs"] = specs
 	}
 	return result
 }
