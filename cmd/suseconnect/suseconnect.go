@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -145,7 +146,12 @@ func main() {
 		writeConfig = true
 	}
 	if token != "" {
-		connect.CFG.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			util.Debug.Printf("Error Processing token %+v", processTokenErr)
+			os.Exit(1)
+		}
+		connect.CFG.Token = processedToken
 	}
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
@@ -377,4 +383,24 @@ func fileExists(path string) bool {
 
 func isSumaManaged() bool {
 	return fileExists("/etc/sysconfig/rhn/systemid")
+}
+
+func processToken(token string) (string, error) {
+	if strings.HasPrefix(token, util.AtTheRate) {
+		tokenFilePath := strings.TrimPrefix(token, util.AtTheRate)
+		tokenBytes, err := os.ReadFile(tokenFilePath)
+		if err != nil {
+			return util.EmptyString, fmt.Errorf("error reading token from file: %w", err)
+		}
+		return util.ThrowErrorIfEmpty(string(tokenBytes))
+	} else if token == util.Dash {
+		reader := bufio.NewReader(os.Stdin)
+		token, err := reader.ReadString('\n')
+		if err != nil {
+			return util.EmptyString, fmt.Errorf("error reading token from stdin: %w", err)
+		}
+		return util.ThrowErrorIfEmpty(strings.TrimSuffix(token, "\n"))
+	} else {
+		return token, nil
+	}
 }
