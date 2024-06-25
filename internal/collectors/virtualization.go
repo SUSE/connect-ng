@@ -11,6 +11,12 @@ const systemdDetectVirtExecutable = "systemd-detect-virt"
 type Virtualization struct{}
 
 func (Virtualization) run(arch string) (Result, error) {
+	// Z systems just work differently in this regard, and this is already
+	// handled when collecting the CPU info. Hence, there's nothing to do here
+	// for these systems.
+	if arch == ARCHITECTURE_Z {
+		return NoResult, nil
+	}
 
 	// We utilize systemd here to fetch the virtualization information. Since we do not hard require systemd
 	// there might be the possibility to run on a system without systemd installed (e.g. containers).

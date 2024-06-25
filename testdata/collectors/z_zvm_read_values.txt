@@ -1,0 +1,14 @@
+Version: 1.0.3
+Type: 8561
+Sequence Code: 00000000000688E8
+CPUs Total: 71
+CPUs IFL: 71
+LPAR Number: 1
+LPAR Name: ZL01
+LPAR Characteristics: Shared
+LPAR CPUs Total: 6
+LPAR CPUs IFL: 6
+VM00 Name: ASCHNELL
+VM00 Control Program: z/VM    7.3.0
+VM00 CPUs Total: 2
+VM00 IFLs: 2

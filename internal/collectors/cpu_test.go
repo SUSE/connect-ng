@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -90,4 +91,99 @@ func TestArm64BadACPI(t *testing.T) {
 	addArm64Extras(res)
 
 	assert.Equal(0, len(res), "unexpected result for bad ARM64 ACPI compatible device")
+}
+
+func mockReadValuesCmd(path string, t *testing.T) {
+	util.Execute = func(cmd []string, _ []int) ([]byte, error) {
+		actualCmd := strings.Join(cmd, " ")
+		testData := util.ReadTestFile(path, t)
+
+		assert.Equal(t, "read_values -s", actualCmd, "Wrong command called")
+
+		return testData, nil
+	}
+}
+
+func TestZReadValues(t *testing.T) {
+	assert := assert.New(t)
+
+	mockReadValuesCmd("collectors/z_zvm_read_values.txt", t)
+
+	res, err := cpusOnZ()
+
+	assert.NoError(err)
+
+	assert.Equal(2, res["cpus"], t)
+	assert.Equal(2, res["sockets"], t)
+	assert.Equal("zvm", res["hypervisor"], t)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.Equal("8561", specs["type"], t)
+	assert.Equal("ASCHNELL", specs["layer_type"], t)
+	_, ok := specs["type_name"]
+	assert.False(ok, t)
+}
+
+func TestZReadValuesWithName(t *testing.T) {
+	assert := assert.New(t)
+
+	mockReadValuesCmd("collectors/z_zvm_read_values_with_type_name.txt", t)
+
+	res, err := cpusOnZ()
+
+	assert.NoError(err)
+
+	assert.Equal(2, res["cpus"], t)
+	assert.Equal(2, res["sockets"], t)
+	assert.Equal("zvm", res["hypervisor"], t)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.Equal("8561", specs["type"], t)
+	assert.Equal("ASCHNELL", specs["layer_type"], t)
+	assert.Equal("IBM LinuxONE III", specs["type_name"], t)
+}
+
+func TestLPARReadValues(t *testing.T) {
+	assert := assert.New(t)
+
+	mockReadValuesCmd("collectors/z_lpar_read_values.txt", t)
+
+	res, err := cpusOnZ()
+
+	assert.NoError(err)
+	assert.Equal(6, res["cpus"], t)
+	assert.Equal(6, res["sockets"], t)
+	assert.Equal("lpar", res["hypervisor"], t)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.Equal("8561", specs["type"], t)
+	assert.Equal("ZL01", specs["layer_type"], t)
+	_, ok := specs["type_name"]
+	assert.False(ok, t)
+}
+
+func TestZEmptyReadValues(t *testing.T) {
+	assert := assert.New(t)
+
+	mockReadValuesCmd("collectors/empty.txt", t)
+
+	res, err := cpusOnZ()
+
+	assert.NoError(err)
+	assert.Nil(res["cpus"], t)
+	assert.Nil(res["sockets"], t)
+	_, ok := res["hypervisor"]
+	assert.False(ok, t)
+}
+
+func TestZBadReadValues(t *testing.T) {
+	assert := assert.New(t)
+
+	util.Execute = func(cmd []string, _ []int) ([]byte, error) {
+		return []byte{}, errors.New("wat")
+	}
+
+	res, err := cpusOnZ()
+	assert.Nil(res)
+	assert.Error(err, "could not execute 'read_values': wat", t)
 }

@@ -1,0 +1,15 @@
+Version: 1.0.0
+Type: 8561
+Type Name: IBM LinuxONE III
+Sequence Code: 00000000000688E8
+Fehler: erg = 0, result_string = NULL
+Fehler: erg = 0, result_string = NULL
+LPAR Number: 1
+LPAR Name: ZL01
+LPAR Characteristics: Shared
+Fehler: erg = 0, result_string = NULL
+Fehler: erg = 0, result_string = NULL
+VM00 Name: ASCHNELL
+VM00 Control Program: z/VM    7.3.0
+VM00 CPUs Total: 2
+VM00 IFLs: 2

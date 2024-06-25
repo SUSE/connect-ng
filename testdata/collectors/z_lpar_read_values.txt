@@ -1,0 +1,10 @@
+Version: 1.0.3
+Type: 8561
+Sequence Code: 00000000000688E8
+CPUs Total: 71
+CPUs IFL: 71
+LPAR Number: 1
+LPAR Name: ZL01
+LPAR Characteristics: Shared
+LPAR CPUs Total: 6
+LPAR CPUs IFL: 6

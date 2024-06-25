@@ -13,6 +13,13 @@ import (
 type CPU struct{}
 
 func (cpu CPU) run(arch string) (Result, error) {
+	// Z systems live on their own planet when it comes to counting CPUs and
+	// sockets (i.e. even the concept of "what is a CPU?" is different there).
+	// Hence, let's handle this in a completely different way.
+	if arch == ARCHITECTURE_Z {
+		return cpusOnZ()
+	}
+
 	output, err := util.Execute([]string{"lscpu", "-p=cpu,socket"}, nil)
 
 	if err != nil {
@@ -73,10 +80,12 @@ func addArchExtras(arch string, result Result) Result {
 	return result
 }
 
+// NOTE: ARM64 support
+
 const deviceTreePath = "/sys/firmware/devicetree/base/compatible"
 
 func exactStringMatch(id string, text []byte) string {
-	re := regexp.MustCompile(fmt.Sprintf("%v: (.*)", id))
+	re := regexp.MustCompile(fmt.Sprintf("%v\\s*:\\s*(.*)", id))
 	results := re.FindSubmatch(text)
 	if len(results) != 2 {
 		return ""
@@ -114,4 +123,53 @@ func addArm64Extras(result Result) Result {
 		result["processor_information"] = pinfo
 	}
 	return result
+}
+
+// NOTE: Z systems support
+
+func exactIntMatch(layerID string, text []byte) (int, error) {
+	re := regexp.MustCompile(layerID + " CPUs Total\\s*:\\s*(.*)")
+	results := re.FindSubmatch(text)
+	if len(results) != 2 {
+		return -1, nil
+	}
+	return strconv.Atoi(string(results[1]))
+}
+
+func cpusOnZ() (Result, error) {
+	output, err := util.Execute([]string{"read_values", "-s"}, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not execute 'read_values': %v", err)
+	}
+
+	// `read_values` gives the same base output for both zvm and LPAR, but for
+	// zvm it adds some extra values. Thus, we can try to detect zvm first, and
+	// if that's not possible then we are using LPAR.
+	if total, err := exactIntMatch("VM00", output); err == nil && total != -1 {
+		return parseZReadValues(output, total, "zvm", "VM00"), nil
+	} else if total, err := exactIntMatch("LPAR", output); err == nil && total != -1 {
+		return parseZReadValues(output, total, "lpar", "LPAR"), nil
+	}
+	return Result{"cpus": nil, "sockets": nil}, nil
+}
+
+func parseZReadValues(output []byte, count int, hypervisor string, layerID string) Result {
+	res := Result{"cpus": count, "sockets": count, "hypervisor": hypervisor}
+
+	specs := make(map[string]string)
+	if typeID := exactStringMatch("Type", output); typeID != "" {
+		specs["type"] = typeID
+	}
+	// Available in `read_values` 1.0.5. See bsc#1226609 and
+	// https://build.opensuse.org/request/show/1181961.
+	if typeName := exactStringMatch("Type Name", output); typeName != "" {
+		specs["type_name"] = typeName
+	}
+	if name := exactStringMatch(layerID+" Name", output); name != "" {
+		specs["layer_type"] = name
+	}
+	if len(specs) > 0 {
+		res["arch_specs"] = specs
+	}
+	return res
 }
