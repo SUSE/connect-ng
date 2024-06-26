@@ -63,7 +63,10 @@ func TestArm64DeviceTree(t *testing.T) {
 	mockReadFile(t, deviceTreePath, util.ReadTestFile("collectors/device_tree_rpi5.txt", t))
 	addArm64Extras(res)
 
-	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", res["device_tree"], "wrong device_tree value")
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+
+	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", specs["device_tree"], "wrong device_tree value")
 }
 
 func TestArm64ACPI(t *testing.T) {

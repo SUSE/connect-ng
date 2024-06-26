@@ -102,26 +102,26 @@ func exactStringMatch(id string, text []byte) string {
 // If nothing could be fetched, then nothing is added and the same `result` is
 // returned.
 func addArm64Extras(result Result) Result {
+	specs := make(map[string]string)
+
 	b := util.ReadFile(deviceTreePath)
 	if len(b) > 0 {
 		// NOTE: the device tree `compatible` file can be weird and contain
 		// multiple null bytes spread across the given definition. Hence, `Trim`
 		// and friends are not enough and we have to actually replace any
 		// occurrences with empty bytes.
-		result["device_tree"] = string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+		specs["device_tree"] = string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
 	} else {
 		output, _ := util.Execute([]string{"dmidecode", "-t", "processor"}, nil)
 
-		specs := make(map[string]string)
 		specs["family"] = exactStringMatch("Family", output)
 		specs["manufacturer"] = exactStringMatch("Manufacturer", output)
 		specs["signature"] = exactStringMatch("Signature", output)
 		if len(specs["family"]) == 0 && len(specs["manufacturer"]) == 0 && len(specs["signature"]) == 0 {
 			return result
 		}
-
-		result["arch_specs"] = specs
 	}
+	result["arch_specs"] = specs
 	return result
 }
 
