@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseCredentials(t *testing.T) {
@@ -135,4 +136,28 @@ func TestParseCurlrcCredentials(t *testing.T) {
 			t.Errorf("parseCurlrcCredentials() == %+v, %s, expected %+v, %s, input: %s", got, err, test.expectCreds, test.expectErr, test.input)
 		}
 	}
+}
+
+func TestCurlrcCredentialsPath(t *testing.T) {
+	assert := assert.New(t)
+
+	// We have to manipulate the path for this test to work.
+	home := os.Getenv("HOME")
+	err := os.Unsetenv("HOME")
+	if err != nil {
+		t.Fatal("could not setup test")
+	}
+	defer os.Setenv("HOME", home)
+
+	// Mocking up important functions
+
+	util.CurrentUser = func() string { return "user" }
+	util.ReadFile = func(path string) []byte {
+		assert.Equal("/etc/passwd", path)
+		return util.ReadTestFile("credentials/passwd.txt", t)
+	}
+
+	// The actual test :)
+
+	assert.Equal("/home/user/.curlrc", CurlrcCredentialsPath(), "bad curlrc credentials path")
 }
