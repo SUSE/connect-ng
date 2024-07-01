@@ -76,13 +76,62 @@ func parseCPUSocket(content string) (int, int) {
 func addArchExtras(arch string, result Result) Result {
 	if arch == ARCHITECTURE_ARM64 {
 		return addArm64Extras(result)
+	} else if arch == ARCHITECTURE_POWER {
+		return addPpc64Extras(result)
+	}
+	return result
+}
+
+const deviceTreePath = "/sys/firmware/devicetree/base/compatible"
+
+func readDeviceTreeFile() string {
+	b := util.ReadFile(deviceTreePath)
+	if len(b) > 0 {
+		// NOTE: the device tree `compatible` file can be weird and contain
+		// multiple null bytes spread across the given definition. Hence, `Trim`
+		// and friends are not enough and we have to actually replace any
+		// occurrences with empty bytes.
+		return string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+	}
+	return ""
+}
+
+// NOTE: PPC64LE support
+
+const lparcfgPath = "/proc/ppc64/lparcfg"
+
+var lparRE = regexp.MustCompile(`shared_processor_mode\s*=\s*(.*)`)
+
+func addPpc64Extras(result Result) Result {
+	specs := make(map[string]string)
+
+	// PowerPC machines usually have `device_tree` information. Let's grab it.
+	if dt := readDeviceTreeFile(); len(dt) > 0 {
+		specs["device_tree"] = dt
+	}
+
+	// If there is an LPAR configuration file in place, let's try to gather
+	// whether the LPAR processor shared mode is enabled or not.
+	if cfg := util.ReadFile(lparcfgPath); len(cfg) > 0 {
+		results := lparRE.FindSubmatch(cfg)
+		if len(results) == 2 {
+			if val, err := strconv.Atoi(string(results[1])); err == nil {
+				if val == 1 {
+					specs["lpar_mode"] = "shared"
+				} else {
+					specs["lpar_mode"] = "dedicated"
+				}
+			}
+		}
+	}
+
+	if len(specs) > 0 {
+		result["arch_specs"] = specs
 	}
 	return result
 }
 
 // NOTE: ARM64 support
-
-const deviceTreePath = "/sys/firmware/devicetree/base/compatible"
 
 func exactStringMatch(id string, text []byte) string {
 	re := regexp.MustCompile(fmt.Sprintf("%v\\s*:\\s*(.*)", id))
@@ -104,13 +153,8 @@ func exactStringMatch(id string, text []byte) string {
 func addArm64Extras(result Result) Result {
 	specs := make(map[string]string)
 
-	b := util.ReadFile(deviceTreePath)
-	if len(b) > 0 {
-		// NOTE: the device tree `compatible` file can be weird and contain
-		// multiple null bytes spread across the given definition. Hence, `Trim`
-		// and friends are not enough and we have to actually replace any
-		// occurrences with empty bytes.
-		specs["device_tree"] = string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+	if dt := readDeviceTreeFile(); len(dt) > 0 {
+		specs["device_tree"] = dt
 	} else {
 		output, _ := util.Execute([]string{"dmidecode", "-t", "processor"}, nil)
 

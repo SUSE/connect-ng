@@ -190,3 +190,41 @@ func TestZBadReadValues(t *testing.T) {
 	assert.Nil(res)
 	assert.Error(err, "could not execute 'read_values': wat", t)
 }
+
+func mockReadFileMap(t *testing.T, paths map[string][]byte) {
+	util.ReadFile = func(path string) []byte {
+		return paths[path]
+	}
+}
+
+func TestSharedLPAR(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	paths := make(map[string][]byte)
+	paths[deviceTreePath] = []byte{}
+	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_shared.txt", t)
+
+	mockReadFileMap(t, paths)
+	addPpc64Extras(res)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+	assert.Equal("shared", specs["lpar_mode"], t)
+}
+
+func TestDedicatedLPAR(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	paths := make(map[string][]byte)
+	paths[deviceTreePath] = []byte{}
+	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_dedicated.txt", t)
+
+	mockReadFileMap(t, paths)
+	addPpc64Extras(res)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+	assert.Equal("dedicated", specs["lpar_mode"], t)
+}
