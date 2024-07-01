@@ -47,12 +47,7 @@ func ServiceCredentialsPath(service string, fsRoot string) string {
 }
 
 func CurlrcCredentialsPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		// TODO: handle error? log?
-		return ""
-	}
-	return filepath.Join(home, CurlrcUserFile)
+	return filepath.Join(util.CurrentHomeDir(), CurlrcUserFile)
 }
 
 // ReadCredentials returns the credentials from path
