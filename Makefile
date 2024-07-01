@@ -54,6 +54,17 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/zypper-search-packages
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
+# This "arm" means ARM64v8 little endian, the one being delivered currently on
+# OBS.
+build-arm: clean out internal/connect/version.txt
+	GOOS=linux GOARCH=arm64 $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
+
+build-s390: clean out internal/connect/version.txt
+	GOOS=linux GOARCH=s390x $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
+
+build-ppc64le: clean out internal/connect/version.txt
+	GOOS=linux GOARCH=ppc64le $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
+
 test: internal/connect/version.txt
 	$(GO) test ./internal/* ./cmd/suseconnect
 
@@ -71,14 +82,6 @@ feature-tests:
 
 test-yast: build-so
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
-
-# This "arm" means ARM64v8 little endian, the one being delivered currently on
-# OBS.
-build-arm: out internal/connect/version.txt
-	GOOS=linux GOARCH=arm64 $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
-
-build-s390: out internal/connect/version.txt
-	GOOS=linux GOARCH=s390x $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
 clean:
 	go clean
