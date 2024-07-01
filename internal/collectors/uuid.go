@@ -21,13 +21,22 @@ func (UUID) run(arch string) (Result, error) {
 
 	switch arch {
 	case ARCHITECTURE_ARM64:
-		uuid, err = uuidDefault()
+		// ARM machines don't necessarily have `dmidecode` installed (i.e. on
+		// non-ACPI devices it does not even make sense to have it installed).
+		// Thus, we will first try to fill the uuid if such an executable even
+		// exists.
+		if util.ExecutableExists("dmidecode") {
+			uuid, err = uuidDefault()
+		}
 
-		// This can happen because non-ACPI compliant ARM64 devices will provide
-		// an empty output from `dmidecode` (i.e. just a comment explaining that
-		// it's not supported). In this cases, just fallback to using the
-		// machine-id value as we do for s390x.
-		if err == nil && uuid == "" {
+		// Either `dmidecode` did not exist, or it returned an empty value. An
+		// empty value is also to be expected: on non-ACPI devices that, for
+		// whatever reason, have `dmidecode` installed, the tool will simply
+		// give back a comment stating that the machine is not supported.
+		//
+		// In any case, just fallback to using the machine-id value as we do for
+		// s390x.
+		if err == nil || uuid == "" {
 			uuid, err = machineID()
 		}
 	case ARCHITECTURE_Z:

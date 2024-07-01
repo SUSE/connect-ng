@@ -20,6 +20,15 @@ func mockUtilFileExists(exists bool) {
 	}
 }
 
+func mockUtilExecutableExists(expected string, b bool, t *testing.T) {
+	util.ExecutableExists = func(exe string) bool {
+		if expected != exe {
+			t.Fatalf("got '%v' -- expecting '%v'", exe, expected)
+		}
+		return b
+	}
+}
+
 func mockUtilExecute(output string, err error) {
 	util.Execute = func(_ []string, _ []int) ([]byte, error) {
 		return []byte(output), err
@@ -76,6 +85,20 @@ func TestUUIDRunArmNonACPI(t *testing.T) {
 		return []byte{}, nil
 	}
 	mockUtilFileExists(false)
+	mockLocalOsReadfile(t, "/etc/machine-id", actualUUID)
+
+	result, err := uuid.run(ARCHITECTURE_ARM64)
+	assert.NoError(err)
+	assert.Equal(expectedUUID, result["uuid"])
+}
+
+func TestUUIDRunArmNonACPINoDmidecode(t *testing.T) {
+	assert := assert.New(t)
+	actualUUID := "a85d8326f09347ef9f118da1a74a4dd1"
+	expectedUUID := "a85d8326-f093-47ef-9f11-8da1a74a4dd1"
+	uuid := UUID{}
+
+	mockUtilExecutableExists("dmidecode", false, t)
 	mockLocalOsReadfile(t, "/etc/machine-id", actualUUID)
 
 	result, err := uuid.run(ARCHITECTURE_ARM64)
