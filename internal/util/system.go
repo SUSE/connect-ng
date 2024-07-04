@@ -7,7 +7,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
+	"regexp"
 	"slices"
+	"strings"
 	"syscall"
 )
 
@@ -145,4 +148,55 @@ func ReadOnlyFilesystem(root string) error {
 		return fmt.Errorf("`%v` is mounted as `read-only`. Aborting", path)
 	}
 	return nil
+}
+
+var CurrentUser = func() string {
+	u, err := user.Current()
+	if err != nil {
+		Debug.Fatal("cannot determine the current user")
+		return ""
+	}
+	return u.Username
+}
+
+// Returns the home directory from the given login name by reading
+// `/etc/passwd`. If an error occurs (e.g. `/etc/passwd` could not be read),
+// then an empty string is simply returned.
+func homeFromUser(name string) string {
+	b := ReadFile("/etc/passwd")
+	if len(b) == 0 {
+		return ""
+	}
+
+	re, err := regexp.Compile("(?m)^" + name + ":(.*)")
+	if err != nil {
+		return ""
+	}
+
+	results := re.FindSubmatch(b)
+	if len(results) == 2 {
+		entries := strings.Split(string(results[0]), ":")
+		if len(entries) >= 6 {
+			return entries[5]
+		}
+	}
+	return ""
+}
+
+func CurrentHomeDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		// Sadly Go only reads from "$HOME" in order to find the user's home
+		// directory and does not want to go any further if that environment
+		// variable is not defined. Let's try with `homeFromUser` which tries to
+		// pick up this value by reading the current user's /etc/passwd entry.
+		if u := CurrentUser(); u == "" {
+			// If we are still not able to detect it, let's assume "/" and cross
+			// fingers.
+			home = "/"
+		} else {
+			home = homeFromUser(u)
+		}
+	}
+	return home
 }
