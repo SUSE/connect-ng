@@ -49,6 +49,12 @@ func TestCPUCollectorRunInvalidCPU(t *testing.T) {
 	assert.Equal(expected, res, "Result mismatch")
 }
 
+func mockReadFileMap(t *testing.T, paths map[string][]byte) {
+	util.ReadFile = func(path string) []byte {
+		return paths[path]
+	}
+}
+
 func mockReadFile(t *testing.T, expectedPath string, content []byte) {
 	util.ReadFile = func(path string) []byte {
 		assert.Equal(t, expectedPath, path)
@@ -60,7 +66,27 @@ func TestArm64DeviceTree(t *testing.T) {
 	assert := assert.New(t)
 	res := Result{}
 
-	mockReadFile(t, deviceTreePath, util.ReadTestFile("collectors/device_tree_rpi5.txt", t))
+	paths := make(map[string][]byte)
+	paths[deviceTreePaths[0]] = util.ReadTestFile("collectors/device_tree_rpi5.txt", t)
+
+	mockReadFileMap(t, paths)
+	addArm64Extras(res)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+
+	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", specs["device_tree"], "wrong device_tree value")
+}
+
+func TestArm64DeviceTreeOtherEntry(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	paths := make(map[string][]byte)
+	paths[deviceTreePaths[0]] = []byte{}
+	paths[deviceTreePaths[1]] = util.ReadTestFile("collectors/device_tree_rpi5.txt", t)
+
+	mockReadFileMap(t, paths)
 	addArm64Extras(res)
 
 	specs := res["arch_specs"].(map[string]string)
@@ -73,7 +99,10 @@ func TestArm64ACPI(t *testing.T) {
 	assert := assert.New(t)
 	res := Result{}
 
-	mockReadFile(t, deviceTreePath, []byte{})
+	paths := make(map[string][]byte)
+	paths[deviceTreePaths[0]] = []byte{}
+
+	mockReadFileMap(t, paths)
 	mockDmidecode(t, "processor", util.ReadTestFile("collectors/dmidecode_aarch64_acpi.txt", t))
 	addArm64Extras(res)
 
@@ -89,7 +118,10 @@ func TestArm64BadACPI(t *testing.T) {
 	assert := assert.New(t)
 	res := Result{}
 
-	mockReadFile(t, deviceTreePath, []byte{})
+	paths := make(map[string][]byte)
+	paths[deviceTreePaths[0]] = []byte{}
+
+	mockReadFileMap(t, paths)
 	mockDmidecode(t, "processor", util.ReadTestFile("collectors/dmidecode_aarch64_bad.txt", t))
 	addArm64Extras(res)
 
@@ -191,18 +223,12 @@ func TestZBadReadValues(t *testing.T) {
 	assert.Error(err, "could not execute 'read_values': wat", t)
 }
 
-func mockReadFileMap(t *testing.T, paths map[string][]byte) {
-	util.ReadFile = func(path string) []byte {
-		return paths[path]
-	}
-}
-
 func TestSharedLPAR(t *testing.T) {
 	assert := assert.New(t)
 	res := Result{}
 
 	paths := make(map[string][]byte)
-	paths[deviceTreePath] = []byte{}
+	paths[deviceTreePaths[0]] = []byte{}
 	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_shared.txt", t)
 
 	mockReadFileMap(t, paths)
@@ -218,7 +244,7 @@ func TestDedicatedLPAR(t *testing.T) {
 	res := Result{}
 
 	paths := make(map[string][]byte)
-	paths[deviceTreePath] = []byte{}
+	paths[deviceTreePaths[0]] = []byte{}
 	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_dedicated.txt", t)
 
 	mockReadFileMap(t, paths)

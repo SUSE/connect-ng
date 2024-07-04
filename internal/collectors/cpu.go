@@ -82,16 +82,22 @@ func addArchExtras(arch string, result Result) Result {
 	return result
 }
 
-const deviceTreePath = "/sys/firmware/devicetree/base/compatible"
+// Paths where the `compatible` file for `device-tree` might be located.
+var deviceTreePaths = []string{
+	"/sys/firmware/devicetree/base/compatible",
+	"/sys/firmware/devicetree/base/hypervisor/compatible",
+}
 
 func readDeviceTreeFile() string {
-	b := util.ReadFile(deviceTreePath)
-	if len(b) > 0 {
-		// NOTE: the device tree `compatible` file can be weird and contain
-		// multiple null bytes spread across the given definition. Hence, `Trim`
-		// and friends are not enough and we have to actually replace any
-		// occurrences with empty bytes.
-		return string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+	for _, deviceTreePath := range deviceTreePaths {
+		b := util.ReadFile(deviceTreePath)
+		if len(b) > 0 {
+			// NOTE: the device tree `compatible` file can be weird and contain
+			// multiple null bytes spread across the given definition. Hence, `Trim`
+			// and friends are not enough and we have to actually replace any
+			// occurrences with empty bytes.
+			return string(bytes.Replace(b, []byte("\x00"), []byte(""), -1))
+		}
 	}
 	return ""
 }
