@@ -5,7 +5,7 @@ set -e
 SOURCE=${SOURCE:-/usr/src/connect-ng}
 
 # Base product to run feature tests against
-PRODUCT=${PRODUCT:-SLE_15_SP5}
+PRODUCT=${PRODUCT:-SLE_15_SP6}
 
 # exported variables we expect to exist to run the tests
 KEYS_TO_CHECK=(VALID_REGCODE EXPIRED_REGCODE BETA_VALID_REGCODE BETA_NOT_ACTIVATED_REGCODE NOT_ACTIVATED_REGCODE)
