@@ -63,7 +63,10 @@ func TestArm64DeviceTree(t *testing.T) {
 	mockReadFile(t, deviceTreePath, util.ReadTestFile("collectors/device_tree_rpi5.txt", t))
 	addArm64Extras(res)
 
-	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", res["device_tree"], "wrong device_tree value")
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+
+	assert.Equal("raspberrypi,5-model-bbrcm,bcm2712", specs["device_tree"], "wrong device_tree value")
 }
 
 func TestArm64ACPI(t *testing.T) {
@@ -186,4 +189,42 @@ func TestZBadReadValues(t *testing.T) {
 	res, err := cpusOnZ()
 	assert.Nil(res)
 	assert.Error(err, "could not execute 'read_values': wat", t)
+}
+
+func mockReadFileMap(t *testing.T, paths map[string][]byte) {
+	util.ReadFile = func(path string) []byte {
+		return paths[path]
+	}
+}
+
+func TestSharedLPAR(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	paths := make(map[string][]byte)
+	paths[deviceTreePath] = []byte{}
+	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_shared.txt", t)
+
+	mockReadFileMap(t, paths)
+	addPpc64Extras(res)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+	assert.Equal("shared", specs["lpar_mode"], t)
+}
+
+func TestDedicatedLPAR(t *testing.T) {
+	assert := assert.New(t)
+	res := Result{}
+
+	paths := make(map[string][]byte)
+	paths[deviceTreePath] = []byte{}
+	paths[lparcfgPath] = util.ReadTestFile("collectors/lparcfg_dedicated.txt", t)
+
+	mockReadFileMap(t, paths)
+	addPpc64Extras(res)
+
+	specs := res["arch_specs"].(map[string]string)
+	assert.NotNil(specs)
+	assert.Equal("dedicated", specs["lpar_mode"], t)
 }
