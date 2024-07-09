@@ -1,5 +1,5 @@
 ---
-SLE_15_SP5:
+SLE_15_SP6:
   beta: true
   online_migration_targets:
   - "Basesystem-Module"
@@ -8,21 +8,21 @@ SLE_15_SP5:
   next_version: SLES15-SP6
   base_product:
     repositories:
-    - SUSE_Linux_Enterprise_Server_15_SP5_x86_64:SLE-Product-SLES15-SP5-Pool
-    - SUSE_Linux_Enterprise_Server_15_SP5_x86_64:SLE-Product-SLES15-SP5-Updates
+    - SUSE_Linux_Enterprise_Server_15_SP6_x86_64:SLE-Product-SLES15-SP6-Pool
+    - SUSE_Linux_Enterprise_Server_15_SP6_x86_64:SLE-Product-SLES15-SP6-Updates
   paid_extension:
-    identifier: sle-ha/15.5/x86_64
+    identifier: sle-ha/15.6/x86_64
   free_extension:
-    identifier: sle-module-basesystem/15.5/x86_64
-    credentials_file: /etc/zypp/credentials.d/Basesystem_Module_15_SP5_x86_64
-    service: Basesystem_Module_15_SP5_x86_64
+    identifier: sle-module-basesystem/15.6/x86_64
+    credentials_file: /etc/zypp/credentials.d/Basesystem_Module_15_SP6_x86_64
+    service: Basesystem_Module_15_SP6_x86_64
     release_package: sle-module-basesystem-release
     repositories:
-    - Basesystem_Module_15_SP5_x86_64:SLE-Module-Basesystem15-SP5-Debuginfo-Pool
-    - Basesystem_Module_15_SP5_x86_64:SLE-Module-Basesystem15-SP5-Debuginfo-Updates
-    - Basesystem_Module_15_SP5_x86_64:SLE-Module-Basesystem15-SP5-Pool
-    - Basesystem_Module_15_SP5_x86_64:SLE-Module-Basesystem15-SP5-Source-Pool
-    - Basesystem_Module_15_SP5_x86_64:SLE-Module-Basesystem15-SP5-Updates
+    - Basesystem_Module_15_SP6_x86_64:SLE-Module-Basesystem15-SP6-Debuginfo-Pool
+    - Basesystem_Module_15_SP6_x86_64:SLE-Module-Basesystem15-SP6-Debuginfo-Updates
+    - Basesystem_Module_15_SP6_x86_64:SLE-Module-Basesystem15-SP6-Pool
+    - Basesystem_Module_15_SP6_x86_64:SLE-Module-Basesystem15-SP6-Source-Pool
+    - Basesystem_Module_15_SP6_x86_64:SLE-Module-Basesystem15-SP6-Updates
 
 SLE_15:
   beta: true
