@@ -32,5 +32,22 @@ This will create a `out/suseconnect` binary on the host.
 
 ### Testing
 
-Run the unit tests: `make test`
-Run selected unit tests, eg: `go test ./internal/collectors/`
+You can run all unit tests by running `make test`. If you then want to run unit
+tests for a specific package, you can simply run it as you would do for any Go
+project, for example: `go test ./internal/collectors/`.
+
+For feature tests you first need to create an `.env` file in the root directory
+of the project with the following contents:
+
+``` sh
+BETA_VALID_REGCODE="<regcode>"
+BETA_NOT_ACTIVATED_REGCODE="<regcode>"
+VALID_REGCODE="<regcode>"
+EXPIRED_REGCODE="<regcode>"
+NOT_ACTIVATED_REGCODE="<regcode>"
+```
+
+These values can be picked up from Glue's production environment. Once that is
+done, you can then simply run `make feature-tests`. This will run a all feature
+tests inside of a container by using the registration codes as provided by the
+`.env` file.
