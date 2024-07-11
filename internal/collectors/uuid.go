@@ -80,7 +80,7 @@ func machineID() (string, error) {
 
 	u, err := uuid.Parse(string(bytes.TrimSpace(out)))
 	if err != nil {
-		return "", fmt.Errorf("Unable to determine UUID for s390x: %v", err)
+		return "", fmt.Errorf("unable to determine UUID for s390x: %v", err)
 	}
 
 	return u.String(), nil

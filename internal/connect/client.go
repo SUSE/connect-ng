@@ -180,7 +180,7 @@ func Deregister(jsonOutput bool) error {
 	if util.FileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration is disabled for on-demand instances. " +
-			"Use `registercloudguest --clean` instead.")
+			"Use `registercloudguest --clean` instead")
 	}
 
 	if !IsRegistered() {

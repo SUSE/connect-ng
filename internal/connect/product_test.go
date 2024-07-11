@@ -124,7 +124,7 @@ func TestSplitTriplet(t *testing.T) {
 	if p.ToTriplet() != expected.ToTriplet() {
 		t.Errorf("Expected: %v, got: %v", expected, p)
 	}
-	p, err = SplitTriplet("SLES")
+	_, err = SplitTriplet("SLES")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}

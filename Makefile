@@ -16,7 +16,7 @@ MOUNT         = -v $(PWD):$(WORKDIR)
 
 .PHONY: dist build clean ci-env build-rpm feature-tests format vendor
 
-all: clean build test
+all: clean build test lint
 
 dist: clean internal/connect/version.txt vendor
 	@mkdir -p $(DIST)/build/packaging
@@ -82,6 +82,11 @@ feature-tests:
 
 test-yast: build-so
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
+
+lint: internal/connect/version.txt
+	@gofmt -l internal/* cmd/*
+	@go vet ./...
+	@staticcheck ./...
 
 clean:
 	go clean

@@ -200,7 +200,7 @@ func downloadFile(url string) ([]byte, error) {
 		return nil, err
 	}
 	if !successCode(resp.StatusCode) {
-		return nil, fmt.Errorf("Downloading %s failed (code: %d): %s", url, resp.StatusCode, resBody)
+		return nil, fmt.Errorf("downloading %s failed (code: %d): %s", url, resp.StatusCode, resBody)
 	}
 	return resBody, nil
 }
