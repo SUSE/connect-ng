@@ -75,6 +75,7 @@ func main() {
 		email                 string
 		version               bool
 		jsonFlag              bool
+		info                  bool
 	)
 
 	// display help like the ruby SUSEConnect
@@ -109,6 +110,8 @@ func main() {
 	flag.Var(&product, "product", "")
 	flag.Var(&product, "p", "")
 	flag.BoolVar(&jsonFlag, "json", false, "")
+	flag.BoolVar(&info, "info", false, "")
+	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
 	if version {
@@ -246,6 +249,14 @@ func main() {
 		}
 		err := connect.Rollback()
 		exitOnError(err)
+	} else if info {
+		sysInfo, err := connect.FetchSystemInformation()
+		exitOnError(err)
+
+		out, err := json.Marshal(sysInfo)
+		exitOnError(err)
+
+		fmt.Print(string(out))
 	} else {
 		if instanceDataFile != "" && connect.URLDefault() {
 			fmt.Print("Please use --instance-data only in combination ")
