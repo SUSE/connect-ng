@@ -337,6 +337,7 @@ func AnnounceSystem(distroTgt string, instanceDataFile string, quiet bool) (stri
 	if err != nil {
 		return "", "", err
 	}
+	pushTelemetry(sysInfoBody)
 	return announceSystem(sysInfoBody)
 }
 
@@ -354,6 +355,7 @@ func UpdateSystem(distroTarget, instanceDataFile string, quiet bool, keepalive b
 	if err != nil {
 		return err
 	}
+	pushTelemetry(sysInfoBody)
 	return localUpdateSystem(sysInfoBody)
 }
 
