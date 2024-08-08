@@ -251,7 +251,7 @@ func makeSysInfoBody(distroTarget, namespace string, instanceData []byte, includ
 		}
 	}
 
-	sysinfo, err := fetchSystemInformation()
+	sysinfo, err := FetchSystemInformation()
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ var mandatoryCollectors = []collectors.Collector{
 	collectors.SAP{},
 }
 
-func fetchSystemInformation() (collectors.Result, error) {
+func FetchSystemInformation() (collectors.Result, error) {
 	arch, err := collectors.DetectArchitecture()
 
 	if err != nil {

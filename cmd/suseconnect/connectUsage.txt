@@ -46,6 +46,8 @@ Manage subscriptions at https://scc.suse.com
                              services installed by SUSEConnect.
         --rollback           Revert the registration state in case of a failed
                              migration.
+    -i, --info               Show the information that will be reported to the
+                             server.
         --version            Print program version.
 
 Common options:
