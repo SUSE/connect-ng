@@ -1,12 +1,8 @@
-------------------------------------------------------------------
-Wed Aug 28 20:31:47 UTC 2024 - Charu Jain <cjain@suse.com>
-
-- Integrating uptime-tracker
-
 -------------------------------------------------------------------
 Fri Sep 13 15:56:05 UTC 2024 - Miquel Sabate Sola <msabate@suse.com>
 
 - IN PROGRESS: 1.13
+  - Integrating uptime-tracker
 
 -------------------------------------------------------------------
 Fri Sep 13 14:11:22 UTC 2024 - Miquel Sabate Sola <msabate@suse.com>

@@ -26,7 +26,6 @@ const (
 	daysBeforePurge         = 90                         // purge all the records after this many days
 )
 
-// getShortenedVersion returns the short program version
 func getShortenedVersion() string {
 	return strings.Split(strings.TrimSpace(version), "~")[0]
 }
@@ -37,6 +36,24 @@ func exitOnError(err error) {
 	}
 	fmt.Println(err)
 	os.Exit(1)
+}
+
+func displayUptimeVersion() {
+        var (
+                version bool
+        )
+
+        flag.Usage = func() {
+                fmt.Print(uptimeTrackerUsageText)
+        }
+
+        flag.BoolVar(&version, "version", false, "")
+
+        flag.Parse()
+        if version {
+                fmt.Println(getShortenedVersion())
+                os.Exit(0)
+        }
 }
 
 func readUptimeLogFile(uptimeLogsFilePath string) (map[string]string, error) {
@@ -124,22 +141,7 @@ func writeUptimeLogsFile(uptimeLogsFilePath string, uptimeLogs map[string]string
 }
 
 func main() {
-	var (
-		version bool
-	)
-
-	flag.Usage = func() {
-		fmt.Print(uptimeTrackerUsageText)
-	}
-
-	flag.BoolVar(&version, "version", false, "")
-
-	flag.Parse()
-	if version {
-		fmt.Println(getShortenedVersion())
-		os.Exit(0)
-	}
-
+	displayUptimeVersion()
 	uptimeLogs, err := readUptimeLogFile(uptimeCheckLogsFilePath)
 	exitOnError(err)
 	uptimeLogs, err = purgeOldUptimeLog(uptimeLogs)
