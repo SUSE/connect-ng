@@ -139,6 +139,7 @@ func main() {
 			os.Exit(1)
 		}
 		connect.CFG.FsRoot = fsRoot
+		zypper.SetFilesystemRoot(fsRoot)
 	}
 	if namespace != "" {
 		connect.CFG.Namespace = namespace
