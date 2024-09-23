@@ -3,6 +3,9 @@ Fri Sep 13 15:56:05 UTC 2024 - Miquel Sabate Sola <msabate@suse.com>
 
 - IN PROGRESS: 1.13
   - Integrating uptime-tracker
+  - Update error message for Public Cloud instances with registercloudguest
+    installed. SUSEConnect -d is disabled on PYAG and BYOS when the
+    registercloudguest command is available. (bsc#1230861)
 
 -------------------------------------------------------------------
 Fri Sep 13 14:11:22 UTC 2024 - Miquel Sabate Sola <msabate@suse.com>
