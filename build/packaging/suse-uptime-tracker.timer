@@ -1,0 +1,10 @@
+[Unit]
+Description=Schedule uptime tracking every 15 minutes
+
+[Timer]
+# Run this timer every 15 minutes
+OnCalendar=*:0/15
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target

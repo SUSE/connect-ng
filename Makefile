@@ -29,6 +29,7 @@ dist: clean internal/connect/version.txt vendor
 	@cp LICENSE LICENSE.LGPL README.md $(DIST)
 	@cp SUSEConnect.example $(DIST)
 	@cp build/packaging/suseconnect-keepalive* $(DIST)/build/packaging
+	@cp build/packaging/suse-uptime-tracker* $(DIST)/build/packaging
 	@cp -r build/packaging/suseconnect-ng* $(DIST)
 
 	@tar cfvj vendor.tar.xz vendor
@@ -52,6 +53,7 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/zypper-migration
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/zypper-search-packages
+	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suse-uptime-tracker
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
