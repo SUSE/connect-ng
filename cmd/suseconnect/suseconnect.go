@@ -136,7 +136,7 @@ func main() {
 			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
-		connect.CFG.BaseURL = baseURL
+		connect.CFG.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
 	if fsRoot != "" {
