@@ -387,8 +387,14 @@ func announceOrUpdate(quiet bool) error {
 	}
 
 	if err = cred.CreateCredentials(login, password, "", cred.SystemCredentialsPath(CFG.FsRoot)); err == nil {
-		util.Debug.Print("\nAdding SUSE registry system authentication configuration ...")
-		setupRegistryAuthentication(login, password)
+		// If the user is authenticated against the SCC, then setup the Docker
+		// Registry configuration for the system. Otherwise, if the system is
+		// behind a proxy (e.g. RMT), this step might fail and it's best to
+		// avoid it (see bsc#1231185).
+		if CFG.IsScc() {
+			util.Debug.Print("\nAdding SUSE registry system authentication configuration ...")
+			setupRegistryAuthentication(login, password)
+		}
 	}
 	return err
 }
@@ -405,14 +411,9 @@ func UpToDate() bool {
 	return upToDate()
 }
 
-// URLDefault returns true if using https://scc.suse.com
-func URLDefault() bool {
-	return CFG.BaseURL == defaultBaseURL
-}
-
 func printInformation(action string, jsonOutput bool) {
 	var server string
-	if URLDefault() {
+	if CFG.IsScc() {
 		server = "SUSE Customer Center"
 	} else {
 		server = "registration proxy " + CFG.BaseURL

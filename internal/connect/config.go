@@ -30,9 +30,9 @@ const (
 type ServerType uint64
 
 const (
-	Unknown ServerType = iota
-	Scc
-	Rmt
+	UnknownProvider ServerType = iota
+	SccProvider
+	RmtProvider
 )
 
 // Config holds the config!
@@ -135,7 +135,7 @@ func parseConfig(r io.Reader, c *Config) {
 
 	// Set the server type depending on what we parsed from the configuration.
 	if c.BaseURL == defaultBaseURL {
-		c.ServerType = Scc
+		c.ServerType = SccProvider
 	}
 }
 
@@ -152,5 +152,5 @@ func (c *Config) MergeJSON(jsn string) error {
 // but it might need to be filled in upon HTTP requests to further guess if it's
 // a Glue instance running on localhost or similar developer-only scenarios.
 func (c *Config) IsScc() bool {
-	return c.ServerType == Scc
+	return c.ServerType == SccProvider
 }
