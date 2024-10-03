@@ -268,11 +268,11 @@ func main() {
 
 		fmt.Print(string(out))
 	} else {
-		if instanceDataFile != "" && connect.URLDefault() {
+		if instanceDataFile != "" && connect.CFG.IsScc() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if connect.URLDefault() && token == "" && product.value == "" {
+		} else if connect.CFG.IsScc() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
@@ -323,7 +323,7 @@ func main() {
 }
 
 func maybeBrokenSMTError() error {
-	if !connect.URLDefault() && !connect.UpToDate() {
+	if !connect.CFG.IsScc() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
 			"Please update it and try again.")
 	}
