@@ -159,11 +159,11 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	// configuration, we can actually further inspect it via some of the headers
 	// that are returned by Glue vs RMT. Hence, if the server type is unknown,
 	// make an educated guess now.
-	if CFG.ServerType == Unknown {
+	if CFG.ServerType == UnknownProvider {
 		if api := resp.Header.Get("Scc-Api-Version"); api == sccAPIVersion {
-			CFG.ServerType = Scc
+			CFG.ServerType = SccProvider
 		} else {
-			CFG.ServerType = Rmt
+			CFG.ServerType = RmtProvider
 		}
 	}
 
