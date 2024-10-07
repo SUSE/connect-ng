@@ -149,15 +149,7 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
-	if token != "" {
-		connect.CFG.Token = token
-		processedToken, processTokenErr := processToken(token)
-		if processTokenErr != nil {
-			util.Debug.Printf("Error Processing token %+v", processTokenErr)
-			os.Exit(1)
-		}
-		connect.CFG.Token = processedToken
-	}
+	parseRegistrationToken(token)
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
@@ -310,6 +302,18 @@ func main() {
 	}
 }
 
+func parseRegistrationToken(token string) {
+	if token != "" {
+		connect.CFG.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			fmt.Printf("Error Processing token %+v", processTokenErr)
+			os.Exit(1)
+		}
+		connect.CFG.Token = processedToken
+	}
+}
+
 func maybeBrokenSMTError() error {
 	if !connect.URLDefault() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
@@ -425,6 +429,7 @@ func readTokenFromReader(reader io.Reader) (string, error) {
 		return "", fmt.Errorf("failed to read token from reader: %w", err)
 	}
 	token := strings.TrimSuffix(tokenBytes, "\n")
+	token = strings.TrimSpace(token)
 	if token == "" {
 		return "", fmt.Errorf("error: token cannot be empty after reading")
 	}
