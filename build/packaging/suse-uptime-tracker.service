@@ -1,0 +1,7 @@
+[Unit]
+Description=Run SUSE uptime tracker
+Wants=suse-uptime-tracker.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/suse-uptime-tracker

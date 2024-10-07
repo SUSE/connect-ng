@@ -1,0 +1,6 @@
+Usage: suse-uptime-tracker [options]
+Keep track of system uptime. If no options are specified, it will update
+the uptime tracking log file with the current uptime.
+
+        --version        Print program version.
+    -h, --help           Show this message.
