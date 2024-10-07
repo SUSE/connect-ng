@@ -151,15 +151,7 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
-	if token != "" {
-		connect.CFG.Token = token
-		processedToken, processTokenErr := processToken(token)
-		if processTokenErr != nil {
-			util.Debug.Printf("Error Processing token %+v", processTokenErr)
-			os.Exit(1)
-		}
-		connect.CFG.Token = processedToken
-	}
+	parseRegistrationToken(token)
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
@@ -323,6 +315,18 @@ func main() {
 	}
 }
 
+func parseRegistrationToken(token string) {
+	if token != "" {
+		connect.CFG.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			fmt.Printf("Error Processing token with error %+v", processTokenErr)
+			os.Exit(1)
+		}
+		connect.CFG.Token = processedToken
+	}
+}
+
 func maybeBrokenSMTError() error {
 	if !connect.CFG.IsScc() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
@@ -412,8 +416,6 @@ func isSumaManaged() bool {
 }
 
 func processToken(token string) (string, error) {
-	var reader io.Reader
-
 	if strings.HasPrefix(token, "@") {
 		tokenFilePath := strings.TrimPrefix(token, "@")
 		file, err := os.Open(tokenFilePath)
@@ -421,23 +423,21 @@ func processToken(token string) (string, error) {
 			return "", fmt.Errorf("failed to open token file '%s': %w", tokenFilePath, err)
 		}
 		defer file.Close()
-		reader = file
+		return readTokenFromReader(file)
 	} else if token == "-" {
-		reader = os.Stdin
+		return readTokenFromReader(os.Stdin)
 	} else {
 		return token, nil
 	}
-
-	return readTokenFromReader(reader)
 }
 
 func readTokenFromReader(reader io.Reader) (string, error) {
 	bufReader := bufio.NewReader(reader)
 	tokenBytes, err := bufReader.ReadString('\n')
-	if err != nil && err != io.EOF { // Handle potential errors, including EOF
+	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("failed to read token from reader: %w", err)
 	}
-	token := strings.TrimSuffix(tokenBytes, "\n")
+	token := strings.TrimSpace(tokenBytes)
 	if token == "" {
 		return "", fmt.Errorf("error: token cannot be empty after reading")
 	}
