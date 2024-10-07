@@ -15,6 +15,10 @@ Manage subscriptions at https://scc.suse.com
                              be registered.
                              Relates that product to the specified subscription,
                              and enables software repositories for that product.
+        --set-labels [LABELS]
+                             Set labels in SCC when the product is registered.
+                             Multiple labels can be specified providing a comma
+                             seperated
     -d, --de-register        De-registers the system and base product, or in
                              conjunction with --product, a single extension, and
                              removes all its services installed by SUSEConnect.

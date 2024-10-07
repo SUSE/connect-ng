@@ -68,6 +68,7 @@ func main() {
 		fsRoot                string
 		namespace             string
 		token                 string
+		labels                string
 		product               singleStringFlag
 		instanceDataFile      string
 		listExtensions        bool
@@ -103,6 +104,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "", "")
 	flag.StringVar(&token, "regcode", "", "")
 	flag.StringVar(&token, "r", "", "")
+	flag.StringVar(&labels, "set-labels", "", "")
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
@@ -273,13 +275,23 @@ func main() {
 			}
 
 			err := connect.Register(jsonFlag)
-			if jsonFlag && err != nil {
-				out := connect.RegisterOut{Success: false, Message: err.Error()}
-				str, _ := json.Marshal(&out)
-				fmt.Println(string(str))
-				os.Exit(1)
-			} else {
-				exitOnError(err)
+			if err != nil {
+				if jsonFlag {
+					out := connect.RegisterOut{Success: false, Message: err.Error()}
+					str, _ := json.Marshal(&out)
+					fmt.Println(string(str))
+					os.Exit(1)
+				} else {
+					exitOnError(err)
+				}
+			}
+
+			// After successful registration we try to set labels
+			if len(labels) > 0 {
+				err := connect.AssignAndCrateLabels(strings.Split(labels, ","))
+				if err != nil && !jsonFlag {
+					fmt.Printf("Problem setting labels for this system: %s\n", err)
+				}
 			}
 		}
 	}
