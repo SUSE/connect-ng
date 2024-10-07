@@ -661,7 +661,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 	}
 
 	if interrupted {
-		return fsInconsistent, fmt.Errorf("Preparing migration: %v", ErrInterrupted)
+		return fsInconsistent, fmt.Errorf("preparing migration: %v", ErrInterrupted)
 	}
 
 	// Disable all old repos in case of Leap -> SLES migration (bsc#1184237)
@@ -685,7 +685,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 
 	echo := util.SetSystemEcho(true)
 	if err := zypper.RefreshRepos(baseProductVersion, true, false, false, false, autoImportRepoKeys); err != nil {
-		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
+		return fsInconsistent, fmt.Errorf("refresh of repositories failed: %v", err)
 	}
 	if interrupted {
 		return fsInconsistent, ErrInterrupted
@@ -720,11 +720,11 @@ func checkFlagContradictions() error {
 	flag.Visit(func(f *flag.Flag) {
 		if strings.HasPrefix(f.Name, "no-") {
 			if seen.Contains(f.Name[3:]) {
-				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name[3:], f.Name)
+				err = fmt.Errorf("flags contradict: --%s and --%s", f.Name[3:], f.Name)
 			}
 		} else {
 			if seen.Contains("no-" + f.Name) {
-				err = fmt.Errorf("Flags contradict: --%s and --%s", f.Name, "no-"+f.Name)
+				err = fmt.Errorf("flags contradict: --%s and --%s", f.Name, "no-"+f.Name)
 			}
 		}
 		seen.Add(f.Name)

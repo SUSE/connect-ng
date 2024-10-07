@@ -36,21 +36,6 @@ func mockInstallReleasePackage(t *testing.T, expected bool) {
 	}
 }
 
-func mockRemoveOrRefreshService(t *testing.T, expected bool) {
-	counter := 0
-	localRemoveOrRefreshService = func(Service, bool) error {
-		counter += 1
-		return nil
-	}
-
-	if !expected {
-		if counter > 1 {
-			t.Errorf("Expected removeOrRefreshService not to be called.")
-		}
-	}
-
-}
-
 func mockMakeSysInfoBody(t *testing.T, expectedIncludeUptimeLog bool) {
 	localMakeSysInfoBody = func(distroTarget, namespace string, instanceData []byte, includeUptimeLog bool) ([]byte, error) {
 		if includeUptimeLog != expectedIncludeUptimeLog {
