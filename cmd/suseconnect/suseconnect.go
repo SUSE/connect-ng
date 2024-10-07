@@ -307,7 +307,7 @@ func parseRegistrationToken(token string) {
 		connect.CFG.Token = token
 		processedToken, processTokenErr := processToken(token)
 		if processTokenErr != nil {
-			fmt.Printf("Error Processing token %+v", processTokenErr)
+			fmt.Printf("Error Processing token with error %+v", processTokenErr)
 			os.Exit(1)
 		}
 		connect.CFG.Token = processedToken
