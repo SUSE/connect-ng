@@ -57,12 +57,14 @@ func TestSaveLoad(t *testing.T) {
 	c1 := NewConfig()
 	c1.Path = path
 	c1.AutoAgreeEULA = true
+	c1.ServerType = Unknown
 	if err := c1.Save(); err != nil {
 		t.Fatalf("Unable to write config: %s", err)
 	}
 	c2 := NewConfig()
 	c2.Path = path
 	c2.Load()
+	c2.ServerType = Unknown
 	if !reflect.DeepEqual(c1, c2) {
 		t.Errorf("got %+v, expected %+v", c2, c1)
 	}
