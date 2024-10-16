@@ -14,7 +14,7 @@ type Label struct {
 	Description string `json:"description,omitempty"`
 }
 
-func AssignAndCrateLabels(labels []string) error {
+func AssignAndCreateLabels(labels []string) error {
 	collection := []Label{}
 
 	for _, name := range labels {

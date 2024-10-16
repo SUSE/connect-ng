@@ -23,7 +23,7 @@ func TestAssignAndCreateLabelsOk(t *testing.T) {
 
 	mockSetLabelsApiCall(t, expectedLabels)
 
-	err := AssignAndCrateLabels([]string{"label1", "label2"})
+	err := AssignAndCreateLabels([]string{"label1", "label2"})
 	assert.NoError(err)
 }
 
@@ -34,6 +34,6 @@ func TestAssignAndCreateLabelsError(t *testing.T) {
 		return fmt.Errorf("Cannot set more than 10 labels on system: test-system")
 	}
 
-	err := AssignAndCrateLabels([]string{"label1", "label2"})
+	err := AssignAndCreateLabels([]string{"label1", "label2"})
 	assert.ErrorContains(err, "Cannot set more than")
 }
