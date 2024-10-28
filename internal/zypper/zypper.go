@@ -358,9 +358,13 @@ func parseSearchResultXML(xmlDoc []byte) ([]Package, error) {
 }
 
 // FindProductPackages returns list of product packages for given product
-func FindProductPackages(identifier string) ([]Package, error) {
+func FindProductPackages(identifier string, autoImportRepoKeys bool) ([]Package, error) {
 	args := []string{"--xmlout", "--no-refresh", "--non-interactive", "search", "-s",
 		"--match-exact", "-t", "product", identifier}
+	if autoImportRepoKeys {
+		args = append([]string{"--gpg-auto-import-keys"}, args...)
+	}
+
 	// Don't fail when zypper exits with 104 (no product found) or 6 (no repositories)
 	output, err := zypperRun(args, []int{zypperOK, zypperErrNoRepos, zypperInfoCapNotFound})
 	if err != nil {

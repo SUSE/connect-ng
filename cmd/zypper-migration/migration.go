@@ -497,8 +497,8 @@ func compareEditions(left, right string) int {
 	return 0
 }
 
-func cleanupProductRepos(p connect.Product, force bool) error {
-	productPackages, err := zypper.FindProductPackages(p.Name)
+func cleanupProductRepos(p connect.Product, force, autoImportRepoKeys bool) error {
+	productPackages, err := zypper.FindProductPackages(p.Name, autoImportRepoKeys)
 	if err != nil {
 		return err
 	}
@@ -564,7 +564,7 @@ func isSUSEService(service zypper.ZypperService) bool {
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
-func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (string, error) {
+func migrateSystem(migration connect.MigrationPath, forceDisableRepos, autoImportRepoKeys bool) (string, error) {
 	var baseProductVersion string
 
 	systemServices, _ := zypper.InstalledServices()
@@ -587,7 +587,7 @@ func migrateSystem(migration connect.MigrationPath, forceDisableRepos bool) (str
 			}
 		}
 
-		if err := cleanupProductRepos(p, forceDisableRepos); err != nil {
+		if err := cleanupProductRepos(p, forceDisableRepos, autoImportRepoKeys); err != nil {
 			return baseProductVersion, err
 		}
 
@@ -678,7 +678,7 @@ func applyMigration(migration connect.MigrationPath, systemProducts []connect.Pr
 		}
 	}
 
-	baseProductVersion, err := migrateSystem(migration, nonInteractive || forceDisableRepos)
+	baseProductVersion, err := migrateSystem(migration, nonInteractive || forceDisableRepos, autoImportRepoKeys)
 	if err != nil {
 		return fsInconsistent, err
 	}
