@@ -298,8 +298,9 @@ func main() {
 				}
 			}
 
-			// After successful registration we try to set labels
-			if len(labels) > 0 {
+			// After successful registration we try to set labels if we are
+			// targetting SCC.
+			if connect.CFG.IsScc() && len(labels) > 0 {
 				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
