@@ -135,7 +135,7 @@ func main() {
 			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
-		connect.CFG.BaseURL = baseURL
+		connect.CFG.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
 	if fsRoot != "" {
@@ -261,11 +261,11 @@ func main() {
 
 		fmt.Print(string(out))
 	} else {
-		if instanceDataFile != "" && connect.URLDefault() {
+		if instanceDataFile != "" && connect.CFG.IsScc() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if connect.URLDefault() && token == "" && product.value == "" {
+		} else if connect.CFG.IsScc() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
@@ -298,8 +298,9 @@ func main() {
 				}
 			}
 
-			// After successful registration we try to set labels
-			if len(labels) > 0 {
+			// After successful registration we try to set labels if we are
+			// targetting SCC.
+			if connect.CFG.IsScc() && len(labels) > 0 {
 				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
@@ -316,7 +317,7 @@ func main() {
 }
 
 func maybeBrokenSMTError() error {
-	if !connect.URLDefault() && !connect.UpToDate() {
+	if !connect.CFG.IsScc() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
 			"Please update it and try again.")
 	}

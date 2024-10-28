@@ -155,6 +155,18 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 	defer resp.Body.Close()
 
+	// If we failed to detect which server type was being used when loading the
+	// configuration, we can actually further inspect it via some of the headers
+	// that are returned by Glue vs RMT. Hence, if the server type is unknown,
+	// make an educated guess now.
+	if CFG.ServerType == UnknownProvider {
+		if api := resp.Header.Get("Scc-Api-Version"); api == sccAPIVersion {
+			CFG.ServerType = SccProvider
+		} else {
+			CFG.ServerType = RmtProvider
+		}
+	}
+
 	// For each request SCC might update the System token for a given system.
 	// This will be given through the `System-Token` header, so we have to grab
 	// this here and store it for the next request.
