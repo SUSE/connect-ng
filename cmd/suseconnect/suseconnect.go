@@ -132,7 +132,7 @@ func main() {
 	connect.CFG.Load()
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
-			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
+			fmt.Fprintf(os.Stderr, "URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
 		connect.CFG.ChangeBaseURL(baseURL)
@@ -140,7 +140,7 @@ func main() {
 	}
 	if fsRoot != "" {
 		if fsRoot[0] != '/' {
-			fmt.Println("The path specified in the --root option must be absolute.")
+			fmt.Fprintln(os.Stderr, "The path specified in the --root option must be absolute.")
 			os.Exit(1)
 		}
 		connect.CFG.FsRoot = fsRoot
@@ -155,9 +155,9 @@ func main() {
 	}
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
-			fmt.Print("Please provide the product identifier in this format: ")
-			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
-			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
+			fmt.Fprint(os.Stderr, "Please provide the product identifier in this format: ")
+			fmt.Fprint(os.Stderr, "<internal name>/<version>/<architecture>. You can find ")
+			fmt.Fprint(os.Stderr, "these values by calling: 'SUSEConnect --list-extensions'\n")
 			os.Exit(1)
 		} else {
 			connect.CFG.Product = p
@@ -262,14 +262,14 @@ func main() {
 		fmt.Print(string(out))
 	} else {
 		if instanceDataFile != "" && connect.CFG.IsScc() {
-			fmt.Print("Please use --instance-data only in combination ")
-			fmt.Print("with --url pointing to your RMT or SMT server\n")
+			fmt.Fprint(os.Stderr, "Please use --instance-data only in combination ")
+			fmt.Fprint(os.Stderr, "with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
 		} else if connect.CFG.IsScc() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
-			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
+			fmt.Fprintln(os.Stderr, "This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
 
@@ -303,14 +303,14 @@ func main() {
 			if connect.CFG.IsScc() && len(labels) > 0 {
 				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
-					fmt.Printf("Problem setting labels for this system: %s\n", err)
+					fmt.Fprintf(os.Stderr, "Problem setting labels for this system: %s\n", err)
 				}
 			}
 		}
 	}
 	if writeConfig {
 		if err := connect.CFG.Save(); err != nil {
-			fmt.Printf("Problem writing configuration: %s\n", err)
+			fmt.Fprintf(os.Stderr, "Problem writing configuration: %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -329,55 +329,55 @@ func exitOnError(err error) {
 		return
 	}
 	if ze, ok := err.(zypper.ZypperError); ok {
-		fmt.Println(ze)
+		fmt.Fprintln(os.Stderr, ze)
 		os.Exit(ze.ExitCode)
 	}
 	if ue, ok := err.(*url.Error); ok && errors.Is(ue, syscall.ECONNREFUSED) {
-		fmt.Println("Error:", err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
 		if err := maybeBrokenSMTError(); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 		} else {
-			fmt.Print("Error: Cannot parse response from server\n")
-			fmt.Println(je)
+			fmt.Fprint(os.Stderr, "Error: Cannot parse response from server\n")
+			fmt.Fprintln(os.Stderr, je)
 		}
 		os.Exit(66)
 	}
 	if ae, ok := err.(connect.APIError); ok {
 		if ae.Code == http.StatusUnauthorized && connect.IsRegistered() {
-			fmt.Print("Error: Invalid system credentials, probably because the ")
-			fmt.Print("registered system was deleted in SUSE Customer Center. ")
-			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
-			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
+			fmt.Fprint(os.Stderr, "Error: Invalid system credentials, probably because the ")
+			fmt.Fprint(os.Stderr, "registered system was deleted in SUSE Customer Center. ")
+			fmt.Fprint(os.Stderr, "Check ", connect.CFG.BaseURL, " whether your system appears there. ")
+			fmt.Fprint(os.Stderr, "If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
 		} else if err := maybeBrokenSMTError(); err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 		} else {
-			fmt.Println(ae)
+			fmt.Fprintln(os.Stderr, ae)
 		}
 		os.Exit(67)
 	}
 	switch err {
 	case connect.ErrSystemNotRegistered:
-		fmt.Print("Deregistration failed. Check if the system has been ")
-		fmt.Print("registered using the --status-text option or use the ")
-		fmt.Print("--regcode parameter to register it.\n")
+		fmt.Fprint(os.Stderr, "Deregistration failed. Check if the system has been ")
+		fmt.Fprint(os.Stderr, "registered using the --status-text option or use the ")
+		fmt.Fprint(os.Stderr, "--regcode parameter to register it.\n")
 		os.Exit(69)
 	case connect.ErrListExtensionsUnregistered:
-		fmt.Print("To list extensions, you must first register the base product, ")
-		fmt.Print("using: SUSEConnect -r <registration code>\n")
+		fmt.Fprint(os.Stderr, "To list extensions, you must first register the base product, ")
+		fmt.Fprint(os.Stderr, "using: SUSEConnect -r <registration code>\n")
 		os.Exit(1)
 	case connect.ErrBaseProductDeactivation:
-		fmt.Print("Can not deregister base product. Use SUSEConnect -d to deactivate ")
-		fmt.Print("the whole system.\n")
+		fmt.Fprint(os.Stderr, "Can not deregister base product. Use SUSEConnect -d to deactivate ")
+		fmt.Fprint(os.Stderr, "the whole system.\n")
 		os.Exit(70)
 	case connect.ErrPingFromUnregistered:
-		fmt.Print("Error sending keepalive: ")
-		fmt.Print("System is not registered. Use the --regcode parameter to register it.\n")
+		fmt.Fprint(os.Stderr, "Error sending keepalive: ")
+		fmt.Fprint(os.Stderr, "System is not registered. Use the --regcode parameter to register it.\n")
 		os.Exit(71)
 	default:
-		fmt.Printf("SUSEConnect error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "SUSEConnect error: %s\n", err)
 		os.Exit(1)
 	}
 }
