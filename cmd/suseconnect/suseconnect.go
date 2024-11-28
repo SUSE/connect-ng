@@ -437,7 +437,7 @@ func readTokenFromReader(reader io.Reader) (string, error) {
 	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("failed to read token from reader: %w", err)
 	}
-	token := strings.TrimSuffix(tokenBytes, "\n")
+	token := strings.TrimSpace(tokenBytes)
 	if token == "" {
 		return "", fmt.Errorf("error: token cannot be empty after reading")
 	}
