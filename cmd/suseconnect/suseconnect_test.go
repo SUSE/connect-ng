@@ -84,7 +84,7 @@ func TestReadTokenFromReader_EmptyInput(t *testing.T) {
 }
 
 func TestReadTokenFromReader_OnlyNewline(t *testing.T) {
-	reader := strings.NewReader("\n") // Input contains only a newline
+	reader := strings.NewReader("\n")
 
 	token, err := readTokenFromReader(reader)
 	if err == nil {
@@ -102,7 +102,7 @@ func TestReadTokenFromReader_OnlyNewline(t *testing.T) {
 }
 
 func TestReadTokenFromReader_ErrorProducingReader(t *testing.T) {
-	reader := &errorReader{} // Custom reader that always returns an error
+	reader := &errorReader{}
 
 	token, err := readTokenFromReader(reader)
 	if err == nil {
@@ -110,23 +110,6 @@ func TestReadTokenFromReader_ErrorProducingReader(t *testing.T) {
 	}
 
 	expectedError := "failed to read token from reader: forced reader error"
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', but got '%s'", expectedError, err.Error())
-	}
-
-	if token != "" {
-		t.Errorf("Expected empty token, but got '%s'", token)
-	}
-}
-func TestReadTokenFromReader_OnlyWhitespace(t *testing.T) {
-	reader := strings.NewReader("   \n") // Input contains only spaces and newline
-
-	token, err := readTokenFromReader(reader)
-	if err == nil {
-		t.Fatalf("Expected error, but got none")
-	}
-
-	expectedError := "error: token cannot be empty after reading"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error '%s', but got '%s'", expectedError, err.Error())
 	}
@@ -153,7 +136,7 @@ func TestProcessToken_TokenFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tmpFile.Name()) // Clean up the temp file
+	defer os.Remove(tmpFile.Name())
 
 	expectedToken := "fileToken\n"
 	if _, err := tmpFile.WriteString(expectedToken); err != nil {
@@ -191,7 +174,7 @@ func TestProcessToken_TokenFromStdin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name()) // Clean up the temp file
+	defer os.Remove(tempFile.Name())
 	expectedToken := "stdinToken\n"
 	if _, err := tempFile.WriteString(expectedToken); err != nil {
 		t.Fatalf("Failed to write to temp file: %v", err)
@@ -200,19 +183,19 @@ func TestProcessToken_TokenFromStdin(t *testing.T) {
 	tempFile.Close()
 
 	oldStdin := os.Stdin
-	defer func() { os.Stdin = oldStdin }() // Restore original stdin
-	file, err := os.Open(tempFile.Name())  // Reopen the temp file for reading
+	defer func() { os.Stdin = oldStdin }()
+	file, err := os.Open(tempFile.Name())
 	if err != nil {
 		t.Fatalf("Failed to open temp file: %v", err)
 	}
-	os.Stdin = file // Set os.Stdin to the temp file
+	os.Stdin = file
 
 	result, err := processToken("-")
 	if err != nil {
 		t.Fatalf("Expected no error, but got %v", err)
 	}
 
-	expectedToken = strings.TrimSpace(expectedToken) // Trim newline
+	expectedToken = strings.TrimSpace(expectedToken)
 	if result != expectedToken {
 		t.Errorf("Expected token to be '%s', but got '%s'", expectedToken, result)
 	}
@@ -223,16 +206,16 @@ func TestProcessToken_ErrorReadingStdin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name()) // Clean up the temp file
+	defer os.Remove(tempFile.Name())
 
 	tempFile.Close()
 	oldStdin := os.Stdin
-	defer func() { os.Stdin = oldStdin }() // Restore original stdin
-	file, err := os.Open(tempFile.Name())  // Open the temp file for reading
+	defer func() { os.Stdin = oldStdin }()
+	file, err := os.Open(tempFile.Name())
 	if err != nil {
 		t.Fatalf("Failed to open temp file: %v", err)
 	}
-	os.Stdin = file // Set os.Stdin to the temp file
+	os.Stdin = file
 
 	_, err = processToken("-")
 	if err == nil {
@@ -251,7 +234,7 @@ func parseRegistrationTokenWithInjection(token string) {
 		processedToken, processTokenErr := processTokenFunc(token)
 		if processTokenErr != nil {
 			util.Debug.Printf("Error Processing token %+v", processTokenErr)
-			exit(1) // Use the mockable exit function
+			exit(1)
 		}
 		connect.CFG.Token = processedToken
 	}

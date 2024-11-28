@@ -403,8 +403,6 @@ func isSumaManaged() bool {
 }
 
 func processToken(token string) (string, error) {
-	var reader io.Reader
-
 	if strings.HasPrefix(token, "@") {
 		tokenFilePath := strings.TrimPrefix(token, "@")
 		file, err := os.Open(tokenFilePath)
@@ -412,24 +410,21 @@ func processToken(token string) (string, error) {
 			return "", fmt.Errorf("failed to open token file '%s': %w", tokenFilePath, err)
 		}
 		defer file.Close()
-		reader = file
+		return readTokenFromReader(file)
 	} else if token == "-" {
-		reader = os.Stdin
+		return readTokenFromReader(os.Stdin)
 	} else {
 		return token, nil
 	}
-
-	return readTokenFromReader(reader)
 }
 
 func readTokenFromReader(reader io.Reader) (string, error) {
 	bufReader := bufio.NewReader(reader)
 	tokenBytes, err := bufReader.ReadString('\n')
-	if err != nil && err != io.EOF { // Handle potential errors, including EOF
+	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("failed to read token from reader: %w", err)
 	}
 	token := strings.TrimSuffix(tokenBytes, "\n")
-	token = strings.TrimSpace(token)
 	if token == "" {
 		return "", fmt.Errorf("error: token cannot be empty after reading")
 	}
