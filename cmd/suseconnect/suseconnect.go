@@ -1,21 +1,22 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"runtime"
 	"strings"
 	"syscall"
-
-	"github.com/SUSE/connect-ng/internal/connect"
-	"github.com/SUSE/connect-ng/internal/util"
-	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -150,9 +151,7 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
-	if token != "" {
-		connect.CFG.Token = token
-	}
+	parseRegistrationToken(token)
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
@@ -316,6 +315,18 @@ func main() {
 	}
 }
 
+func parseRegistrationToken(token string) {
+	if token != "" {
+		connect.CFG.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			fmt.Printf("Error Processing token with error %+v", processTokenErr)
+			os.Exit(1)
+		}
+		connect.CFG.Token = processedToken
+	}
+}
+
 func maybeBrokenSMTError() error {
 	if !connect.CFG.IsScc() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
@@ -402,4 +413,33 @@ func fileExists(path string) bool {
 
 func isSumaManaged() bool {
 	return fileExists("/etc/sysconfig/rhn/systemid")
+}
+
+func processToken(token string) (string, error) {
+	if strings.HasPrefix(token, "@") {
+		tokenFilePath := strings.TrimPrefix(token, "@")
+		file, err := os.Open(tokenFilePath)
+		if err != nil {
+			return "", fmt.Errorf("failed to open token file '%s': %w", tokenFilePath, err)
+		}
+		defer file.Close()
+		return readTokenFromReader(file)
+	} else if token == "-" {
+		return readTokenFromReader(os.Stdin)
+	} else {
+		return token, nil
+	}
+}
+
+func readTokenFromReader(reader io.Reader) (string, error) {
+	bufReader := bufio.NewReader(reader)
+	tokenBytes, err := bufReader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("failed to read token from reader: %w", err)
+	}
+	token := strings.TrimSpace(tokenBytes)
+	if token == "" {
+		return "", fmt.Errorf("error: token cannot be empty after reading")
+	}
+	return token, nil
 }
