@@ -26,6 +26,15 @@ const (
 	defaultEnableSystemUptimeTracking = false
 )
 
+// Kinds of servers which are supported by SUSEConnect.
+type ServerType uint64
+
+const (
+	UnknownProvider ServerType = iota
+	SccProvider
+	RmtProvider
+)
+
 // Config holds the config!
 type Config struct {
 	Path                       string
@@ -40,10 +49,10 @@ type Config struct {
 	Email                      string `json:"email"`
 	AutoAgreeEULA              bool
 	EnableSystemUptimeTracking bool
-
-	NoZypperRefresh    bool
-	AutoImportRepoKeys bool
-	SkipServiceInstall bool
+	ServerType                 ServerType
+	NoZypperRefresh            bool
+	AutoImportRepoKeys         bool
+	SkipServiceInstall         bool
 }
 
 // NewConfig returns a Config with defaults
@@ -84,12 +93,34 @@ func (c Config) Save() error {
 func (c *Config) Load() {
 	f, err := os.Open(c.Path)
 	if err != nil {
+		// If we failed at parsing the configuration, we can make further
+		// assumptions based on the base URL being used.
+		if c.BaseURL == defaultBaseURL {
+			c.ServerType = SccProvider
+		}
+
 		util.Debug.Println(err)
 		return
 	}
 	defer f.Close()
 	parseConfig(f, c)
 	util.Debug.Printf("Config after parsing: %+v", c)
+}
+
+// Change the base url to be used when talking to the server to the one being
+// provided.
+func (c *Config) ChangeBaseURL(baseUrl string) {
+	c.BaseURL = baseUrl
+
+	// When making an explicit change of the URL, we can further detect which
+	// kind of server we are dealing with. For now, let's keep it simple, and if
+	// it's the defaultBaseURL then we assume it to be SccProvider, otherwise
+	// RmtProvider.
+	if c.BaseURL == defaultBaseURL {
+		c.ServerType = SccProvider
+	} else {
+		c.ServerType = RmtProvider
+	}
 }
 
 func parseConfig(r io.Reader, c *Config) {
@@ -123,6 +154,11 @@ func parseConfig(r io.Reader, c *Config) {
 			util.Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
 		}
 	}
+
+	// Set the server type depending on what we parsed from the configuration.
+	if c.BaseURL == defaultBaseURL {
+		c.ServerType = SccProvider
+	}
 }
 
 // MergeJSON merges attributes of jsn that match Config fields
@@ -130,4 +166,13 @@ func (c *Config) MergeJSON(jsn string) error {
 	err := json.Unmarshal([]byte(jsn), c)
 	util.Debug.Printf("Merged options: %+v", c)
 	return err
+}
+
+// Returns true if we detected that the configuration points to SCC.
+//
+// NOTE: this will be reliable if the configuration file already pointed to SCC,
+// but it might need to be filled in upon HTTP requests to further guess if it's
+// a Glue instance running on localhost or similar developer-only scenarios.
+func (c *Config) IsScc() bool {
+	return c.ServerType == SccProvider
 }
