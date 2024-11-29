@@ -1,3 +1,9 @@
+ Next release:
+ 
+ - Update error message for Public Cloud instances with registercloudguest
+   installed. SUSEConnect -d is disabled on PYAG and BYOS when the
+   registercloudguest command is available. (bsc#1230861)
+
 -------------------------------------------------------------------
 Thu Nov 14 11:01:05 UTC 2024 - Miquel Sabaté Solà <msabate@suse.com>
 

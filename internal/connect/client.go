@@ -179,7 +179,7 @@ func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) err
 func Deregister(jsonOutput bool) error {
 	if util.FileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
-			"De-registration is disabled for on-demand instances. " +
+			"De-registration via SUSEConnect is disabled by registercloudguest." +
 			"Use `registercloudguest --clean` instead.")
 	}
 
