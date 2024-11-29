@@ -7,9 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/SUSE/connect-ng/internal/connect"
-	"github.com/SUSE/connect-ng/internal/util"
-	"github.com/SUSE/connect-ng/internal/zypper"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +14,10 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -88,6 +89,7 @@ func main() {
 	flag.BoolVar(&status, "status", false, "")
 	flag.BoolVar(&status, "s", false, "")
 	flag.BoolVar(&statusText, "status-text", false, "")
+	flag.BoolVar(&statusText, "st", false, "")
 	flag.BoolVar(&keepAlive, "keepalive", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
 	flag.BoolVar(&writeConfig, "write-config", false, "")

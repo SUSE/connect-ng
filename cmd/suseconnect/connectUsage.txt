@@ -39,7 +39,7 @@ Manage subscriptions at https://scc.suse.com
                              environments.
     -s, --status             Get current system registration status in json
                              format.
-        --status-text        Get current system registration status in text
+    -st    --status-text     Get current system registration status in text
                              format.
         --keepalive          Sends data to SCC to update the system information.
     -l, --list-extensions    List all extensions and modules available for
