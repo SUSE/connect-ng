@@ -38,7 +38,7 @@ Manage subscriptions at the SUSE Customer Center: https://scc.suse.com
   **-r**, **--regcode <REGCODE>**
   : Subscription registration code for the product to be registered.
     Relates that product to the specified subscription and enables software
-    repositories for that product.
+    repositories for that product. It can also be used with `-r -` to pass the registration code via stdin or `-r @/file/path` to specify a file containing the code.
 
   **-d**, **--de-register**
   : De-registers the system and base product, or in conjunction with
