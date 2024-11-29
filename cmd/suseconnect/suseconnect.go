@@ -1,21 +1,22 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"runtime"
 	"strings"
 	"syscall"
-
-	"github.com/SUSE/connect-ng/internal/connect"
-	"github.com/SUSE/connect-ng/internal/util"
-	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -68,6 +69,7 @@ func main() {
 		fsRoot                string
 		namespace             string
 		token                 string
+		labels                string
 		product               singleStringFlag
 		instanceDataFile      string
 		listExtensions        bool
@@ -104,6 +106,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "", "")
 	flag.StringVar(&token, "regcode", "", "")
 	flag.StringVar(&token, "r", "", "")
+	flag.StringVar(&labels, "set-labels", "", "")
 	flag.StringVar(&instanceDataFile, "instance-data", "", "")
 	flag.StringVar(&email, "email", "", "")
 	flag.StringVar(&email, "e", "", "")
@@ -133,7 +136,7 @@ func main() {
 			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
-		connect.CFG.BaseURL = baseURL
+		connect.CFG.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
 	if fsRoot != "" {
@@ -148,9 +151,7 @@ func main() {
 		connect.CFG.Namespace = namespace
 		writeConfig = true
 	}
-	if token != "" {
-		connect.CFG.Token = token
-	}
+	parseRegistrationToken(token)
 	if product.isSet {
 		if p, err := connect.SplitTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
@@ -259,11 +260,11 @@ func main() {
 
 		fmt.Print(string(out))
 	} else {
-		if instanceDataFile != "" && connect.URLDefault() {
+		if instanceDataFile != "" && connect.CFG.IsScc() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if connect.URLDefault() && token == "" && product.value == "" {
+		} else if connect.CFG.IsScc() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
@@ -285,13 +286,24 @@ func main() {
 			}
 
 			err := connect.Register(jsonFlag)
-			if jsonFlag && err != nil {
-				out := connect.RegisterOut{Success: false, Message: err.Error()}
-				str, _ := json.Marshal(&out)
-				fmt.Println(string(str))
-				os.Exit(1)
-			} else {
-				exitOnError(err)
+			if err != nil {
+				if jsonFlag {
+					out := connect.RegisterOut{Success: false, Message: err.Error()}
+					str, _ := json.Marshal(&out)
+					fmt.Println(string(str))
+					os.Exit(1)
+				} else {
+					exitOnError(err)
+				}
+			}
+
+			// After successful registration we try to set labels if we are
+			// targetting SCC.
+			if connect.CFG.IsScc() && len(labels) > 0 {
+				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
+				if err != nil && !jsonFlag {
+					fmt.Printf("Problem setting labels for this system: %s\n", err)
+				}
 			}
 		}
 	}
@@ -303,8 +315,20 @@ func main() {
 	}
 }
 
+func parseRegistrationToken(token string) {
+	if token != "" {
+		connect.CFG.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			fmt.Printf("Error Processing token with error %+v", processTokenErr)
+			os.Exit(1)
+		}
+		connect.CFG.Token = processedToken
+	}
+}
+
 func maybeBrokenSMTError() error {
-	if !connect.URLDefault() && !connect.UpToDate() {
+	if !connect.CFG.IsScc() && !connect.UpToDate() {
 		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
 			"Please update it and try again.")
 	}
@@ -389,4 +413,33 @@ func fileExists(path string) bool {
 
 func isSumaManaged() bool {
 	return fileExists("/etc/sysconfig/rhn/systemid")
+}
+
+func processToken(token string) (string, error) {
+	if strings.HasPrefix(token, "@") {
+		tokenFilePath := strings.TrimPrefix(token, "@")
+		file, err := os.Open(tokenFilePath)
+		if err != nil {
+			return "", fmt.Errorf("failed to open token file '%s': %w", tokenFilePath, err)
+		}
+		defer file.Close()
+		return readTokenFromReader(file)
+	} else if token == "-" {
+		return readTokenFromReader(os.Stdin)
+	} else {
+		return token, nil
+	}
+}
+
+func readTokenFromReader(reader io.Reader) (string, error) {
+	bufReader := bufio.NewReader(reader)
+	tokenBytes, err := bufReader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("failed to read token from reader: %w", err)
+	}
+	token := strings.TrimSpace(tokenBytes)
+	if token == "" {
+		return "", fmt.Errorf("error: token cannot be empty after reading")
+	}
+	return token, nil
 }
