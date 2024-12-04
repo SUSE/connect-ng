@@ -221,7 +221,7 @@ if [ -e /run/suseconnect-keepalive.timer.is-active ]; then
 fi
 
 %files
-%license LICENSE LICENSE.LGPL
+%license LICENSE
 %doc README.md
 %{_bindir}/suseconnect
 %{_bindir}/suse-uptime-tracker
@@ -239,7 +239,7 @@ fi
 %{_unitdir}/suse-uptime-tracker.timer
 
 %files -n libsuseconnect
-%license LICENSE LICENSE.LGPL
+%license LICENSE
 %{_libdir}/libsuseconnect.so
 
 %files -n suseconnect-ruby-bindings
