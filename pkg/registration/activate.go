@@ -24,13 +24,13 @@ type Metadata struct {
 // Activate a product by pairing an authorized connection (which contains the
 // system at hand), plus the "triplet" being used to identify the desired
 // product.
-func Activate(conn connection.Connection, identifier, version, arch string) (Metadata, Product, error) {
-	return Metadata{}, Product{}, nil
+func Activate(conn connection.Connection, identifier, version, arch string) (*Metadata, *Product, error) {
+	return &Metadata{}, &Product{}, nil
 }
 
 // Deactivate a product by pairing an authorized connection (which contains the
 // system at hand), plus the "triplet" being used to identify the product to be
 // deactivated for the system.
-func Deactivate(conn connection.Connection, identifier, version, arch string) (Metadata, Product, error) {
-	return Metadata{}, Product{}, nil
+func Deactivate(conn connection.Connection, identifier, version, arch string) (*Metadata, *Product, error) {
+	return &Metadata{}, &Product{}, nil
 }

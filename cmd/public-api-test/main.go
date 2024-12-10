@@ -19,11 +19,11 @@ func (SccCredentials) HasAuthentication() bool {
 	return true
 }
 
-func (creds SccCredentials) Triplet() (string, string, string, error) {
+func (creds *SccCredentials) Triplet() (string, string, string, error) {
 	return creds.Login, creds.Password, creds.SystemToken, nil
 }
 
-func (creds SccCredentials) Load() error {
+func (creds *SccCredentials) Load() error {
 	creds = SccCredentials{
 		Login:       "foo",
 		Password:    "bar",
@@ -32,7 +32,7 @@ func (creds SccCredentials) Load() error {
 	return nil
 }
 
-func (creds SccCredentials) Update(login, password, token string) error {
+func (creds *SccCredentials) Update(login, password, token string) error {
 	creds = SccCredentials{
 		Login:       login,
 		Password:    password,
@@ -50,7 +50,7 @@ func main() {
 	//_ = connection.New(opts, connection.NoCredentials{})
 
 	// With authentication
-	conn := connection.New(opts, SccCredentials{})
+	conn := connection.New(opts, &SccCredentials{})
 
 	_, _ = registration.Status(conn)
 	_, _, _ = validation.OfflineActivation(bytes.NewReader([]byte{}))
