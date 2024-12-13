@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"os"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
-	"github.com/SUSE/connect-ng/pkg/validation"
 )
 
 type SccCredentials struct {
@@ -24,7 +24,7 @@ func (creds *SccCredentials) Triplet() (string, string, string, error) {
 }
 
 func (creds *SccCredentials) Load() error {
-	creds = SccCredentials{
+	creds = &SccCredentials{
 		Login:       "foo",
 		Password:    "bar",
 		SystemToken: "",
@@ -33,7 +33,7 @@ func (creds *SccCredentials) Load() error {
 }
 
 func (creds *SccCredentials) Update(login, password, token string) error {
-	creds = SccCredentials{
+	creds = &SccCredentials{
 		Login:       login,
 		Password:    password,
 		SystemToken: token,
@@ -52,6 +52,8 @@ func main() {
 	// With authentication
 	conn := connection.New(opts, &SccCredentials{})
 
-	_, _ = registration.Status(conn)
-	_, _, _ = validation.OfflineActivation(bytes.NewReader([]byte{}))
+	registration.Register(conn, os.Getenv("REGCODE"), "lala", collectors.NoResult)
+
+	// _, _ = registration.Status(conn)
+	// _, _, _ = validation.OfflineActivation(bytes.NewReader([]byte{}))
 }

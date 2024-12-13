@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -68,8 +69,20 @@ func (conn ApiConnection) Do(req *http.Request) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	// TODO: handle system token
-	// TODO: handle success/bad code
+	// Update the credentials from the new system token.
+	username, password, token, err := conn.Credentials.Triplet()
+	if err != nil {
+		return nil, err
+	}
+	token = resp.Header.Get("System-Token")
+	if err = conn.Credentials.Update(username, password, token); err != nil {
+		return nil, err
+	}
+
+	if !successCode(resp.StatusCode) {
+		msg := parseError(resp.Body)
+		return nil, fmt.Errorf("API error: %v (code: %v)", msg, resp.StatusCode)
+	}
 
 	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -80,4 +93,23 @@ func (conn ApiConnection) Do(req *http.Request) ([]byte, error) {
 
 func (conn ApiConnection) GetCredentials() Credentials {
 	return conn.Credentials
+}
+
+func successCode(code int) bool {
+	return code >= 200 && code < 300
+}
+
+// parseError returns the error message from a SCC error response
+func parseError(body io.Reader) string {
+	var errResp struct {
+		Error          string `json:"error"`
+		LocalizedError string `json:"localized_error"`
+	}
+	if err := json.NewDecoder(body).Decode(&errResp); err != nil {
+		return ""
+	}
+	if errResp.LocalizedError != "" {
+		return errResp.LocalizedError
+	}
+	return errResp.Error
 }
