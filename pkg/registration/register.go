@@ -1,11 +1,14 @@
 package registration
 
-import "github.com/SUSE/connect-ng/pkg/connection"
+import (
+	"github.com/SUSE/connect-ng/internal/collectors"
+	"github.com/SUSE/connect-ng/pkg/connection"
+)
 
 // Register a system by using the given regcode. You also need to provide the
 // hostname of the system plus extra info that is to be bundled when registering
 // a system.
-func Register(conn connection.Connection, regcode, hostname string, info any) error {
+func Register(conn connection.Connection, regcode, hostname string, info collectors.Result) error {
 	return nil
 }
 
