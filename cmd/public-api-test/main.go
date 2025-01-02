@@ -27,7 +27,7 @@ func waitForUser(message string) {
 	}
 }
 
-func runDemo(regcode string) error {
+func runDemo(identifier, version, arch, regcode string) error {
 	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
 
 	if url := os.Getenv("SCC_URL"); url != "" {
@@ -57,7 +57,13 @@ func runDemo(regcode string) error {
 		return regErr
 	}
 	bold("!! check https://scc.suse.com/systems/%d\n", id)
-	fmt.Println("Note: Unless you activate something on the system we do NOT it in WEB UI")
+
+	bold("3) Activate %s/%s/%s\n", identifier, version, arch)
+	_, root, rootErr := registration.Activate(conn, identifier, version, arch, regcode)
+	if rootErr != nil {
+		return rootErr
+	}
+	bold("++ %s activated\n", root.FriendlyName)
 	waitForUser("Registration complete")
 
 	bold("3) System status // Ping\n")
@@ -75,7 +81,30 @@ func runDemo(regcode string) error {
 	}
 	waitForUser("System update complete")
 
-	bold("4) Deregistration of the client\n")
+	bold("5) Activate recommended extensions/modules\n")
+	product, prodErr := registration.FetchProductInfo(conn, identifier, version, arch)
+	if prodErr != nil {
+		return prodErr
+	}
+
+	activator := func(ext registration.Product) (bool, error) {
+		if ext.Free && ext.Recommended {
+			_, act, activateErr := registration.Activate(conn, ext.Identifier, ext.Version, ext.Arch, "")
+			if activateErr != nil {
+				return false, activateErr
+			}
+			bold("++ %s activated\n", act.FriendlyName)
+			return true, nil
+		}
+		return false, nil
+	}
+
+	if err := product.TraverseExtensions(activator); err != nil {
+		return err
+	}
+	waitForUser("System fully activated")
+
+	bold("6) Deregistration of the client\n")
 	if err := registration.Deregister(conn); err != nil {
 		return err
 	}
@@ -97,7 +126,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := runDemo(regcode)
+	err := runDemo(os.Args[1], os.Args[2], os.Args[3], regcode)
 
 	if err != nil {
 		fmt.Printf("ERROR: %s\n", err)
