@@ -14,11 +14,11 @@ ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
 
-.PHONY: dist build clean ci-env build-rpm feature-tests format vendor
+.PHONY: dist build clean ci-env build-rpm feature-tests set-version format vendor
 
 all: clean build test
 
-dist: clean internal/connect/version.txt vendor
+dist: clean set-version vendor
 	@mkdir -p $(DIST)/build/packaging
 	@cp -r internal $(DIST)
 	@cp -r third_party $(DIST)
@@ -47,28 +47,34 @@ out:
 	mkdir -p out
 
 internal/connect/version.txt:
-	@echo "$(VERSION)" > internal/connect/version.txt
+	@echo -n "$(VERSION)" > internal/connect/version.txt
 
-build: clean out internal/connect/version.txt
+pkg/connection/version.txt:
+	@echo -n "$(VERSION)" > pkg/connection/version.txt
+
+set-version: pkg/connection/version.txt internal/connect/version.txt
+
+build: clean out set-version
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/zypper-migration
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/zypper-search-packages
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suse-uptime-tracker
+	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/public-api-test
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
 # OBS.
-build-arm: clean out internal/connect/version.txt
+build-arm: clean out set-version
 	GOOS=linux GOARCH=arm64 $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
-build-s390: clean out internal/connect/version.txt
+build-s390: clean out set-version
 	GOOS=linux GOARCH=s390x $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
-build-ppc64le: clean out internal/connect/version.txt
+build-ppc64le: clean out set-version
 	GOOS=linux GOARCH=ppc64le $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
-test: internal/connect/version.txt
-	$(GO) test ./internal/* ./cmd/suseconnect
+test: set-version
+	$(GO) test ./internal/* ./cmd/suseconnect ./pkg/*
 
 ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash

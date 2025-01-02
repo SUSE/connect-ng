@@ -3,10 +3,21 @@ package connection
 import (
 	"bytes"
 	"crypto/tls"
+	_ "embed"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
-	"time"
+	"strings"
+)
+
+const (
+	DefaultAPIVersion = "application/json,application/vnd.scc.suse.com.v4+json"
+)
+
+var (
+	//go:embed version.txt
+	rawVersion string
 )
 
 // Connection is to be implemented by any struct that attempts to perform
@@ -14,11 +25,11 @@ import (
 type Connection interface {
 	// Returns an HTTP request object that can be used by a subsequent `Do`
 	// call.
-	GetRequest(string, string, any) (*http.Request, error)
+	BuildRequest(verb string, path string, body any) (*http.Request, error)
 
-	// Performs an HTTP request to the remote API. Returns the response body or
+	// Performs an HTTP request to the remote API. Returns the status code, response body or
 	// an error object.
-	Do(*http.Request) ([]byte, error)
+	Do(*http.Request) (int, []byte, error)
 
 	// Returns the credentials object to be used for authenticated requests.
 	GetCredentials() Credentials
@@ -38,46 +49,97 @@ func New(opts Options, creds Credentials) *ApiConnection {
 	return &ApiConnection{Options: opts, Credentials: creds}
 }
 
-func (conn ApiConnection) GetRequest(verb string, path string, body any) (*http.Request, error) {
-	b, err := json.Marshal(body)
+func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*http.Request, error) {
+	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(verb, conn.Options.Url, bytes.NewReader(b))
+	request, err := http.NewRequest(verb, conn.Options.URL, bytes.NewReader(bodyData))
 	if err != nil {
 		return nil, err
 	}
-	req.URL.Path = path
+	request.URL.Path = path
 
-	return req, nil
+	conn.setupGenericHeaders(request)
+
+	return request, nil
 }
 
-func (conn ApiConnection) Do(req *http.Request) ([]byte, error) {
-	tr := http.DefaultTransport.(*http.Transport).Clone()
-	// TODO: note that we need to get the RootCAs thingie from the old connection.
-	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: conn.Options.Secure}
-	tr.Proxy = conn.Options.Proxy
-	httpclient := &http.Client{Transport: tr, Timeout: 60 * time.Second}
-
-	// TODO: add headers (except auth)
-
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		return nil, err
+func (conn ApiConnection) Do(request *http.Request) (int, []byte, error) {
+	token, tokenErr := conn.Credentials.Token()
+	if tokenErr != nil {
+		return 0, []byte{}, tokenErr
 	}
-	defer resp.Body.Close()
+	request.Header.Add("System-Token", token)
 
-	// TODO: handle system token
-	// TODO: handle success/bad code
-
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	response, doErr := conn.setupHTTPClient().Do(request)
+	if doErr != nil {
+		return 0, nil, doErr
 	}
-	return resBody, nil
+	defer response.Body.Close()
+	code := response.StatusCode
+
+	// Update the credentials from the new system token.
+	token = response.Header.Get("System-Token")
+	if err := conn.Credentials.UpdateToken(token); err != nil {
+		return code, nil, err
+	}
+
+	if !successCode(response.StatusCode) {
+		msg := parseError(response.Body)
+		return code, nil, fmt.Errorf("API error: %v (code: %v)", msg, response.StatusCode)
+	}
+
+	data, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return code, nil, readErr
+	}
+	return code, data, nil
 }
 
 func (conn ApiConnection) GetCredentials() Credentials {
 	return conn.Credentials
+}
+
+func (conn ApiConnection) setupGenericHeaders(request *http.Request) {
+	version := strings.Split(strings.TrimSpace(rawVersion), "~")[0]
+	userAgent := fmt.Sprintf("%s/%s/%s", version, conn.Options.AppName, conn.Options.Version)
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Accept", DefaultAPIVersion)
+	request.Header.Add("User-Agent", userAgent)
+
+	if conn.Options.PreferedLanguage != "" {
+		request.Header.Add("Accept-Language", conn.Options.PreferedLanguage)
+	}
+}
+
+func (conn ApiConnection) setupHTTPClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: conn.Options.Secure}
+
+	if conn.Options.Proxy != nil {
+		transport.Proxy = conn.Options.Proxy
+	}
+
+	return &http.Client{Transport: transport, Timeout: conn.Options.Timeout}
+}
+
+func successCode(code int) bool {
+	return code >= 200 && code < 300
+}
+
+func parseError(body io.Reader) string {
+	var errResp struct {
+		Error          string `json:"error"`
+		LocalizedError string `json:"localized_error"`
+	}
+	if err := json.NewDecoder(body).Decode(&errResp); err != nil {
+		return ""
+	}
+	if errResp.LocalizedError != "" {
+		return errResp.LocalizedError
+	}
+	return errResp.Error
 }

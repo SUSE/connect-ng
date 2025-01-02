@@ -1,5 +1,6 @@
 out
 internal/connect/version.txt
+pkg/connection/version.txt
 connect-ruby
 obs
 artifacts
