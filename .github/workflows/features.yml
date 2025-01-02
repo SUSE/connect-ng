@@ -15,9 +15,7 @@ name: feature tests
 # trigger workflows automatically but will wait for approval from somebody
 # with write access.
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
-on:
-  pull_request:
-    branches: [main]
+on: [pull_request]
 
 env:
   SOURCE: /usr/src/connect-ng
