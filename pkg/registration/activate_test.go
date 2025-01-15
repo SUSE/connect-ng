@@ -16,7 +16,7 @@ func TestActivateProductSuccess(t *testing.T) {
 
 	// 204 No Content
 	payload := fixture(t, "pkg/registration/activate_success.json")
-	conn.On("Do", mock.Anything).Return(200, payload, nil)
+	conn.On("Do", mock.Anything).Return(payload, nil)
 
 	metadata, product, err := registration.Activate(conn, "SLES", "12.1", "x86_64", "regcode")
 	assert.NoError(err)
@@ -31,7 +31,7 @@ func TestActivateProductInvalidRegcode(t *testing.T) {
 	conn, _ := mockConnectionWithCredentials()
 
 	// 204 No Content
-	conn.On("Do", mock.Anything).Return(422, []byte{}, errors.New("No valid subscription found"))
+	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("No valid subscription found"))
 
 	_, _, err := registration.Activate(conn, "SLES", "12.1", "x86_64", "regcode")
 	assert.Error(err)
@@ -44,7 +44,7 @@ func TestDeactivateProductSuccess(t *testing.T) {
 
 	// 204 No Content
 	payload := fixture(t, "pkg/registration/deactivate_success.json")
-	conn.On("Do", mock.Anything).Return(200, payload, nil)
+	conn.On("Do", mock.Anything).Return(payload, nil)
 
 	metadata, product, err := registration.Deactivate(conn, "SLES", "12.1", "x86_64")
 	assert.NoError(err)
@@ -59,7 +59,7 @@ func TestDeactivateProductInvalidProduct(t *testing.T) {
 	conn, _ := mockConnectionWithCredentials()
 
 	// 204 No Content
-	conn.On("Do", mock.Anything).Return(422, []byte{}, errors.New("Product is a base product and cannot be deactivated"))
+	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Product is a base product and cannot be deactivated"))
 
 	_, _, err := registration.Deactivate(conn, "SLES", "12.1", "x86_64")
 	assert.Error(err)

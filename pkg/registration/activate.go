@@ -62,9 +62,9 @@ func Activate(conn connection.Connection, identifier, version, arch, regcode str
 		return nil, nil, buildErr
 	}
 
-	connection.AuthBySystemCredentials(request, login, password)
+	connection.AddSystemAuth(request, login, password)
 
-	_, response, doErr := conn.Do(request)
+	response, doErr := conn.Do(request)
 	if doErr != nil {
 		return nil, nil, doErr
 	}
@@ -105,9 +105,9 @@ func Deactivate(conn connection.Connection, identifier, version, arch string) (*
 		return nil, nil, buildErr
 	}
 
-	connection.AuthBySystemCredentials(request, login, password)
+	connection.AddSystemAuth(request, login, password)
 
-	_, response, doErr := conn.Do(request)
+	response, doErr := conn.Do(request)
 	if doErr != nil {
 		return nil, nil, doErr
 	}

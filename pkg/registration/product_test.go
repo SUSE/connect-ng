@@ -95,7 +95,7 @@ func TestFetchProductInfo(t *testing.T) {
 	login, password, _ := creds.Login()
 
 	payload := fixture(t, "pkg/registration/product_tree.json")
-	conn.On("Do", mock.Anything).Return(200, payload, nil).Run(checkAuthBySystemCredentials(t, login, password))
+	conn.On("Do", mock.Anything).Return(payload, nil).Run(checkAuthBySystemCredentials(t, login, password))
 
 	product, err := registration.FetchProductInfo(conn, "SLES", "15.5", "x86_64")
 	assert.NoError(err)

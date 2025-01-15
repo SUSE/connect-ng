@@ -81,9 +81,9 @@ func FetchProductInfo(conn connection.Connection, identifier, version, arch stri
 		return nil, buildErr
 	}
 
-	connection.AuthBySystemCredentials(request, login, password)
+	connection.AddSystemAuth(request, login, password)
 
-	_, response, doErr := conn.Do(request)
+	response, doErr := conn.Do(request)
 	if doErr != nil {
 		return nil, doErr
 	}
