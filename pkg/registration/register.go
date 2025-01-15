@@ -33,9 +33,9 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 		return 0, buildErr
 	}
 
-	connection.AuthByRegcode(request, regcode)
+	connection.AddRegcodeAuth(request, regcode)
 
-	_, response, doErr := conn.Do(request)
+	response, doErr := conn.Do(request)
 	if doErr != nil {
 		return 0, doErr
 	}
@@ -62,9 +62,9 @@ func Deregister(conn connection.Connection) error {
 		return credErr
 	}
 
-	connection.AuthBySystemCredentials(request, login, password)
+	connection.AddSystemAuth(request, login, password)
 
-	_, _, doErr := conn.Do(request)
+	_, doErr := conn.Do(request)
 	if doErr != nil {
 		return doErr
 	}

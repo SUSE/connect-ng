@@ -43,10 +43,10 @@ func (m *mockConnection) BuildRequest(verb, path string, body any) (*http.Reques
 	return request, err
 }
 
-func (m *mockConnection) Do(request *http.Request) (int, []byte, error) {
+func (m *mockConnection) Do(request *http.Request) ([]byte, error) {
 	args := m.Called(request)
 
-	return args.Int(0), args.Get(1).([]byte), args.Error(2)
+	return args.Get(0).([]byte), args.Error(1)
 }
 
 func (m *mockConnection) GetCredentials() connection.Credentials {

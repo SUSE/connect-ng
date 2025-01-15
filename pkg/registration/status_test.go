@@ -21,7 +21,7 @@ func TestStatusRegistered(t *testing.T) {
 	login, password, _ := creds.Login()
 
 	// 204 No Content
-	conn.On("Do", mock.Anything).Return(204, []byte(""), nil).Run(checkAuthBySystemCredentials(t, login, password))
+	conn.On("Do", mock.Anything).Return([]byte(""), nil).Run(checkAuthBySystemCredentials(t, login, password))
 
 	status, err := registration.Status(conn, hostname, nil)
 	assert.NoError(err)
@@ -34,7 +34,7 @@ func TestStatusUnregistered(t *testing.T) {
 	conn, _ := mockConnectionWithCredentials()
 
 	// 404 Not Found
-	conn.On("Do", mock.Anything).Return(404, []byte(""), errors.New("system not found"))
+	conn.On("Do", mock.Anything).Return([]byte(""), errors.New("system not found"))
 
 	status, err := registration.Status(conn, hostname, nil)
 	assert.NoError(err)
@@ -52,7 +52,7 @@ func TestStatusWithSystemInformation(t *testing.T) {
 
 	// 204 No Content
 	expected := string(fixture(t, "pkg/registration/status_with_system_information.json"))
-	conn.On("Do", mock.AnythingOfType("*http.Request")).Return(204, []byte(""), nil).Run(matchBody(t, expected))
+	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
 
 	status, err := registration.Status(conn, hostname, payload)
 	assert.NoError(err)

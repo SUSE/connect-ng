@@ -40,9 +40,9 @@ func Status(conn connection.Connection, hostname string, systemInformation any) 
 		return Unknown, credErr
 	}
 
-	connection.AuthBySystemCredentials(request, login, password)
+	connection.AddSystemAuth(request, login, password)
 
-	_, _, doErr := conn.Do(request)
+	_, doErr := conn.Do(request)
 	if doErr != nil {
 		return Unregistered, nil
 	}
