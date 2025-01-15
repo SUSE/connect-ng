@@ -62,6 +62,8 @@ type productShowRequest struct {
 	Arch       string `json:"arch"`
 }
 
+// FetchProductInfo fetches information about a product specified by identifier (e.g. SLES) and its version and architecture.
+// The Result also includes the available extension tree, which can be used to activate leaf extensions.
 func FetchProductInfo(conn connection.Connection, identifier, version, arch string) (*Product, error) {
 	payload := productShowRequest{
 		Identifier: identifier,
