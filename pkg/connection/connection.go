@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
-	"time"
+)
+
+const (
+	DefaultAPIVersion = "application/json,application/vnd.scc.suse.com.v4+json"
 )
 
 // Connection is to be implemented by any struct that attempts to perform
@@ -14,7 +18,7 @@ import (
 type Connection interface {
 	// Returns an HTTP request object that can be used by a subsequent `Do`
 	// call.
-	GetRequest(string, string, any) (*http.Request, error)
+	BuildRequest(verb string, path string, body any) (*http.Request, error)
 
 	// Performs an HTTP request to the remote API. Returns the response body or
 	// an error object.
@@ -38,46 +42,95 @@ func New(opts Options, creds Credentials) *ApiConnection {
 	return &ApiConnection{Options: opts, Credentials: creds}
 }
 
-func (conn ApiConnection) GetRequest(verb string, path string, body any) (*http.Request, error) {
-	b, err := json.Marshal(body)
+func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*http.Request, error) {
+	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(verb, conn.Options.Url, bytes.NewReader(b))
+	request, err := http.NewRequest(verb, conn.Options.URL, bytes.NewReader(bodyData))
 	if err != nil {
 		return nil, err
 	}
-	req.URL.Path = path
+	request.URL.Path = path
 
-	return req, nil
+	conn.setupGenericHeaders(request)
+
+	return request, nil
 }
 
-func (conn ApiConnection) Do(req *http.Request) ([]byte, error) {
-	tr := http.DefaultTransport.(*http.Transport).Clone()
-	// TODO: note that we need to get the RootCAs thingie from the old connection.
-	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: conn.Options.Secure}
-	tr.Proxy = conn.Options.Proxy
-	httpclient := &http.Client{Transport: tr, Timeout: 60 * time.Second}
+func (conn ApiConnection) Do(request *http.Request) ([]byte, error) {
+	token, tokenErr := conn.Credentials.Token()
+	if tokenErr != nil {
+		return []byte{}, tokenErr
+	}
+	request.Header.Set("System-Token", token)
 
-	// TODO: add headers (except auth)
+	response, doErr := conn.setupHTTPClient().Do(request)
+	if doErr != nil {
+		return nil, doErr
+	}
+	defer response.Body.Close()
 
-	resp, err := httpclient.Do(req)
-	if err != nil {
+	// Update the credentials from the new system token.
+	token = response.Header.Get("System-Token")
+	if err := conn.Credentials.UpdateToken(token); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	// TODO: handle system token
-	// TODO: handle success/bad code
-
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	if !successCode(response.StatusCode) {
+		msg := parseError(response.Body)
+		return nil, fmt.Errorf("API error: %v (code: %v)", msg, response.StatusCode)
 	}
-	return resBody, nil
+
+	data, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return nil, readErr
+	}
+	return data, nil
 }
 
 func (conn ApiConnection) GetCredentials() Credentials {
 	return conn.Credentials
+}
+
+func (conn ApiConnection) setupGenericHeaders(request *http.Request) {
+	userAgent := fmt.Sprintf("%s/%s", conn.Options.AppName, conn.Options.Version)
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", DefaultAPIVersion)
+	request.Header.Set("User-Agent", userAgent)
+
+	if conn.Options.PreferedLanguage != "" {
+		request.Header.Set("Accept-Language", conn.Options.PreferedLanguage)
+	}
+}
+
+func (conn ApiConnection) setupHTTPClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: conn.Options.Secure}
+
+	if conn.Options.Proxy != nil {
+		transport.Proxy = conn.Options.Proxy
+	}
+
+	return &http.Client{Transport: transport, Timeout: conn.Options.Timeout}
+}
+
+func successCode(code int) bool {
+	return code >= 200 && code < 300
+}
+
+func parseError(body io.Reader) string {
+	var errResp struct {
+		Error          string `json:"error"`
+		LocalizedError string `json:"localized_error"`
+	}
+	if err := json.NewDecoder(body).Decode(&errResp); err != nil {
+		return ""
+	}
+	if errResp.LocalizedError != "" {
+		return errResp.LocalizedError
+	}
+	return errResp.Error
 }

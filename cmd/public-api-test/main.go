@@ -1,57 +1,65 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"os"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
-	"github.com/SUSE/connect-ng/pkg/registration"
-	"github.com/SUSE/connect-ng/pkg/validation"
 )
 
-type SccCredentials struct {
-	Login       string `json:"login"`
-	Password    string `json:"password"`
-	SystemToken string `json:"system_token"`
+const (
+	hostname = "public-api-demo"
+)
+
+func bold(format string, args ...interface{}) {
+	fmt.Printf("\033[1m"+format+"\033[0m", args...)
 }
 
-func (SccCredentials) HasAuthentication() bool {
-	return true
-}
+func runDemo(regcode string) error {
+	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
 
-func (creds *SccCredentials) Triplet() (string, string, string, error) {
-	return creds.Login, creds.Password, creds.SystemToken, nil
-}
-
-func (creds *SccCredentials) Load() error {
-	creds = SccCredentials{
-		Login:       "foo",
-		Password:    "bar",
-		SystemToken: "",
+	if url := os.Getenv("SCC_URL"); url != "" {
+		opts.URL = url
 	}
-	return nil
-}
 
-func (creds *SccCredentials) Update(login, password, token string) error {
-	creds = SccCredentials{
-		Login:       login,
-		Password:    password,
-		SystemToken: token,
+	bold("1) Setup connection and perform an request\n")
+	conn := connection.New(opts, &SccCredentials{})
+
+	request, buildErr := conn.BuildRequest("GET", "/connect/subscriptions/info", nil)
+	if buildErr != nil {
+		return buildErr
 	}
+
+	connection.AddRegcodeAuth(request, regcode)
+
+	payload, err := conn.Do(request)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("!! len(payload): %d characters\n", len(payload))
+	fmt.Printf("!! first 40 characters: %s\n", string(payload[0:40]))
+
 	return nil
 }
 
 func main() {
-	fmt.Println("I'm here")
+	fmt.Println("public-api-demo: A connect client library demo")
 
-	opts := connection.SCCOptions()
+	if len(os.Args) != 4 {
+		fmt.Println("./public-api-demo IDENTIFIER VERSION ARCH")
+		return
+	}
 
-	// No authentication
-	//_ = connection.New(opts, connection.NoCredentials{})
+	regcode := os.Getenv("REGCODE")
+	if regcode == "" {
+		fmt.Printf("ERROR: Requireing REGCODE to set as environment variable\n")
+		os.Exit(1)
+	}
 
-	// With authentication
-	conn := connection.New(opts, &SccCredentials{})
+	err := runDemo(regcode)
 
-	_, _ = registration.Status(conn)
-	_, _, _ = validation.OfflineActivation(bytes.NewReader([]byte{}))
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
 }

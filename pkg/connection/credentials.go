@@ -6,17 +6,18 @@ type Credentials interface {
 	// Returns true if we can authenticate at all, false otherwise.
 	HasAuthentication() bool
 
-	// Returns the authentication triplet in this order: username, password and
-	// system token; or an error if the implementing structure cannot return
-	// this triplet for whatever reason.
-	Triplet() (string, string, string, error)
+	// Token returns the current system used to detect duplicated systems. This
+	// token gets rotated on each non read operation.
+	Token() (string, error)
 
-	// Initializes the credentials structure.
-	Load() error
+	// UpdateToken is called when a token has changed
+	UpdateToken(string) error
 
-	// Updates the credentials information with the given authentication
-	// triplet.
-	Update(string, string, string) error
+	// Login returns the username and password
+	Login() (string, string, error)
+
+	// SetLogin updates the saved username and password
+	SetLogin(string, string) error
 }
 
 // NoCredentials is an empty implementation of the Credentials interface which
@@ -28,14 +29,18 @@ func (NoCredentials) HasAuthentication() bool {
 	return false
 }
 
-func (NoCredentials) Triplet() (string, string, string, error) {
-	return "", "", "", nil
+func (NoCredentials) Token() (string, error) {
+	return "", nil
 }
 
-func (NoCredentials) Load() error {
+func (NoCredentials) UpdateToken(string) error {
 	return nil
 }
 
-func (NoCredentials) Update(string, string, string) error {
+func (NoCredentials) Login() (string, string, error) {
+	return "", "", nil
+}
+
+func (NoCredentials) SetLogin(string, string) error {
 	return nil
 }
