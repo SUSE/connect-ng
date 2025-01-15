@@ -44,7 +44,7 @@ func TestStatusUnregistered(t *testing.T) {
 func TestStatusWithSystemInformation(t *testing.T) {
 	assert := assert.New(t)
 
-	payload := map[string]string{
+	payload := map[string]any{
 		"key": "value",
 	}
 

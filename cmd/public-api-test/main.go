@@ -61,7 +61,7 @@ func runDemo(regcode string) error {
 	waitForUser("Registration complete")
 
 	bold("3) System status // Ping\n")
-	systemInformation := map[string]string{
+	systemInformation := map[string]any{
 		"uname": "public api demo - ping",
 	}
 
