@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 const (
@@ -13,6 +16,15 @@ const (
 
 func bold(format string, args ...interface{}) {
 	fmt.Printf("\033[1m"+format+"\033[0m", args...)
+}
+
+func waitForUser(message string) {
+	if os.Getenv("NON_INTERACTIVE") != "true" {
+		bold("\n%s. Enter to continue\n", message)
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	} else {
+		bold("\n%s", message)
+	}
 }
 
 func runDemo(regcode string) error {
@@ -39,6 +51,35 @@ func runDemo(regcode string) error {
 	fmt.Printf("!! len(payload): %d characters\n", len(payload))
 	fmt.Printf("!! first 40 characters: %s\n", string(payload[0:40]))
 
+	bold("2) Registering a client to SCC with a registration code\n")
+	id, regErr := registration.Register(conn, regcode, hostname, nil)
+	if regErr != nil {
+		return regErr
+	}
+	bold("!! check https://scc.suse.com/systems/%d\n", id)
+	fmt.Println("Note: Unless you activate something on the system we do NOT it in WEB UI")
+	waitForUser("Registration complete")
+
+	bold("3) System status // Ping\n")
+	systemInformation := map[string]any{
+		"uname": "public api demo - ping",
+	}
+
+	status, statusErr := registration.Status(conn, hostname, systemInformation)
+	if statusErr != nil {
+		return statusErr
+	}
+
+	if status != registration.Registered {
+		return errors.New("Could not finalize registration!")
+	}
+	waitForUser("System update complete")
+
+	bold("4) Deregistration of the client\n")
+	if err := registration.Deregister(conn); err != nil {
+		return err
+	}
+	bold("-- System deregistered")
 	return nil
 }
 
