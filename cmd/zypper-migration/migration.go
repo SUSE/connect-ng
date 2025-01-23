@@ -437,6 +437,9 @@ func printMigrations(migrations []connect.MigrationPath,
 			if installedIDs.Contains(p.ToTriplet()) {
 				suffix = suffix + " (already installed)"
 			}
+			if strings.Contains(strings.TrimSpace(p.ReleaseStage), "beta") {
+				suffix = suffix + " (BETA)"
+			}
 			fmt.Printf("%s%s%s\n", prefix, p.FriendlyName, suffix)
 		}
 		fmt.Print("\n")
