@@ -26,8 +26,6 @@ type activationResponse struct {
 	MetadataAndProduct activateResponse `json:"service"`
 }
 
-var noActivations = []*Activation{}
-
 // Fetch all known product activations for this system. If there the system has not yet
 // activated a product, it returns an empty array.
 func FetchActivations(conn connection.Connection) ([]*Activation, error) {
@@ -37,24 +35,24 @@ func FetchActivations(conn connection.Connection) ([]*Activation, error) {
 	login, password, credErr := creds.Login()
 
 	if credErr != nil {
-		return noActivations, credErr
+		return []*Activation{}, credErr
 	}
 
 	request, buildErr := conn.BuildRequest("GET", "/connect/systems/activations", nil)
 
 	if buildErr != nil {
-		return noActivations, buildErr
+		return []*Activation{}, buildErr
 	}
 
 	connection.AddSystemAuth(request, login, password)
 
 	response, doErr := conn.Do(request)
 	if doErr != nil {
-		return noActivations, doErr
+		return []*Activation{}, doErr
 	}
 
 	if err := json.Unmarshal(response, &activations); err != nil {
-		return noActivations, err
+		return []*Activation{}, err
 	}
 
 	return unpackActivations(activations)
