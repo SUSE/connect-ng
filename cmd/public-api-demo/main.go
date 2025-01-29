@@ -66,7 +66,7 @@ func runDemo(identifier, version, arch, regcode string) error {
 	bold("++ %s activated\n", root.FriendlyName)
 	waitForUser("Registration complete")
 
-	bold("3) System status // Ping\n")
+	bold("4) System status // Ping\n")
 	systemInformation := map[string]any{
 		"uname": "public api demo - ping",
 	}
@@ -104,7 +104,19 @@ func runDemo(identifier, version, arch, regcode string) error {
 	}
 	waitForUser("System fully activated")
 
-	bold("6) Deregistration of the client\n")
+	bold("6) Show all activations\n")
+	activations, actErr := registration.FetchActivations(conn)
+
+	if actErr != nil {
+		return actErr
+	}
+
+	for i, activation := range activations {
+		fmt.Printf("[%d] %s\n", i, activation.Product.Name)
+	}
+	waitForUser("All activated products are listed")
+
+	bold("7) Deregistration of the client\n")
 	if err := registration.Deregister(conn); err != nil {
 		return err
 	}
