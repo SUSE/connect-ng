@@ -78,9 +78,9 @@ func (conn ApiConnection) Do(request *http.Request) ([]byte, error) {
 		return nil, err
 	}
 
-	if !successCode(response.StatusCode) {
-		msg := parseError(response.Body)
-		return nil, fmt.Errorf("API error: %v (code: %v)", msg, response.StatusCode)
+	// Check if there was an error from the given API response.
+	if apiError := ErrorFromResponse(response); apiError != nil {
+		return nil, apiError
 	}
 
 	data, readErr := io.ReadAll(response.Body)
@@ -115,22 +115,4 @@ func (conn ApiConnection) setupHTTPClient() *http.Client {
 	}
 
 	return &http.Client{Transport: transport, Timeout: conn.Options.Timeout}
-}
-
-func successCode(code int) bool {
-	return code >= 200 && code < 300
-}
-
-func parseError(body io.Reader) string {
-	var errResp struct {
-		Error          string `json:"error"`
-		LocalizedError string `json:"localized_error"`
-	}
-	if err := json.NewDecoder(body).Decode(&errResp); err != nil {
-		return ""
-	}
-	if errResp.LocalizedError != "" {
-		return errResp.LocalizedError
-	}
-	return errResp.Error
 }
