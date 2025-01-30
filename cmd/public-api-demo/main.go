@@ -141,7 +141,7 @@ func main() {
 	err := runDemo(os.Args[1], os.Args[2], os.Args[3], regcode)
 
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
+		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
 }
