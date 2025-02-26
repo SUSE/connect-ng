@@ -2,9 +2,11 @@ package registration
 
 import (
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	_ "embed"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 )
@@ -42,4 +44,11 @@ func sCCPublicKey() (*rsa.PublicKey, error) {
 	}
 
 	return nil, fmt.Errorf("public key: SCC public key can not be parsed. This is a bug")
+}
+
+func calcSHA256From(input string) string {
+	hash := sha256.New()
+	hash.Write([]byte(input))
+
+	return hex.EncodeToString(hash.Sum(nil))
 }

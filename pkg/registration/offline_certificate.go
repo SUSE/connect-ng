@@ -18,6 +18,8 @@ type OfflineCertificate struct {
 	Hash             string `json:"hash"`
 	EncodedPayload   string `json:"payload"`
 	EncodedSignature string `json:"signature"`
+
+	*OfflinePayload
 }
 
 // The information supplied and validated by the payload. The [RegcodeHash] can be used
@@ -27,11 +29,12 @@ type OfflineCertificate struct {
 // not have the relevant information. Make sure to check if the key exists and prepare for
 // type casting if necessary.
 type OfflinePayload struct {
-	Login        string         `json:"login"`
-	Password     string         `json:"password"`
-	Subscription Subscription   `json:"subscription"`
-	RegcodeHash  string         `json:"regcode_sha256"`
-	Information  map[string]any `json:"information"`
+	Login         string         `json:"login"`
+	Password      string         `json:"password"`
+	Subscription  Subscription   `json:"subscription"`
+	HashedRegcode string         `json:"hashed_regcode"`
+	HashedUUID    string         `json:"hashed_uuid"`
+	Information   map[string]any `json:"information"`
 }
 
 // Reads an offline registration certificate from a read object
@@ -87,6 +90,10 @@ func (cert *OfflineCertificate) IsValid() (bool, error) {
 
 // Extracts the payload from an offline registration certificate
 func (cert *OfflineCertificate) ExtractPayload() (*OfflinePayload, error) {
+	if cert.OfflinePayload != nil {
+		return cert.OfflinePayload, nil
+	}
+
 	payload := OfflinePayload{}
 	raw, decodeErr := decodeBase64([]byte(cert.EncodedPayload))
 
@@ -98,6 +105,7 @@ func (cert *OfflineCertificate) ExtractPayload() (*OfflinePayload, error) {
 		return nil, fmt.Errorf("json: %s", jsonErr)
 	}
 
+	cert.OfflinePayload = &payload
 	return &payload, nil
 }
 
@@ -105,4 +113,47 @@ func (cert *OfflineCertificate) ExtractPayload() (*OfflinePayload, error) {
 // can be used to validate the base64 encoded payload in the [OfflineCertificate] structure.
 func (cert *OfflineCertificate) Signature() ([]byte, error) {
 	return decodeBase64([]byte(strings.TrimSpace(cert.EncodedSignature)))
+}
+
+// Validates a certificate by providing the subscriptions registration code. Only the
+// rightful owner of the subscription has this information and therefore this can be leveraged
+// to ensure the certificate is indeed used by the subscription owner
+func (cert *OfflineCertificate) RegcodeMatches(regcode string) (bool, error) {
+	payload, extractErr := cert.ExtractPayload()
+
+	if extractErr != nil {
+		return false, extractErr
+	}
+
+	return calcSHA256From(regcode) == payload.HashedRegcode, nil
+}
+
+// Validates a certificate by providing the system UUID. This validates that the UUID
+// while generating the offline registration certificate is the same as the provided.
+func (cert *OfflineCertificate) UUIDMatches(uuid string) (bool, error) {
+	payload, extractErr := cert.ExtractPayload()
+
+	if extractErr != nil {
+		return false, extractErr
+	}
+
+	return calcSHA256From(uuid) == payload.HashedUUID, nil
+}
+
+// Checks if the certificate includes a certain product class and therefore is eligible for
+// a certain product.
+// Note: This does not check for a specific version but rather only the product.
+func (cert *OfflineCertificate) ProductClassIncluded(name string) (bool, error) {
+	payload, extractErr := cert.ExtractPayload()
+
+	if extractErr != nil {
+		return false, extractErr
+	}
+
+	for _, class := range payload.Subscription.ProductClasses {
+		if class.Name == name {
+			return true, nil
+		}
+	}
+	return false, nil
 }

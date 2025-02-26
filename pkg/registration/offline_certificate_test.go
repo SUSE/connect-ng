@@ -92,8 +92,8 @@ func TestOfflineCertificateExtractPayloadSuccess(t *testing.T) {
 	assert.NoError(extractErr)
 
 	assert.Equal("SCC_384deae18e324233b20de20c87b89df7", payload.Login)
-	assert.Equal("3a4d46b4-0b06-488f-8d20-a931d398d357", payload.Information["uuid"].(string))
-	assert.Equal("cpe:/o:suse:rancher:2.4.8", payload.Subscription.Products[0].CPE)
+	assert.Equal("https://rnch1.dev.company.net/index", payload.Information["server_url"].(string))
+	assert.Equal("RANCHER-X86-ALPHA", payload.Subscription.ProductClasses[0].Name)
 	assert.Equal(expectedExpirationDate, payload.Subscription.ExpiresAt)
 }
 
@@ -110,4 +110,59 @@ func TestOfflineCertificateExtractPayloadInvalidJSON(t *testing.T) {
 
 	assert.ErrorContains(extractErr, "json: invalid character")
 	assert.Nil(payload)
+}
+
+func TestOfflineCertificateRegcodeMatches(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	reader := bytes.NewReader(rawCert)
+
+	cert, readErr := registration.OfflineCertificateFrom(reader)
+	assert.NoError(readErr)
+
+	matches, matchErr := cert.RegcodeMatches("some-scc-regcode")
+	assert.NoError(matchErr)
+	assert.True(matches)
+
+	notMatches, matchErr := cert.RegcodeMatches("INVALID")
+	assert.NoError(matchErr)
+	assert.False(notMatches)
+}
+
+func TestOfflineCertificateUUIDMatches(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	reader := bytes.NewReader(rawCert)
+
+	cert, readErr := registration.OfflineCertificateFrom(reader)
+	assert.NoError(readErr)
+
+	matches, matchErr := cert.UUIDMatches("3a4d46b4-0b06-488f-8d20-a931d398d357")
+	assert.NoError(matchErr)
+	assert.True(matches)
+
+	notMatches, matchErr := cert.UUIDMatches("INVALID")
+	assert.NoError(matchErr)
+	assert.False(notMatches)
+}
+
+func TestOfflineCertificateProductClassIncluded(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	reader := bytes.NewReader(rawCert)
+
+	cert, readErr := registration.OfflineCertificateFrom(reader)
+	assert.NoError(readErr)
+
+	shouldBeIncluded, matchErr := cert.ProductClassIncluded("RANCHER-X86")
+	assert.NoError(matchErr)
+
+	shouldNotBeIncluded, matchErr := cert.ProductClassIncluded("SLES-X86")
+	assert.NoError(matchErr)
+
+	assert.True(shouldBeIncluded)
+	assert.False(shouldNotBeIncluded)
 }
