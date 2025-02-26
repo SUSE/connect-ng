@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 )
 
 // The information extracted from an offline registration certificate
@@ -29,19 +30,19 @@ type OfflineCertificate struct {
 // not have the relevant information. Make sure to check if the key exists and prepare for
 // type casting if necessary.
 type OfflinePayload struct {
-	Login         string         `json:"login"`
-	Password      string         `json:"password"`
-	Subscription  Subscription   `json:"subscription"`
-	HashedRegcode string         `json:"hashed_regcode"`
-	HashedUUID    string         `json:"hashed_uuid"`
-	Information   map[string]any `json:"information"`
+	Login            string           `json:"login"`
+	Password         string           `json:"password"`
+	SubscriptionInfo SubscriptionInfo `json:"subscription"`
+	HashedRegcode    string           `json:"hashed_regcode"`
+	HashedUUID       string           `json:"hashed_uuid"`
+	Information      map[string]any   `json:"information"`
 }
 
 // Reads an offline registration certificate from a read object
 //
 // An error indicates the certificate was probably malformed
 func OfflineCertificateFrom(reader io.Reader) (*OfflineCertificate, error) {
-	certificate := OfflineCertificate{}
+	certificate := &OfflineCertificate{}
 
 	raw, readErr := io.ReadAll(reader)
 
@@ -55,17 +56,17 @@ func OfflineCertificateFrom(reader io.Reader) (*OfflineCertificate, error) {
 		return nil, decodeErr
 	}
 
-	if err := json.Unmarshal(decoded, &certificate); err != nil {
+	if err := json.Unmarshal(decoded, certificate); err != nil {
 		return nil, fmt.Errorf("json error: %s", err)
 	}
 
-	return &certificate, nil
+	return certificate, nil
 }
 
 // Checks if the provided offline registration certificate is valid using
 // the public RSA key to validate the included signature
 func (cert *OfflineCertificate) IsValid() (bool, error) {
-	key, keyErr := sCCPublicKey()
+	key, keyErr := sccPublicKey()
 
 	if keyErr != nil {
 		return false, keyErr
@@ -94,19 +95,19 @@ func (cert *OfflineCertificate) ExtractPayload() (*OfflinePayload, error) {
 		return cert.OfflinePayload, nil
 	}
 
-	payload := OfflinePayload{}
+	payload := &OfflinePayload{}
 	raw, decodeErr := decodeBase64([]byte(cert.EncodedPayload))
 
 	if decodeErr != nil {
 		return nil, decodeErr
 	}
 
-	if jsonErr := json.Unmarshal(raw, &payload); jsonErr != nil {
+	if jsonErr := json.Unmarshal(raw, payload); jsonErr != nil {
 		return nil, fmt.Errorf("json: %s", jsonErr)
 	}
 
-	cert.OfflinePayload = &payload
-	return &payload, nil
+	cert.OfflinePayload = payload
+	return payload, nil
 }
 
 // Provides the signature encoded in the offline registration certificate which
@@ -150,10 +151,20 @@ func (cert *OfflineCertificate) ProductClassIncluded(name string) (bool, error) 
 		return false, extractErr
 	}
 
-	for _, class := range payload.Subscription.ProductClasses {
+	for _, class := range payload.SubscriptionInfo.ProductClasses {
 		if class.Name == name {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+func (cert *OfflineCertificate) ExpiresAt() (time.Time, error) {
+	payload, extractErr := cert.ExtractPayload()
+
+	if extractErr != nil {
+		return time.Now(), extractErr
+	}
+
+	return payload.SubscriptionInfo.ExpiresAt, nil
 }

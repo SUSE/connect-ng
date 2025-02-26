@@ -3,7 +3,7 @@ package registration
 import "time"
 
 // A subscription used in the offline registration workflow
-type Subscription struct {
+type SubscriptionInfo struct {
 	Kind           string         `json:"kind"`
 	Name           string         `json:"name"`
 	StartsAt       time.Time      `json:"starts_at"`

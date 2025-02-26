@@ -83,7 +83,6 @@ func TestOfflineCertificateExtractPayloadSuccess(t *testing.T) {
 
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
-	expectedExpirationDate := time.Date(2026, time.January, 27, 11, 53, 51, 223000000, time.UTC)
 
 	cert, err := registration.OfflineCertificateFrom(reader)
 	assert.NoError(err)
@@ -93,8 +92,7 @@ func TestOfflineCertificateExtractPayloadSuccess(t *testing.T) {
 
 	assert.Equal("SCC_384deae18e324233b20de20c87b89df7", payload.Login)
 	assert.Equal("https://rnch1.dev.company.net/index", payload.Information["server_url"].(string))
-	assert.Equal("RANCHER-X86-ALPHA", payload.Subscription.ProductClasses[0].Name)
-	assert.Equal(expectedExpirationDate, payload.Subscription.ExpiresAt)
+	assert.Equal("RANCHER-X86-ALPHA", payload.SubscriptionInfo.ProductClasses[0].Name)
 }
 
 func TestOfflineCertificateExtractPayloadInvalidJSON(t *testing.T) {
@@ -165,4 +163,21 @@ func TestOfflineCertificateProductClassIncluded(t *testing.T) {
 
 	assert.True(shouldBeIncluded)
 	assert.False(shouldNotBeIncluded)
+}
+
+func TestOfflineCertificateExpireDate(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	reader := bytes.NewReader(rawCert)
+
+	cert, readErr := registration.OfflineCertificateFrom(reader)
+	assert.NoError(readErr)
+
+	expectedExpirationDate := time.Date(2026, time.January, 27, 11, 53, 51, 223000000, time.UTC)
+
+	expireDate, err := cert.ExpiresAt()
+	assert.NoError(err)
+
+	assert.Equal(expectedExpirationDate, expireDate)
 }

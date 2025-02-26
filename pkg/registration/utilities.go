@@ -29,7 +29,7 @@ func decodeBase64(input []byte) ([]byte, error) {
 	return decoded[:size], nil
 }
 
-func sCCPublicKey() (*rsa.PublicKey, error) {
+func sccPublicKey() (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(publicKey)
 
 	// PKCS#8 compatible
