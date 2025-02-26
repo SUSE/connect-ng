@@ -11,12 +11,14 @@ import (
 func main() {
 	fmt.Println("validate-offline-certificate: Validate a offline registration certificate and print useful information")
 
-	if len(os.Args) != 2 {
-		fmt.Println("./validate-offline-certificate <filename>")
+	if len(os.Args) != 4 {
+		fmt.Println("./validate-offline-certificate <filename> <regcode> <uuid>")
 		os.Exit(1)
 	}
 
 	path := os.Args[1]
+	regcode := os.Args[2]
+	uuid := os.Args[3]
 
 	hdl, openErr := os.Open(path)
 
@@ -53,7 +55,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("uuid: %s\n", payload.Information["uuid"])
-	fmt.Printf("subscription: %s\n", payload.Subscription.Name)
-	fmt.Printf("expires: %s\n", payload.Subscription.ExpiresAt)
+	regcodeMatches, err := cert.RegcodeMatches(regcode)
+	if err != nil {
+		fmt.Printf("err: %s", err)
+		os.Exit(1)
+	}
+	fmt.Printf("regcode matches: %v\n", regcodeMatches)
+
+	uuidMatches, err := cert.UUIDMatches(uuid)
+	if err != nil {
+		fmt.Printf("err: %s", err)
+		os.Exit(1)
+	}
+	fmt.Printf("uuid matches: %v\n", uuidMatches)
+
+	fmt.Printf("subscription: %s\n", payload.SubscriptionInfo.Name)
+	fmt.Printf("expires: %s\n", payload.SubscriptionInfo.ExpiresAt)
 }
