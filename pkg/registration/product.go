@@ -14,7 +14,6 @@ type Product struct {
 	Arch       string `json:"arch"`
 	Summary    string `json:"summary,omitempty"`
 	IsBase     bool   `json:"isbase"`
-	CPE        string `json:"cpe, omitempty"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
 	ReleaseType  string `json:"release_type,omitempty"`
