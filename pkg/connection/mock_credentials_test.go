@@ -1,4 +1,4 @@
-package connection_test
+package connection
 
 import "github.com/stretchr/testify/mock"
 

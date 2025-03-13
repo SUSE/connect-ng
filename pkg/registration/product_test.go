@@ -1,11 +1,10 @@
-package registration_test
+package registration
 
 import (
 	"encoding/json"
 	"fmt"
 	"testing"
 
-	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -14,7 +13,7 @@ func TestProductTraverseExtensionsFull(t *testing.T) {
 	assert := assert.New(t)
 
 	productJson := fixture(t, "pkg/registration/product_tree.json")
-	product := registration.Product{}
+	product := Product{}
 
 	actual := []string{}
 	expected := []string{
@@ -40,7 +39,7 @@ func TestProductTraverseExtensionsFull(t *testing.T) {
 
 	assert.NoError(json.Unmarshal(productJson, &product))
 
-	err := product.TraverseExtensions(func(p registration.Product) (bool, error) {
+	err := product.TraverseExtensions(func(p Product) (bool, error) {
 		actual = append(actual, fmt.Sprintf("%s/%s/%s", p.Identifier, p.Version, p.Arch))
 		return true, nil
 	})
@@ -52,7 +51,7 @@ func TestProductTraverseExtensionsSkipBranch(t *testing.T) {
 	assert := assert.New(t)
 
 	productJson := fixture(t, "pkg/registration/product_tree.json")
-	product := registration.Product{}
+	product := Product{}
 
 	actual := []string{}
 	expected := []string{
@@ -73,7 +72,7 @@ func TestProductTraverseExtensionsSkipBranch(t *testing.T) {
 
 	assert.NoError(json.Unmarshal(productJson, &product))
 
-	err := product.TraverseExtensions(func(p registration.Product) (bool, error) {
+	err := product.TraverseExtensions(func(p Product) (bool, error) {
 		triplet := fmt.Sprintf("%s/%s/%s", p.Identifier, p.Version, p.Arch)
 
 		// Skip everything based on server-applications
@@ -97,7 +96,7 @@ func TestFetchProductInfo(t *testing.T) {
 	payload := fixture(t, "pkg/registration/product_tree.json")
 	conn.On("Do", mock.Anything).Return(payload, nil).Run(checkAuthBySystemCredentials(t, login, password))
 
-	product, err := registration.FetchProductInfo(conn, "SLES", "15.5", "x86_64")
+	product, err := FetchProductInfo(conn, "SLES", "15.5", "x86_64")
 	assert.NoError(err)
 
 	assert.Equal("SUSE Linux Enterprise Server 15 SP5 x86_64", product.FriendlyName)

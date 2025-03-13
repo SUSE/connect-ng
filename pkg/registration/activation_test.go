@@ -1,9 +1,8 @@
-package registration_test
+package registration
 
 import (
 	"testing"
 
-	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -17,12 +16,12 @@ func TestFetchProductActivations(t *testing.T) {
 	payload := fixture(t, "pkg/registration/activations.json")
 	conn.On("Do", mock.Anything).Return(payload, nil).Run(checkAuthBySystemCredentials(t, login, password))
 
-	activations, err := registration.FetchActivations(conn)
+	activations, err := FetchActivations(conn)
 
 	assert.NoError(err)
 	assert.Equal(4, len(activations))
 
-	sles := &registration.Activation{}
+	sles := &Activation{}
 	for _, activation := range activations {
 		if activation.RegistrationCode == "SOME_TEST_REGCODE" {
 			sles = activation
@@ -40,7 +39,7 @@ func TestFetchProductActivationsEmpty(t *testing.T) {
 
 	conn.On("Do", mock.Anything).Return([]byte("[]"), nil).Run(checkAuthBySystemCredentials(t, login, password))
 
-	activations, err := registration.FetchActivations(conn)
+	activations, err := FetchActivations(conn)
 
 	assert.NoError(err)
 	assert.Equal(0, len(activations))
