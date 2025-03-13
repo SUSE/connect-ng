@@ -1,4 +1,4 @@
-package registration_test
+package registration
 
 import "github.com/stretchr/testify/mock"
 

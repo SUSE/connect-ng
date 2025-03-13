@@ -1,4 +1,4 @@
-package connection_test
+package connection
 
 import (
 	"net/http"
