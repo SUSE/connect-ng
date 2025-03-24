@@ -7,16 +7,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/SUSE/connect-ng/internal/connect"
-	"github.com/SUSE/connect-ng/internal/util"
-	"github.com/SUSE/connect-ng/internal/zypper"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 var (
@@ -45,15 +45,9 @@ func (p *singleStringFlag) Set(value string) error {
 }
 
 func main() {
-	// Disallow the usage of SUSEConnect outside of Linux. The `runtime.GOOS`
-	// constant is provided by the standard library and is filled on a platform
-	// basis through an internal `goos` package. You can check the value being
-	// filled specifically for Linux here:
-	// https://cs.opensource.google/go/go/+/master:src/internal/goos/zgoos_linux.go
-	//
-	// NOTE: Android is considered a different platform than "Linux".
-	if runtime.GOOS != "linux" {
-		exitOnError(fmt.Errorf("platform '%v' is not supported. Use Linux instead", runtime.GOOS))
+	// SUSEConnect only works on Linux.
+	if err := util.EnsureLinux(); err != nil {
+		exitOnError(err)
 	}
 
 	var (
