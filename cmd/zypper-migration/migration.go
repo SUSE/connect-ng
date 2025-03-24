@@ -50,6 +50,12 @@ func (a *multiArg) Set(v string) error {
 }
 
 func main() {
+	// Ensure Zypper is installed.
+	if err := util.EnsureZypper(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	var (
 		debug                    bool
 		verbose                  bool

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"syscall"
@@ -24,6 +25,9 @@ const (
 	// If we ever consider supporting these systems, then we would need to
 	// change this.
 	BTRFS_SUPER_MAGIC = 0x9123683E
+
+	// See: https://cs.opensource.google/go/go/+/master:src/internal/goos/zgoos_linux.go
+	LINUX_IDENTIFIER = "linux"
 )
 
 var systemEcho bool
@@ -199,4 +203,26 @@ func CurrentHomeDir() string {
 		}
 	}
 	return home
+}
+
+// Returns an error if the current platform is not Linux.
+//
+// NOTE: Android is considered a different platform than "Linux".
+func EnsureLinux() error {
+	if platform := runtime.GOOS; platform != LINUX_IDENTIFIER {
+		return fmt.Errorf("platform '%v' is not supported. Use Linux instead", platform)
+	}
+	return nil
+}
+
+// Ensure that this is a Linux box with Zypper installed.
+func EnsureZypper() error {
+	if err := EnsureLinux(); err != nil {
+		return err
+	}
+
+	if !ExecutableExists("zypper") {
+		return fmt.Errorf("'zypper' is not installed. Make sure it's on your PATH")
+	}
+	return nil
 }
