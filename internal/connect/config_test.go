@@ -29,66 +29,54 @@ badkey: badval
 
 func TestParseConfig(t *testing.T) {
 	r := strings.NewReader(cfg1)
-	expect := Config{
-		BaseURL:         "https://smt-azure.susecloud.net",
-		Language:        "en_US.UTF-8",
-		NoZypperRefresh: true,
-		AutoAgreeEULA:   true,
+
+	opts := DefaultOptions()
+	parseFromConfiguration(r, opts)
+
+	expectedURL := "https://smt-azure.susecloud.net"
+	if opts.BaseURL != expectedURL {
+		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.BaseURL, expectedURL)
 	}
-	c := Config{}
-	parseConfig(r, &c)
-	if !reflect.DeepEqual(c, expect) {
-		t.Errorf("got %+v, expected %+v", c, expect)
+	expectedLanguage := "en_US.UTF-8"
+	if opts.Language != expectedLanguage {
+		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.Language, expectedLanguage)
+	}
+	if !opts.NoZypperRefresh {
+		t.Fatalf("NoZypperRefresh should be true")
+	}
+	if !opts.AutoAgreeEULA {
+		t.Fatalf("AutoAgreeEULA should be true")
 	}
 }
 
 func TestParseConfig2(t *testing.T) {
 	r := strings.NewReader(cfg2)
-	expect := Config{BaseURL: "http://example.com", Language: "en_US.UTF-8", Insecure: true}
-	c := Config{}
-	parseConfig(r, &c)
-	if !reflect.DeepEqual(c, expect) {
-		t.Errorf("got %+v, expected %+v", c, expect)
+	expect := DefaultOptions()
+	expect.BaseURL = "http://example.com"
+	expect.Language = "en_US.UTF-8"
+	expect.Insecure = true
+
+	opts := DefaultOptions()
+	parseFromConfiguration(r, opts)
+	if !reflect.DeepEqual(opts, expect) {
+		t.Errorf("got %+v, expected %+v", opts, expect)
 	}
 }
 
 func TestSaveLoad(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "SUSEConnect.test")
-	c1 := NewConfig()
+	c1 := DefaultOptions()
 	c1.Path = path
 	c1.AutoAgreeEULA = true
 	c1.ServerType = UnknownProvider
-	if err := c1.Save(); err != nil {
+	if err := c1.SaveAsConfiguration(); err != nil {
 		t.Fatalf("Unable to write config: %s", err)
 	}
-	c2 := NewConfig()
-	c2.Path = path
-	c2.Load()
-	c2.ServerType = UnknownProvider
+	c2, err := ReadFromConfiguration(path)
+	if err != nil {
+		t.Fatalf("Got an error: %v", err)
+	}
 	if !reflect.DeepEqual(c1, c2) {
 		t.Errorf("got %+v, expected %+v", c2, c1)
-	}
-}
-
-func TestMergeJSON(t *testing.T) {
-	c := NewConfig()
-	c.Token = "should-be-overridden"
-
-	// note the case of the json attributes doesn't matter
-	jsn := `{"ToKeN": "regcode-42", "email": "jbloggs@acme.com"}`
-	if err := c.MergeJSON(jsn); err != nil {
-		t.Fatalf("Merge error: %s", err)
-	}
-	expected := "regcode-42"
-	if c.Token != expected {
-		t.Errorf("got Token: %s, expected: %s", c.Token, expected)
-	}
-	expected = "jbloggs@acme.com"
-	if c.Email != expected {
-		t.Errorf("got Email: %s, expected: %s", c.Email, expected)
-	}
-	// check other fields were not touched
-	if c.BaseURL != defaultBaseURL {
-		t.Errorf("got BaseURL: %s, expected: %s", c.BaseURL, defaultBaseURL)
 	}
 }
