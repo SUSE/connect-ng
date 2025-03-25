@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO(mssola): remove before finishing RR4.
+func shittyGlobalVariableNeededForNow() {
+	CFG = DefaultOptions()
+}
+
 // NOTE: Until there is a better implementation of the credentials package
 //
 //	we need to set the file creation path for SCCCredentials to /tmp
@@ -26,6 +31,8 @@ func setRootToTmp() {
 }
 
 func TestAnnounceSystem(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 
 	setRootToTmp()
@@ -51,6 +58,8 @@ func TestAnnounceSystem(t *testing.T) {
 }
 
 func TestGetActivations(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	response := util.ReadTestFile("activations.json", t)
 
@@ -71,6 +80,8 @@ func TestGetActivations(t *testing.T) {
 }
 
 func TestGetActivationsRequest(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	var gotRequest *http.Request
 
 	assert := assert.New(t)
@@ -102,6 +113,8 @@ func TestGetActivationsRequest(t *testing.T) {
 }
 
 func TestGetActivationsError(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 
 	setRootToTmp()
@@ -118,6 +131,8 @@ func TestGetActivationsError(t *testing.T) {
 }
 
 func TestUpToDateOkay(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +145,8 @@ func TestUpToDateOkay(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	productQuery := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
 
@@ -150,6 +167,8 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestGetProductError(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	productQuery := Product{Name: "Dummy"}
 
@@ -168,6 +187,8 @@ func TestGetProductError(t *testing.T) {
 }
 
 func TestUpgradeProduct(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
 	expectedName := "SUSE_Linux_Enterprise_Micro_5.0_x86_64"
@@ -190,6 +211,8 @@ func TestUpgradeProduct(t *testing.T) {
 }
 
 func TestUpgradeProductError(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	product := Product{Name: "Dummy"}
 
@@ -208,6 +231,8 @@ func TestUpgradeProductError(t *testing.T) {
 }
 
 func TestDeactivateProduct(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	product := Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
 	expectedName := "Basesystem_Module_15_SP2_x86_64"
@@ -230,6 +255,8 @@ func TestDeactivateProduct(t *testing.T) {
 }
 
 func TestDeactivateProductSMT(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	product := Product{Name: "SUSE-MicroOS", Version: "5.0", Arch: "x86_64"}
 	expectedName := "SMT_DUMMY_NOREMOVE_SERVICE"
@@ -251,6 +278,8 @@ func TestDeactivateProductSMT(t *testing.T) {
 }
 
 func TestDeactivateProductError(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	product := Product{Name: "Dummy"}
 
@@ -269,6 +298,8 @@ func TestDeactivateProductError(t *testing.T) {
 }
 
 func TestProductMigrations(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 
 	setRootToTmp()
@@ -286,6 +317,8 @@ func TestProductMigrations(t *testing.T) {
 }
 
 func TestProductMigrationsSMT(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	expectedID := 101361
 
@@ -320,6 +353,8 @@ func createTestUptimeLogFileWithContent(content string) (string, error) {
 }
 
 func TestUptimeLogFileDoesNotExist(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	tempFilePath, err := createTestUptimeLogFileWithContent("")
 	if err != nil {
 		t.Fatalf("Failed to create temp uptime log file for testing")
@@ -332,6 +367,8 @@ func TestUptimeLogFileDoesNotExist(t *testing.T) {
 }
 
 func TestReadUptimeLogFile(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	uptimeLogFileContent := `2024-01-18:000000000000001000110000
 2024-01-13:000000000000000000010000`
 	tempFilePath, err := createTestUptimeLogFileWithContent(uptimeLogFileContent)
@@ -358,6 +395,8 @@ func mockDetectArchitecture() {
 }
 
 func TestMakeSysInfoBody(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	expectedBody := strings.TrimSpace(string(util.ReadTestFile("api/system_information_body.json", t)))
 
@@ -377,6 +416,8 @@ func TestMakeSysInfoBody(t *testing.T) {
 }
 
 func TestSetLabelsOk(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 
 	testLabels := []Label{
@@ -399,6 +440,8 @@ func TestSetLabelsOk(t *testing.T) {
 }
 
 func TestSetLabelsError(t *testing.T) {
+	shittyGlobalVariableNeededForNow()
+
 	assert := assert.New(t)
 	testLabels := []Label{
 		Label{Name: "label1"},
