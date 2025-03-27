@@ -357,18 +357,6 @@ func UpdateSystem(distroTarget, instanceDataFile string, quiet bool, keepalive b
 	return localUpdateSystem(sysInfoBody)
 }
 
-// SendKeepAlivePing updates the system information on the server
-func SendKeepAlivePing() error {
-	if !IsRegistered() {
-		return ErrPingFromUnregistered
-	}
-	err := UpdateSystem("", "", false, true)
-	if err == nil {
-		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
-	}
-	return err
-}
-
 // announceOrUpdate Announces the system to the server, receiving and storing
 // its credentials. When already announced, sends the current hardware details
 // to the server. The output is not shown on stdout if `quiet` is set to true.
