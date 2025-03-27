@@ -230,8 +230,10 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), opts)
 		}
-		err := connect.SendKeepAlivePing()
+		apiConnection := connect.New(opts)
+		err = apiConnection.KeepAlive()
 		exitOnError(err, opts)
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if statusText {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'status-text' command"), opts)
