@@ -21,6 +21,12 @@ type Activation struct {
 	Product  *Product
 }
 
+// Returns the activation identified by the product's "triplet".
+func (a *Activation) ToTriplet() string {
+	p := a.Product
+	return p.Name + "/" + p.Version + "/" + p.Arch
+}
+
 type activationResponse struct {
 	Activation
 	MetadataAndProduct activateResponse `json:"service"`
