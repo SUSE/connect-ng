@@ -9,6 +9,7 @@ import (
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 type RegisterOut struct {
@@ -45,17 +46,17 @@ var (
 
 // Register announces the system, activates the
 // product on SCC and adds the service to the system
-func Register(jsonOutput bool) error {
+func Register(opts *Options, jsonOutput bool) error {
 	out := &RegisterOut{}
+	apiConnection := New(opts)
 
 	printInformation("register", jsonOutput)
-	err := announceOrUpdate(jsonOutput)
-	if err != nil {
+	if err := apiConnection.RegisterOrKeepAlive(opts.Token); err != nil {
 		return err
 	}
 
 	installReleasePkg := true
-	product := CFG.Product
+	product := opts.Product
 	if product.isEmpty() {
 		base, err := zypper.BaseProduct()
 		if err != nil {
@@ -65,7 +66,7 @@ func Register(jsonOutput bool) error {
 		installReleasePkg = false
 	}
 
-	if service, err := registerProduct(product, installReleasePkg, jsonOutput); err == nil {
+	if service, err := registerProduct(opts, product, installReleasePkg, jsonOutput); err == nil {
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
 				Name:       product.LongName,
@@ -88,7 +89,7 @@ func Register(jsonOutput bool) error {
 		if err != nil {
 			return err
 		}
-		if err := registerProductTree(p, jsonOutput, out); err != nil {
+		if err := registerProductTree(opts, p, jsonOutput, out); err != nil {
 			return err
 		}
 	}
@@ -107,38 +108,38 @@ func Register(jsonOutput bool) error {
 }
 
 // registerProduct activates the product, adds the service and installs the release package
-func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
+func registerProduct(opts *Options, product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
 	if jsonOutput {
 		util.Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	} else {
 		util.Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
 	}
 
-	service, err := activateProduct(product, CFG.Email)
+	service, err := activateProduct(product, opts.Email)
 	if err != nil {
 		return Service{}, err
 	}
 
-	if !CFG.SkipServiceInstall {
+	if !opts.SkipServiceInstall {
 		if jsonOutput {
 			util.Debug.Print("-> Adding service to system ...")
 		} else {
 			util.Info.Print("-> Adding service to system ...")
 		}
 
-		if err := localAddService(service.URL, service.Name, !CFG.NoZypperRefresh, CFG.Insecure); err != nil {
+		if err := localAddService(service.URL, service.Name, !opts.NoZypperRefresh, opts.Insecure); err != nil {
 			return Service{}, err
 		}
 	}
 
-	if installReleasePkg && !CFG.SkipServiceInstall {
+	if installReleasePkg && !opts.SkipServiceInstall {
 		if jsonOutput {
 			util.Debug.Print("-> Installing release package ...")
 		} else {
 			util.Info.Print("-> Installing release package ...")
 		}
 
-		if err := localInstallReleasePackage(product.Name, CFG.AutoImportRepoKeys); err != nil {
+		if err := localInstallReleasePackage(product.Name, opts.AutoImportRepoKeys); err != nil {
 			return Service{}, err
 		}
 	}
@@ -147,10 +148,10 @@ func registerProduct(product Product, installReleasePkg bool, jsonOutput bool) (
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) error {
+func registerProductTree(opts *Options, product Product, jsonOutput bool, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
-			if service, err := registerProduct(extension, true, jsonOutput); err == nil {
+			if service, err := registerProduct(opts, extension, true, jsonOutput); err == nil {
 				out.Products = append(out.Products, ProductService{
 					Product: ProductOut{
 						Name:       product.LongName,
@@ -167,7 +168,7 @@ func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) err
 			} else {
 				return err
 			}
-			if err := registerProductTree(extension, jsonOutput, out); err != nil {
+			if err := registerProductTree(opts, extension, jsonOutput, out); err != nil {
 				return err
 			}
 		}
@@ -176,8 +177,8 @@ func registerProductTree(product Product, jsonOutput bool, out *RegisterOut) err
 }
 
 // Deregister deregisters the system
-func Deregister(jsonOutput bool) error {
-	if util.FileExists("/usr/sbin/registercloudguest") && CFG.Product.isEmpty() {
+func Deregister(opts *Options, jsonOutput bool) error {
+	if util.FileExists("/usr/sbin/registercloudguest") && opts.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration via SUSEConnect is disabled by registercloudguest." +
 			"Use `registercloudguest --clean` instead.")
@@ -190,8 +191,8 @@ func Deregister(jsonOutput bool) error {
 	out := &RegisterOut{}
 
 	printInformation("deregister", jsonOutput)
-	if !CFG.Product.isEmpty() {
-		return deregisterProduct(CFG.Product, jsonOutput, out)
+	if !opts.Product.isEmpty() {
+		return deregisterProduct(opts.Product, jsonOutput, opts.SkipServiceInstall, out)
 	}
 	base, err := zypper.BaseProduct()
 	if err != nil {
@@ -222,23 +223,24 @@ func Deregister(jsonOutput bool) error {
 
 	// reverse loop over dependencies
 	for i := len(dependencies) - 1; i >= 0; i-- {
-		if err := deregisterProduct(dependencies[i], jsonOutput, out); err != nil {
+		if err := deregisterProduct(dependencies[i], jsonOutput, opts.SkipServiceInstall, out); err != nil {
 			return err
 		}
 	}
 
 	// remove potential docker and podman configurations for our registry
-	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(opts.FsRoot))
 	if err == nil {
 		util.Debug.Print("\nRemoving SUSE registry system authentication configuration ...")
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
-	if err := deregisterSystem(); err != nil {
+	apiConnection := New(opts)
+	if err := registration.Deregister(apiConnection.Connection); err != nil {
 		return err
 	}
 
-	if !CFG.SkipServiceInstall {
+	if !opts.SkipServiceInstall {
 		if err := localRemoveOrRefreshService(baseProductService, jsonOutput); err != nil {
 			return err
 		}
@@ -246,7 +248,7 @@ func Deregister(jsonOutput bool) error {
 	if !jsonOutput {
 		util.Info.Print("\nCleaning up ...")
 	}
-	if err := Cleanup(); err != nil {
+	if err := Cleanup(opts.BaseURL, opts.FsRoot); err != nil {
 		return err
 	}
 	if jsonOutput {
@@ -264,7 +266,7 @@ func Deregister(jsonOutput bool) error {
 	return nil
 }
 
-func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error {
+func deregisterProduct(product Product, jsonOutput, skipServiceInstall bool, out *RegisterOut) error {
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
@@ -280,7 +282,7 @@ func deregisterProduct(product Product, jsonOutput bool, out *RegisterOut) error
 		return err
 	}
 
-	if CFG.SkipServiceInstall {
+	if skipServiceInstall {
 		return nil
 	}
 
@@ -360,7 +362,7 @@ func UpdateSystem(distroTarget, instanceDataFile string, quiet bool, keepalive b
 // announceOrUpdate Announces the system to the server, receiving and storing
 // its credentials. When already announced, sends the current hardware details
 // to the server. The output is not shown on stdout if `quiet` is set to true.
-func announceOrUpdate(quiet bool) error {
+func announceOrUpdate(opts *Options, quiet bool) error {
 	if IsRegistered() {
 		return UpdateSystem("", "", quiet, false)
 	}
@@ -399,6 +401,7 @@ func UpToDate() bool {
 	return upToDate()
 }
 
+// TODO: this is bs (e.g. wtf actions with strings, why we need any of this to begin with, what the hell).
 func printInformation(action string, jsonOutput bool) {
 	var server string
 	if CFG.IsScc() {
