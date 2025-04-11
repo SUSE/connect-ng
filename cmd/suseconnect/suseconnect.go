@@ -216,13 +216,16 @@ func main() {
 	// TODO(mssola): to be removed by the end of RR4.
 	connect.CFG = opts
 
-	if status {
+	if status || statusText {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status' command"), opts)
+			exitOnError(errors.New("cannot use the json option with this command"), opts)
 		}
-		output, err := connect.GetProductStatuses("json")
+		if status {
+			err = connect.PrintProductStatuses(opts, connect.StatusJSON)
+		} else {
+			err = connect.PrintProductStatuses(opts, connect.StatusText)
+		}
 		exitOnError(err, opts)
-		fmt.Println(output)
 	} else if keepAlive {
 		if isSumaManaged() {
 			os.Exit(0)
@@ -234,20 +237,13 @@ func main() {
 		err = apiConnection.KeepAlive()
 		exitOnError(err, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
-	} else if statusText {
-		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status-text' command"), opts)
-		}
-		output, err := connect.GetProductStatuses("text")
-		exitOnError(err, opts)
-		fmt.Print(output)
 	} else if listExtensions {
 		output, err := connect.RenderExtensionTree(jsonFlag)
 		exitOnError(err, opts)
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister(jsonFlag)
+		err := connect.Deregister(opts, jsonFlag)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
 			str, _ := json.Marshal(&out)
@@ -260,13 +256,13 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), opts)
 		}
-		err := connect.Cleanup()
+		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
 		exitOnError(err, opts)
 	} else if rollback {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), opts)
 		}
-		err := connect.Rollback()
+		err := connect.Rollback(opts.Insecure)
 		exitOnError(err, opts)
 	} else if info {
 		sysInfo, err := connect.FetchSystemInformation()
@@ -302,7 +298,7 @@ func main() {
 				exitOnError(err, opts)
 			}
 
-			err := connect.Register(jsonFlag)
+			err := connect.Register(opts, jsonFlag)
 			if err != nil {
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
