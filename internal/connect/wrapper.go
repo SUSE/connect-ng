@@ -61,3 +61,24 @@ func (w Wrapper) KeepAlive() error {
 	}
 	return err
 }
+
+func (w Wrapper) Register(regcode string) error {
+	hwinfo, err := FetchSystemInformation()
+	if err != nil {
+		return fmt.Errorf("could not fetch system's information: %v", err)
+	}
+	hostname := collectors.FromResult(hwinfo, "hostname", "")
+
+	// TODO: do something with the code
+	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo)
+	return err
+}
+
+// RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
+// whether the current system is registered or not.
+func (w Wrapper) RegisterOrKeepAlive(regcode string) error {
+	if w.Registered {
+		return w.KeepAlive()
+	}
+	return w.Register(regcode)
+}

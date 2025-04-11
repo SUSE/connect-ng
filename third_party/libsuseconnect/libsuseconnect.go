@@ -352,7 +352,13 @@ func getstatus(format *C.char) *C.char {
 	connect.CFG = opts
 
 	gFormat := C.GoString(format)
-	output, err := connect.GetProductStatuses(gFormat)
+	var f connect.StatusFormat
+	if gFormat == "text" {
+		f = connect.StatusText
+	} else {
+		f = connect.StatusJSON
+	}
+	output, err := connect.GetProductStatuses(opts, f)
 	if err != nil {
 		return C.CString(err.Error())
 	}
