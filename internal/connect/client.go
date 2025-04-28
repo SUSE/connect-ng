@@ -46,11 +46,11 @@ var (
 
 // Register announces the system, activates the
 // product on SCC and adds the service to the system
-func Register(opts *Options, jsonOutput bool) error {
+func Register(opts *Options) error {
 	out := &RegisterOut{}
 	apiConnection := New(opts)
 
-	printInformation("register", jsonOutput)
+	printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
 	if err := apiConnection.RegisterOrKeepAlive(opts.Token); err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func Register(opts *Options, jsonOutput bool) error {
 		installReleasePkg = false
 	}
 
-	if service, err := registerProduct(opts, product, installReleasePkg, jsonOutput); err == nil {
+	if service, err := registerProduct(opts, product, installReleasePkg); err == nil {
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
 				Name:       product.LongName,
@@ -89,11 +89,16 @@ func Register(opts *Options, jsonOutput bool) error {
 		if err != nil {
 			return err
 		}
-		if err := registerProductTree(opts, p, jsonOutput, out); err != nil {
+		// BUG: `out` is then re-written afterwards.
+		if err := registerProductTree(opts, p, out); err != nil {
 			return err
 		}
 	}
-	if jsonOutput {
+
+	switch opts.OutputKind {
+	case Text:
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully registered system")))
+	case JSON:
 		out.Success = true
 		out.Message = "Successfully registered system"
 		out, err := json.Marshal(out)
@@ -101,19 +106,13 @@ func Register(opts *Options, jsonOutput bool) error {
 			return err
 		}
 		util.Info.Println(string(out))
-	} else {
-		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully registered system")))
 	}
 	return nil
 }
 
 // registerProduct activates the product, adds the service and installs the release package
-func registerProduct(opts *Options, product Product, installReleasePkg bool, jsonOutput bool) (Service, error) {
-	if jsonOutput {
-		util.Debug.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
-	} else {
-		util.Info.Printf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
-	}
+func registerProduct(opts *Options, product Product, installReleasePkg bool) (Service, error) {
+	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
 
 	service, err := activateProduct(product, opts.Email)
 	if err != nil {
@@ -121,11 +120,7 @@ func registerProduct(opts *Options, product Product, installReleasePkg bool, jso
 	}
 
 	if !opts.SkipServiceInstall {
-		if jsonOutput {
-			util.Debug.Print("-> Adding service to system ...")
-		} else {
-			util.Info.Print("-> Adding service to system ...")
-		}
+		opts.Print("-> Adding service to system ...")
 
 		if err := localAddService(service.URL, service.Name, !opts.NoZypperRefresh, opts.Insecure); err != nil {
 			return Service{}, err
@@ -133,11 +128,7 @@ func registerProduct(opts *Options, product Product, installReleasePkg bool, jso
 	}
 
 	if installReleasePkg && !opts.SkipServiceInstall {
-		if jsonOutput {
-			util.Debug.Print("-> Installing release package ...")
-		} else {
-			util.Info.Print("-> Installing release package ...")
-		}
+		opts.Print("-> Installing release package ...")
 
 		if err := localInstallReleasePackage(product.Name, opts.AutoImportRepoKeys); err != nil {
 			return Service{}, err
@@ -148,10 +139,10 @@ func registerProduct(opts *Options, product Product, installReleasePkg bool, jso
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(opts *Options, product Product, jsonOutput bool, out *RegisterOut) error {
+func registerProductTree(opts *Options, product Product, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
-			if service, err := registerProduct(opts, extension, true, jsonOutput); err == nil {
+			if service, err := registerProduct(opts, extension, true); err == nil {
 				out.Products = append(out.Products, ProductService{
 					Product: ProductOut{
 						Name:       product.LongName,
@@ -168,7 +159,7 @@ func registerProductTree(opts *Options, product Product, jsonOutput bool, out *R
 			} else {
 				return err
 			}
-			if err := registerProductTree(opts, extension, jsonOutput, out); err != nil {
+			if err := registerProductTree(opts, extension, out); err != nil {
 				return err
 			}
 		}
@@ -176,8 +167,8 @@ func registerProductTree(opts *Options, product Product, jsonOutput bool, out *R
 	return nil
 }
 
-// Deregister deregisters the system
-func Deregister(opts *Options, jsonOutput bool) error {
+// Deregister the current system.
+func Deregister(opts *Options) error {
 	if util.FileExists("/usr/sbin/registercloudguest") && opts.Product.isEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration via SUSEConnect is disabled by registercloudguest." +
@@ -188,11 +179,12 @@ func Deregister(opts *Options, jsonOutput bool) error {
 		return ErrSystemNotRegistered
 	}
 
+	// BUG: this is largely ignored for trees.
 	out := &RegisterOut{}
 
-	printInformation("deregister", jsonOutput)
+	printInformation(fmt.Sprintf("Deregistering system to %s", opts.ServerName()), opts)
 	if !opts.Product.isEmpty() {
-		return deregisterProduct(opts.Product, jsonOutput, opts.SkipServiceInstall, out)
+		return deregisterProduct(opts.Product, opts, out)
 	}
 	base, err := zypper.BaseProduct()
 	if err != nil {
@@ -223,7 +215,7 @@ func Deregister(opts *Options, jsonOutput bool) error {
 
 	// reverse loop over dependencies
 	for i := len(dependencies) - 1; i >= 0; i-- {
-		if err := deregisterProduct(dependencies[i], jsonOutput, opts.SkipServiceInstall, out); err != nil {
+		if err := deregisterProduct(dependencies[i], opts, out); err != nil {
 			return err
 		}
 	}
@@ -241,17 +233,20 @@ func Deregister(opts *Options, jsonOutput bool) error {
 	}
 
 	if !opts.SkipServiceInstall {
-		if err := localRemoveOrRefreshService(baseProductService, jsonOutput); err != nil {
+		if err := localRemoveOrRefreshService(baseProductService, opts); err != nil {
 			return err
 		}
 	}
-	if !jsonOutput {
-		util.Info.Print("\nCleaning up ...")
-	}
+
+	opts.Print("\nCleaning up ...")
 	if err := Cleanup(opts.BaseURL, opts.FsRoot); err != nil {
 		return err
 	}
-	if jsonOutput {
+
+	switch opts.OutputKind {
+	case Text:
+		util.Info.Print(util.Bold(util.GreenText("Successfully deregistered system")))
+	case JSON:
 		out.Success = true
 		out.Message = "Successfully deregistered system"
 		out, err := json.Marshal(out)
@@ -259,14 +254,12 @@ func Deregister(opts *Options, jsonOutput bool) error {
 			return err
 		}
 		util.Info.Println(string(out))
-	} else {
-		util.Info.Print(util.Bold(util.GreenText("Successfully deregistered system")))
 	}
 
 	return nil
 }
 
-func deregisterProduct(product Product, jsonOutput, skipServiceInstall bool, out *RegisterOut) error {
+func deregisterProduct(product Product, opts *Options, out *RegisterOut) error {
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
@@ -274,22 +267,24 @@ func deregisterProduct(product Product, jsonOutput, skipServiceInstall bool, out
 	if product.ToTriplet() == zypperProductToProduct(base).ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
-	if !jsonOutput {
-		util.Info.Printf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch)
-	}
+	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
 	service, err := deactivateProduct(product)
 	if err != nil {
 		return err
 	}
 
-	if skipServiceInstall {
+	if opts.SkipServiceInstall {
 		return nil
 	}
 
-	if err := localRemoveOrRefreshService(service, jsonOutput); err != nil {
+	if err := localRemoveOrRefreshService(service, opts); err != nil {
 		return err
 	}
-	if jsonOutput {
+
+	switch opts.OutputKind {
+	case Text:
+		util.Info.Print("-> Removing release package ...")
+	case JSON:
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
 				Name:       product.LongName,
@@ -303,25 +298,19 @@ func deregisterProduct(product Product, jsonOutput, skipServiceInstall bool, out
 				Url:  service.URL,
 			},
 		})
-	} else {
-		util.Info.Print("-> Removing release package ...")
 	}
 	return zypper.RemoveReleasePackage(product.Name)
 }
 
 // SMT provides one service for all products, removing it would remove all repositories.
 // Refreshing the service instead to remove the repos of deregistered product.
-func removeOrRefreshService(service Service, jsonOutput bool) error {
+func removeOrRefreshService(service Service, opts *Options) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
-		if !jsonOutput {
-			util.Info.Print("-> Refreshing service ...")
-		}
+		opts.Print("-> Refreshing service ...")
 		zypper.RefreshAllServices()
 		return nil
 	}
-	if !jsonOutput {
-		util.Info.Print("-> Removing service from system ...")
-	}
+	opts.Print("-> Removing service from system ...")
 	return zypper.RemoveService(service.Name)
 }
 
@@ -401,40 +390,16 @@ func UpToDate() bool {
 	return upToDate()
 }
 
-// TODO: this is bs (e.g. wtf actions with strings, why we need any of this to begin with, what the hell).
-func printInformation(action string, jsonOutput bool) {
-	var server string
-	if CFG.IsScc() {
-		server = "SUSE Customer Center"
-	} else {
-		server = "registration proxy " + CFG.BaseURL
+// Print the given message plus some extra registration information that might
+// be relevant (i.e. things that have changed from the default behaviour).
+func printInformation(msg string, opts *Options) {
+	opts.Print(msg)
+
+	if opts.FsRoot != "" {
+		opts.Print("Rooted at: " + opts.FsRoot)
 	}
-	if action == "register" {
-		if jsonOutput {
-			util.Debug.Printf(util.Bold("Registering system to %s"), server)
-		} else {
-			util.Info.Printf(util.Bold("Registering system to %s"), server)
-		}
-	} else {
-		if jsonOutput {
-			util.Debug.Printf(util.Bold("Deregistering system from %s"), server)
-		} else {
-			util.Info.Printf(util.Bold("Deregistering system from %s"), server)
-		}
-	}
-	if CFG.FsRoot != "" {
-		if jsonOutput {
-			util.Debug.Print("Rooted at:", CFG.FsRoot)
-		} else {
-			util.Info.Print("Rooted at:", CFG.FsRoot)
-		}
-	}
-	if CFG.Email != "" {
-		if jsonOutput {
-			util.Debug.Print("Using E-Mail:", CFG.Email)
-		} else {
-			util.Info.Print("Using E-Mail:", CFG.Email)
-		}
+	if opts.Email != "" {
+		opts.Print("Using E-Mail: " + opts.Email)
 	}
 }
 
