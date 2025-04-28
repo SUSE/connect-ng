@@ -243,7 +243,7 @@ func main() {
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister(opts, jsonFlag)
+		err := connect.Deregister(opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
 			str, _ := json.Marshal(&out)
@@ -298,7 +298,7 @@ func main() {
 				exitOnError(err, opts)
 			}
 
-			err := connect.Register(opts, jsonFlag)
+			err := connect.Register(opts)
 			if err != nil {
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
