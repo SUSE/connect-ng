@@ -110,6 +110,28 @@ func TestSAPDetectSingleWorkload(t *testing.T) {
 
 }
 
+func TestSAPRunWithLowercaseWorkload(t *testing.T) {
+	assert := assert.New(t)
+	sap := SAP{}
+
+	expected := Result{"sap": []map[string]interface{}{
+		{
+			"system_id":      "DEV",
+			"instance_types": []string{"trex", "J"},
+		},
+	}}
+
+	mockUtilFileExists(true)
+	mockLocalOsReaddir(map[string][]string{
+		"/usr/sap":     []string{"DEV", ".config"},
+		"/usr/sap/DEV": []string{"trex01", "J01"},
+	})
+
+	res, err := sap.run(ARCHITECTURE_X86_64)
+	assert.NoError(err)
+	assert.Equal(expected, res, "Result mismatch when there are workloads")
+}
+
 func TestSAPRunWithMultipleWorkloads(t *testing.T) {
 	assert := assert.New(t)
 	sap := SAP{}
@@ -129,4 +151,18 @@ func TestSAPRunWithMultipleWorkloads(t *testing.T) {
 	res, err := sap.run(ARCHITECTURE_X86_64)
 	assert.NoError(err)
 	assert.Equal(expected, res, "Result mismatch when there are workloads")
+}
+
+func TestSAPRunWithNoWorkloadDetected(t *testing.T) {
+	assert := assert.New(t)
+	sap := SAP{}
+
+	mockUtilFileExists(true)
+	mockLocalOsReaddir(map[string][]string{
+		"/usr/sap": []string{".config"},
+	})
+
+	res, err := sap.run(ARCHITECTURE_X86_64)
+	assert.NoError(err)
+	assert.Equal(NoResult, res, "Should not detect SAP")
 }

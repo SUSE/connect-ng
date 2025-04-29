@@ -14,7 +14,7 @@ type SAP struct{}
 // systemId and workloadId will be under the main directory
 // eg /usr/sap/AB3/ERS1
 var sapSystemId = regexp.MustCompile("([A-Z][A-Z0-9]{2})")
-var workloadsRegex = regexp.MustCompile("([A-Z]+)[0-9]{2}")
+var workloadsRegex = regexp.MustCompile("([a-zA-Z]+)[0-9]{2}")
 var localOsReaddir = os.ReadDir
 var sapInstallationDir = "/usr/sap"
 
@@ -36,6 +36,8 @@ func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]st
 }
 
 func (sap SAP) run(arch string) (Result, error) {
+	detected := []map[string]interface{}{}
+
 	if !util.FileExists(sapInstallationDir) {
 		return NoResult, nil
 	}
@@ -45,14 +47,19 @@ func (sap SAP) run(arch string) (Result, error) {
 		return NoResult, err
 	}
 
-	var detector []map[string]interface{}
 	for _, systemId := range systemIds {
 		systemPath := path.Join(sapInstallationDir, systemId)
 		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
-		detector = append(detector, map[string]interface{}{
+
+		detected = append(detected, map[string]interface{}{
 			"system_id":      systemId,
 			"instance_types": workloads,
 		})
 	}
-	return Result{"sap": detector}, nil
+
+	if len(detected) > 0 {
+		return Result{"sap": detected}, nil
+	}
+
+	return NoResult, nil
 }
