@@ -68,46 +68,6 @@ func disableOutput() {
 	util.Debug = log.New(io.Discard, "", 0)
 }
 
-func TestClientRegisterWithServiceInstallSkipSuccessful(t *testing.T) {
-	disableOutput()
-
-	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
-	CFG.SkipServiceInstall = true
-	mockAddServiceCalled(t, false)
-	mockInstallReleasePackage(t, false)
-	Register(false)
-}
-
-func TestClientRegisterWithoutServiceInstallSkipSuccessful(t *testing.T) {
-	disableOutput()
-
-	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
-	CFG.SkipServiceInstall = false
-	mockAddServiceCalled(t, true)
-	mockInstallReleasePackage(t, true)
-	Register(false)
-}
-
-func TestClientDeregistrationWithServiceInstallSkipSuccessful(t *testing.T) {
-	disableOutput()
-
-	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
-	CFG.SkipServiceInstall = true
-	mockAddServiceCalled(t, false)
-	mockInstallReleasePackage(t, false)
-	Deregister(false)
-}
-
-func TestClientDeregistrationWithoutServiceInstallSkipSuccessful(t *testing.T) {
-	disableOutput()
-
-	CFG.Product = Product{Name: "sle-module-basesystem", Version: "15.2", Arch: "x86_64"}
-	CFG.SkipServiceInstall = false
-	mockAddServiceCalled(t, true)
-	mockInstallReleasePackage(t, true)
-	Deregister(false)
-}
-
 func TestDefaultSystemUptimeTrackingDisable(t *testing.T) {
 	localUpdateSystem = func(body []byte) error {
 		// we don't care about updating the system for unit test

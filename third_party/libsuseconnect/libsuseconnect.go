@@ -63,29 +63,29 @@ func free_string(str *C.char) {
 
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	login, password, err := connect.AnnounceSystem(C.GoString(distroTarget), "", false)
+	if err := connect.Register(opts); err != nil {
+		return C.CString(errorToJSON(err))
+	}
+
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(opts.FsRoot))
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
-	var res struct {
-		Credentials []string `json:"credentials"`
-	}
-	res.Credentials = []string{login, password, ""}
-	jsn, _ := json.Marshal(&res)
+	jsn, _ := json.Marshal(&creds)
 	return C.CString(string(jsn))
 }
 
 //export update_system
 func update_system(clientParams, distroTarget *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	if err := connect.UpdateSystem(C.GoString(distroTarget), "", false, false); err != nil {
+	apiConnection := connect.New(opts)
+	if err := apiConnection.KeepAlive(); err != nil {
 		return C.CString(errorToJSON(err))
 	}
-
 	return C.CString("{}")
 }
 
