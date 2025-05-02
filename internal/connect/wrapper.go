@@ -33,11 +33,16 @@ func New(opts *Options) *Wrapper {
 		Timeout:          connection.DefaultTimeout,
 	}
 
-	creds, err := credentials.ReadCredentials(credentials.SystemCredentialsPath(opts.FsRoot))
+	credentialsPath := credentials.SystemCredentialsPath(opts.FsRoot)
+	creds, err := credentials.ReadCredentials(credentialsPath)
 	registered := false
 	if err == nil {
 		registered = true
-
+	} else {
+		// If the credentials could not be read, then probably it was because
+		// they did not exist. In this case, initialize at least the filename so
+		// future writes don't fail and can create a new credentials file.
+		creds.Filename = credentialsPath
 	}
 
 	return &Wrapper{
