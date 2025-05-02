@@ -16,24 +16,6 @@ const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
 
-// announceSystem announces a system to SCC
-// https://scc.suse.com/connect/v4/documentation#/subscriptions/post_subscriptions_systems
-// The body parameter is produced by makeSysInfoBody()
-func announceSystem(body []byte) (string, string, error) {
-	resp, err := callHTTP("POST", "/connect/subscriptions/systems", body, nil, authToken)
-	if err != nil {
-		return "", "", err
-	}
-	var creds struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
-	if err = json.Unmarshal(resp, &creds); err != nil {
-		return "", "", JSONError{err}
-	}
-	return creds.Login, creds.Password, nil
-}
-
 func upToDate() bool {
 	// REVIST 404 case - see original
 	// Should fail in any case. 422 error means that the endpoint is there and working right
