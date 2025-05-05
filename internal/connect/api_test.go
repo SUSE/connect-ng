@@ -114,7 +114,7 @@ func TestUpToDateOkay(t *testing.T) {
 	defer ts.Close()
 	CFG.BaseURL = ts.URL
 
-	assert.True(UpToDate())
+	assert.True(IsOutdatedRegProxy(CFG))
 }
 
 func TestGetProduct(t *testing.T) {
