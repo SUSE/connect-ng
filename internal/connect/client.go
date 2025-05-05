@@ -417,14 +417,25 @@ func DeactivateProduct(product Product) (Service, error) {
 	return deactivateProduct(product)
 }
 
-// DeregisterSystem deletes current system in SMT/SCC
-func DeregisterSystem() error {
-	return deregisterSystem()
-}
+// Returns the zypper repositories for the installer updates endpoint.
+func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, error) {
+	repos := make([]zypper.Repository, 0)
 
-// InstallerUpdates returns an array of Installer-Updates repositories for the given product
-func InstallerUpdates(product Product) ([]zypper.Repository, error) {
-	return installerUpdates(product)
+	wrapper := New(opts)
+	req, err := wrapper.Connection.BuildRequest("GET", "/connect/repositories/installer", nil)
+	if err != nil {
+		return repos, err
+	}
+	req = connection.AddQuery(req, product.toQuery())
+
+	resp, err := wrapper.Connection.Do(req)
+	if err != nil {
+		return repos, err
+	}
+	if err = json.Unmarshal(resp, &repos); err != nil {
+		return repos, JSONError{err}
+	}
+	return repos, nil
 }
 
 // SyncProducts synchronizes activated system products to the registration server
