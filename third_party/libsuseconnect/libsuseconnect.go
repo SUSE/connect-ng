@@ -91,9 +91,9 @@ func update_system(clientParams, distroTarget *C.char) *C.char {
 
 //export deactivate_system
 func deactivate_system(clientParams *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	err := connect.DeregisterSystem()
+	err := connect.Deregister(opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

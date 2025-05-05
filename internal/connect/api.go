@@ -133,11 +133,6 @@ func deactivateProduct(product Product) (Service, error) {
 	return remoteService, nil
 }
 
-func deregisterSystem() error {
-	_, err := callHTTP("DELETE", "/connect/systems", nil, nil, authSystem)
-	return err
-}
-
 func syncProducts(products []Product) ([]Product, error) {
 	remoteProducts := make([]Product, 0)
 	var payload struct {
