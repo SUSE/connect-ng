@@ -385,14 +385,14 @@ func reload_certificates() *C.char {
 
 //export list_installer_updates
 func list_installer_updates(clientParams, product *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var productQuery connect.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	repos, err := connect.InstallerUpdates(productQuery)
+	repos, err := connect.InstallerUpdates(opts, productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
