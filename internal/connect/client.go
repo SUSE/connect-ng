@@ -439,11 +439,6 @@ func DeactivateProduct(product Product) (Service, error) {
 	return deactivateProduct(product)
 }
 
-// DeregisterSystem deletes current system in SMT/SCC
-func DeregisterSystem() error {
-	return deregisterSystem()
-}
-
 // Returns the zypper repositories for the installer updates endpoint.
 func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, error) {
 	repos := make([]zypper.Repository, 0)
