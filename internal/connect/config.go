@@ -3,23 +3,18 @@ package connect
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/SUSE/connect-ng/internal/util"
 )
 
-var (
-	// CFG is the global struct for config
-	CFG = NewConfig()
-)
+// TODO(mssola): to be removed by the end of RR4.
+var CFG *Options
 
 const (
-	defaultConfigPath                 = "/etc/SUSEConnect"
+	DefaultConfigPath                 = "/etc/SUSEConnect"
 	defaultBaseURL                    = "https://scc.suse.com"
 	defaultInsecure                   = false
 	defaultSkip                       = false
@@ -35,8 +30,7 @@ const (
 	RmtProvider
 )
 
-// Config holds the config!
-type Config struct {
+type Options struct {
 	Path                       string
 	BaseURL                    string `json:"url"`
 	Language                   string `json:"language"`
@@ -55,75 +49,40 @@ type Config struct {
 	SkipServiceInstall         bool
 }
 
-// NewConfig returns a Config with defaults
-func NewConfig() Config {
-	return Config{
-		Path:                       defaultConfigPath,
+// Returns the Options suitable for targeting the SCC reference server without a
+// proxy.
+func DefaultOptions() *Options {
+	return &Options{
+		Path:                       DefaultConfigPath,
 		BaseURL:                    defaultBaseURL,
 		Insecure:                   defaultInsecure,
 		SkipServiceInstall:         defaultSkip,
 		EnableSystemUptimeTracking: defaultEnableSystemUptimeTracking,
+		ServerType:                 UnknownProvider,
 	}
 }
 
-func (c Config) toYAML() []byte {
-	buf := bytes.Buffer{}
-	fmt.Fprintf(&buf, "---\n")
-	fmt.Fprintf(&buf, "url: %s\n", c.BaseURL)
-	fmt.Fprintf(&buf, "insecure: %v\n", c.Insecure)
-	if c.Language != "" {
-		fmt.Fprintf(&buf, "language: %s\n", c.Language)
+// Returns an Options object which has the default values from `DefaultOptions`
+// but fills the relevant data from the configuration as given by its `path`.
+//
+// If this path does not exist, then it takes the defaults. If this path does
+// exist but there are problems when parsing it, then an error will be returned.
+func ReadFromConfiguration(path string) (*Options, error) {
+	cfg := DefaultOptions()
+
+	if f, err := os.Open(path); err == nil {
+		defer f.Close()
+
+		cfg.Path = path
+		return parseFromConfiguration(f, cfg)
 	}
-	if c.Namespace != "" {
-		fmt.Fprintf(&buf, "namespace: %s\n", c.Namespace)
-	}
-	fmt.Fprintf(&buf, "auto_agree_with_licenses: %v\n", c.AutoAgreeEULA)
-	fmt.Fprintf(&buf, "enable_system_uptime_tracking: %v\n", c.EnableSystemUptimeTracking)
-	return buf.Bytes()
+	return cfg, nil
 }
 
-// Save saves the config to Path
-func (c Config) Save() error {
-	data := c.toYAML()
-	return os.WriteFile(c.Path, data, 0644)
-}
-
-// Load tries to read and merge the settings from Path.
-// Ignore errors as it's quite normal that Path does not exist.
-func (c *Config) Load() {
-	f, err := os.Open(c.Path)
-	if err != nil {
-		// If we failed at parsing the configuration, we can make further
-		// assumptions based on the base URL being used.
-		if c.BaseURL == defaultBaseURL {
-			c.ServerType = SccProvider
-		}
-
-		util.Debug.Println(err)
-		return
-	}
-	defer f.Close()
-	parseConfig(f, c)
-	util.Debug.Printf("Config after parsing: %+v", c)
-}
-
-// Change the base url to be used when talking to the server to the one being
-// provided.
-func (c *Config) ChangeBaseURL(baseUrl string) {
-	c.BaseURL = baseUrl
-
-	// When making an explicit change of the URL, we can further detect which
-	// kind of server we are dealing with. For now, let's keep it simple, and if
-	// it's the defaultBaseURL then we assume it to be SccProvider, otherwise
-	// RmtProvider.
-	if c.BaseURL == defaultBaseURL {
-		c.ServerType = SccProvider
-	} else {
-		c.ServerType = RmtProvider
-	}
-}
-
-func parseConfig(r io.Reader, c *Config) {
+// Parse the configuration from the reader `r` and set the corresponding values
+// into the given `cfg`. On success it will return the modified configuration,
+// otherwise it will return an empty configuration and an error object.
+func parseFromConfiguration(r io.Reader, cfg *Options) (*Options, error) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -137,35 +96,75 @@ func parseConfig(r io.Reader, c *Config) {
 		}
 		switch key {
 		case "url":
-			c.BaseURL = val
+			cfg.BaseURL = val
 		case "language":
-			c.Language = val
+			cfg.Language = val
 		case "namespace":
-			c.Namespace = val
+			cfg.Namespace = val
 		case "insecure":
-			c.Insecure, _ = strconv.ParseBool(val)
+			v, err := strconv.ParseBool(val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
+			}
+			cfg.Insecure = v
 		case "no_zypper_refs":
-			c.NoZypperRefresh, _ = strconv.ParseBool(val)
+			v, err := strconv.ParseBool(val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
+			}
+			cfg.NoZypperRefresh = v
 		case "auto_agree_with_licenses":
-			c.AutoAgreeEULA, _ = strconv.ParseBool(val)
+			v, err := strconv.ParseBool(val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
+			}
+			cfg.AutoAgreeEULA = v
 		case "enable_system_uptime_tracking":
-			c.EnableSystemUptimeTracking, _ = strconv.ParseBool(val)
+			v, err := strconv.ParseBool(val)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
+			}
+			cfg.EnableSystemUptimeTracking = v
 		default:
-			util.Debug.Printf("Cannot parse line \"%s\" from %s", line, c.Path)
+			return nil, fmt.Errorf("cannot parse line \"%s\" from %s", line, cfg.Path)
 		}
 	}
+	return cfg, nil
+}
 
-	// Set the server type depending on what we parsed from the configuration.
-	if c.BaseURL == defaultBaseURL {
-		c.ServerType = SccProvider
+// Change the base url to be used when talking to the server to the one being
+// provided.
+func (opts *Options) ChangeBaseURL(baseUrl string) {
+	opts.BaseURL = baseUrl
+
+	// When making an explicit change of the URL, we can further detect which
+	// kind of server we are dealing with. For now, let's keep it simple, and if
+	// it's the defaultBaseURL then we assume it to be SccProvider, otherwise
+	// RmtProvider.
+	if opts.BaseURL == defaultBaseURL {
+		opts.ServerType = SccProvider
+	} else {
+		opts.ServerType = RmtProvider
 	}
 }
 
-// MergeJSON merges attributes of jsn that match Config fields
-func (c *Config) MergeJSON(jsn string) error {
-	err := json.Unmarshal([]byte(jsn), c)
-	util.Debug.Printf("Merged options: %+v", c)
-	return err
+// Saves the current options into the configuration path as defined in
+// `Options.Path`.
+func (opts *Options) SaveAsConfiguration() error {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, "---\n")
+	fmt.Fprintf(&buf, "url: %s\n", opts.BaseURL)
+	fmt.Fprintf(&buf, "insecure: %v\n", opts.Insecure)
+	if opts.Language != "" {
+		fmt.Fprintf(&buf, "language: %s\n", opts.Language)
+	}
+	if opts.Namespace != "" {
+		fmt.Fprintf(&buf, "namespace: %s\n", opts.Namespace)
+	}
+	fmt.Fprintf(&buf, "auto_agree_with_licenses: %v\n", opts.AutoAgreeEULA)
+	fmt.Fprintf(&buf, "enable_system_uptime_tracking: %v\n", opts.EnableSystemUptimeTracking)
+
+	return os.WriteFile(opts.Path, buf.Bytes(), 0644)
 }
 
 // Returns true if we detected that the configuration points to SCC.
@@ -173,6 +172,12 @@ func (c *Config) MergeJSON(jsn string) error {
 // NOTE: this will be reliable if the configuration file already pointed to SCC,
 // but it might need to be filled in upon HTTP requests to further guess if it's
 // a Glue instance running on localhost or similar developer-only scenarios.
-func (c *Config) IsScc() bool {
-	return c.ServerType == SccProvider
+func (opts *Options) IsScc() bool {
+	if opts.ServerType == SccProvider {
+		return true
+	}
+	if opts.ServerType == UnknownProvider && opts.BaseURL == defaultBaseURL {
+		return true
+	}
+	return false
 }
