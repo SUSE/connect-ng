@@ -8,9 +8,10 @@ import (
 	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
-// Cleanup removes system credentials and installed services
-func Cleanup() error {
-	systemCredPath := credentials.SystemCredentialsPath(CFG.FsRoot)
+// Cleanup removes system credentials stored at the given `basePath`, and
+// removes installed services which are related to the given `baseURL`.
+func Cleanup(baseURL, basePath string) error {
+	systemCredPath := credentials.SystemCredentialsPath(basePath)
 	err := util.RemoveFile(systemCredPath)
 	if err != nil {
 		return err
@@ -26,8 +27,8 @@ func Cleanup() error {
 		// NOTE: this check might not work correctly with SMT depending
 		//       on the configuration (e.g. listen on https but API
 		//       returns URL with http).
-		if !strings.Contains(service.URL, CFG.BaseURL) {
-			util.Debug.Printf("%s not in %s\n", CFG.BaseURL, service.URL)
+		if !strings.Contains(service.URL, baseURL) {
+			util.Debug.Printf("%s not in %s\n", baseURL, service.URL)
 			continue
 		}
 		if err := zypper.RemoveService(service.Name); err != nil {
