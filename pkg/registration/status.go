@@ -18,16 +18,22 @@ const (
 )
 
 type statusRequest struct {
-	Hostname string            `json:"hostname"`
-	Info     SystemInformation `json:"hwinfo"`
+	Hostname string `json:"hostname"`
+
+	requestWithInformation
 }
 
 // Returns the registration status for the system pointed by the authorized
 // connection.
-func Status(conn connection.Connection, hostname string, info SystemInformation) (StatusCode, error) {
+func Status(conn connection.Connection, hostname string, systemInformation SystemInformation, extraData ExtraData) (StatusCode, error) {
 	payload := statusRequest{
 		Hostname: hostname,
-		Info:     info,
+	}
+
+	enrichWithSystemInformation(&payload.requestWithInformation, systemInformation)
+	enrichErr := enrichWithExtraData(&payload.requestWithInformation, extraData)
+	if enrichErr != nil {
+		return 0, enrichErr
 	}
 
 	request, buildErr := conn.BuildRequest("PUT", "/connect/systems", payload)
