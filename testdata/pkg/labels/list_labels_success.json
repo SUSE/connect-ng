@@ -1,0 +1,15 @@
+[
+  {
+    "id": 3,
+    "name": "label1",
+    "description": "label1 description"
+  },
+  {
+    "id": 8,
+    "name": "label2"
+  },
+  {
+    "id": 12,
+    "name": "label3"
+  }
+]
