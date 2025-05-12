@@ -43,19 +43,23 @@ func New(opts Options, creds Credentials) *ApiConnection {
 }
 
 func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*http.Request, error) {
+	var reader io.Reader
 	buffer := bytes.Buffer{}
 
-	// Make sure we do not encode HTML data which might interfere with instance_data which can be valid
-	// XML.
-	encoder := json.NewEncoder(&buffer)
-	encoder.SetEscapeHTML(false)
+	if body != nil {
+		// Make sure we do not encode HTML data which might interfere with instance_data which can be valid
+		// XML.
+		encoder := json.NewEncoder(&buffer)
+		encoder.SetEscapeHTML(false)
 
-	err := encoder.Encode(body)
-	if err != nil {
-		return nil, err
+		err := encoder.Encode(body)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(buffer.Bytes())
 	}
 
-	request, err := http.NewRequest(verb, conn.Options.URL, bytes.NewReader(buffer.Bytes()))
+	request, err := http.NewRequest(verb, conn.Options.URL, reader)
 	if err != nil {
 		return nil, err
 	}
