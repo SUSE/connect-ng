@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"os"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
@@ -15,39 +14,6 @@ import (
 const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
-
-// announceSystem announces a system to SCC
-// https://scc.suse.com/connect/v4/documentation#/subscriptions/post_subscriptions_systems
-// The body parameter is produced by makeSysInfoBody()
-func announceSystem(body []byte) (string, string, error) {
-	resp, err := callHTTP("POST", "/connect/subscriptions/systems", body, nil, authToken)
-	if err != nil {
-		return "", "", err
-	}
-	var creds struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
-	if err = json.Unmarshal(resp, &creds); err != nil {
-		return "", "", JSONError{err}
-	}
-	return creds.Login, creds.Password, nil
-}
-
-func upToDate() bool {
-	// REVIST 404 case - see original
-	// Should fail in any case. 422 error means that the endpoint is there and working right
-	_, err := callHTTP("GET", "/connect/repositories/installer", nil, nil, authNone)
-	if err == nil {
-		return false
-	}
-	if ae, ok := err.(APIError); ok {
-		if ae.Code == http.StatusUnprocessableEntity {
-			return true
-		}
-	}
-	return false
-}
 
 // systemActivations returns a map keyed by "Identifier/Version/Arch"
 func systemActivations() (map[string]Activation, error) {
@@ -149,11 +115,6 @@ func deactivateProduct(product Product) (Service, error) {
 		return remoteService, JSONError{err}
 	}
 	return remoteService, nil
-}
-
-func deregisterSystem() error {
-	_, err := callHTTP("DELETE", "/connect/systems", nil, nil, authSystem)
-	return err
 }
 
 func syncProducts(products []Product) ([]Product, error) {
@@ -326,18 +287,6 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 		return migrations, JSONError{err}
 	}
 	return migrations, nil
-}
-
-func installerUpdates(product Product) ([]zypper.Repository, error) {
-	repos := make([]zypper.Repository, 0)
-	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.toQuery(), authNone)
-	if err != nil {
-		return repos, err
-	}
-	if err = json.Unmarshal(resp, &repos); err != nil {
-		return repos, JSONError{err}
-	}
-	return repos, nil
 }
 
 func setLabels(labels []Label) error {

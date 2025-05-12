@@ -11,7 +11,7 @@ import (
 type MigrationPath []Product
 
 // Rollback restores system state to before failed migration
-func Rollback() error {
+func Rollback(insecure bool) error {
 	util.Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
 	base, err := zypper.BaseProduct()
@@ -24,7 +24,7 @@ func Rollback() error {
 	if err != nil {
 		return err
 	}
-	if err = migrationRefreshService(service); err != nil {
+	if err = migrationRefreshService(service, insecure); err != nil {
 		return err
 	}
 
@@ -57,7 +57,7 @@ func Rollback() error {
 		if err != nil {
 			return err
 		}
-		if err := migrationRefreshService(service); err != nil {
+		if err := migrationRefreshService(service, insecure); err != nil {
 			return err
 		}
 	}
@@ -72,12 +72,12 @@ func Rollback() error {
 }
 
 // MigrationAddService adds zypper service in migration context
-func MigrationAddService(URL string, serviceName string) error {
+func MigrationAddService(URL string, serviceName string, insecure bool) error {
 	// don't try to add the service if the plugin with the same name exists (bsc#1128969)
 	if util.FileExists(filepath.Join("/usr/lib/zypp/plugins/services", serviceName)) {
 		return nil
 	}
-	return zypper.AddService(URL, serviceName, true, CFG.Insecure)
+	return zypper.AddService(URL, serviceName, true, insecure)
 }
 
 // MigrationRemoveService removes zypper service in migration context
@@ -89,7 +89,7 @@ func MigrationRemoveService(serviceName string) error {
 	return zypper.RemoveService(serviceName)
 }
 
-func migrationRefreshService(service Service) error {
+func migrationRefreshService(service Service, insecure bool) error {
 	// INFO: Remove old and new service because this could be called after filesystem rollback or
 	// from inside a failed migration
 	if err := MigrationRemoveService(service.Name); err != nil {
@@ -100,7 +100,7 @@ func migrationRefreshService(service Service) error {
 	}
 
 	// INFO: Add new service for the same product but with new/valid service url
-	MigrationAddService(service.URL, service.Name)
+	MigrationAddService(service.URL, service.Name, insecure)
 
 	return nil
 }

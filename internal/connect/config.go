@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 // TODO(mssola): to be removed by the end of RR4.
@@ -30,6 +32,18 @@ const (
 	RmtProvider
 )
 
+// OutputKind is an enum that describes which kind of output is expected from a
+// CLI point of view.
+type OutputKind int
+
+const (
+	// All output from the CLI is to be given in clear text.
+	Text OutputKind = iota
+
+	// All output from the CLI is to be given as JSON blobs.
+	JSON
+)
+
 type Options struct {
 	Path                       string
 	BaseURL                    string `json:"url"`
@@ -47,6 +61,7 @@ type Options struct {
 	NoZypperRefresh            bool
 	AutoImportRepoKeys         bool
 	SkipServiceInstall         bool
+	OutputKind                 OutputKind
 }
 
 // Returns the Options suitable for targeting the SCC reference server without a
@@ -59,6 +74,24 @@ func DefaultOptions() *Options {
 		SkipServiceInstall:         defaultSkip,
 		EnableSystemUptimeTracking: defaultEnableSystemUptimeTracking,
 		ServerType:                 UnknownProvider,
+	}
+}
+
+// Returns the name of the server as expected by CLI tools.
+func (opts *Options) ServerName() string {
+	if opts.IsScc() {
+		return "SUSE Customer Center"
+	}
+	return "registration proxy " + opts.BaseURL
+}
+
+// Prints the given message on `Info` or `Debug` depending on the OutputKind.
+func (opts *Options) Print(msg string) {
+	switch opts.OutputKind {
+	case Text:
+		util.Info.Printf(msg)
+	case JSON:
+		util.Debug.Printf(msg)
 	}
 }
 
