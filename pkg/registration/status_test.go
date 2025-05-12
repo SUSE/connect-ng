@@ -21,7 +21,7 @@ func TestStatusRegistered(t *testing.T) {
 	// 204 No Content
 	conn.On("Do", mock.Anything).Return([]byte(""), nil).Run(checkAuthBySystemCredentials(t, login, password))
 
-	status, err := Status(conn, hostname, nil)
+	status, err := Status(conn, hostname, NoSystemInformation, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Registered, status)
 }
@@ -34,7 +34,7 @@ func TestStatusUnregistered(t *testing.T) {
 	// 404 Not Found
 	conn.On("Do", mock.Anything).Return([]byte(""), errors.New("system not found"))
 
-	status, err := Status(conn, hostname, nil)
+	status, err := Status(conn, hostname, NoSystemInformation, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Unregistered, status)
 }
@@ -42,7 +42,7 @@ func TestStatusUnregistered(t *testing.T) {
 func TestStatusWithSystemInformation(t *testing.T) {
 	assert := assert.New(t)
 
-	payload := map[string]any{
+	systemInformation := map[string]any{
 		"key": "value",
 	}
 
@@ -52,7 +52,31 @@ func TestStatusWithSystemInformation(t *testing.T) {
 	expected := string(fixture(t, "pkg/registration/status_with_system_information.json"))
 	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
 
-	status, err := Status(conn, hostname, payload)
+	status, err := Status(conn, hostname, systemInformation, NoExtraData)
+	assert.NoError(err)
+	assert.Equal(Registered, status)
+}
+
+func TestStatusWithExtraData(t *testing.T) {
+	assert := assert.New(t)
+
+	extraData := map[string]any{
+		"online_at": []string{
+			"12122025:000000000000000000000000",
+			"11122025:000000000000000000000000",
+			"10122025:000000000000000000000000",
+		},
+		"namespace":     "staging-sles",
+		"instance_data": "<document>{\"instanceId\": \"dummy_instance_data\"}</document>",
+	}
+
+	conn, _ := mockConnectionWithCredentials()
+
+	// 204 No Content
+	expected := string(fixture(t, "pkg/registration/status_with_extra_data.json"))
+	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
+
+	status, err := Status(conn, hostname, NoSystemInformation, extraData)
 	assert.NoError(err)
 	assert.Equal(Registered, status)
 }

@@ -29,30 +29,35 @@ func waitForUser(message string) {
 
 func runDemo(identifier, version, arch, regcode string) error {
 	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
+	isProxy := false
 
 	if url := os.Getenv("SCC_URL"); url != "" {
 		opts.URL = url
+		isProxy = true
 	}
 
 	bold("1) Setup connection and perform an request\n")
 	conn := connection.New(opts, &SccCredentials{})
 
-	request, buildErr := conn.BuildRequest("GET", "/connect/subscriptions/info", nil)
-	if buildErr != nil {
-		return buildErr
-	}
+	// Proxies do not implement /connect/subscriptions/info so we skip it
+	if !isProxy {
+		request, buildErr := conn.BuildRequest("GET", "/connect/subscriptions/info", nil)
+		if buildErr != nil {
+			return buildErr
+		}
 
-	connection.AddRegcodeAuth(request, regcode)
+		connection.AddRegcodeAuth(request, regcode)
 
-	payload, err := conn.Do(request)
-	if err != nil {
-		return err
+		payload, err := conn.Do(request)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("!! len(payload): %d characters\n", len(payload))
+		fmt.Printf("!! first 40 characters: %s\n", string(payload[0:40]))
 	}
-	fmt.Printf("!! len(payload): %d characters\n", len(payload))
-	fmt.Printf("!! first 40 characters: %s\n", string(payload[0:40]))
 
 	bold("2) Registering a client to SCC with a registration code\n")
-	id, regErr := registration.Register(conn, regcode, hostname, nil)
+	id, regErr := registration.Register(conn, regcode, hostname, registration.NoSystemInformation, registration.NoExtraData)
 	if regErr != nil {
 		return regErr
 	}
@@ -67,11 +72,15 @@ func runDemo(identifier, version, arch, regcode string) error {
 	waitForUser("Registration complete")
 
 	bold("4) System status // Ping\n")
-	systemInformation := map[string]any{
+	systemInformation := registration.SystemInformation{
 		"uname": "public api demo - ping",
 	}
 
-	status, statusErr := registration.Status(conn, hostname, systemInformation)
+	extraData := registration.ExtraData{
+		"instance_data": "<document>{}</document>",
+	}
+
+	status, statusErr := registration.Status(conn, hostname, systemInformation, extraData)
 	if statusErr != nil {
 		return statusErr
 	}

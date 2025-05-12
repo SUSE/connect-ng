@@ -7,8 +7,9 @@ import (
 )
 
 type announceRequest struct {
-	Hostname          string `json:"hostname"`
-	SystemInformation any    `json:"hwinfo"`
+	Hostname string `json:"hostname"`
+
+	requestWithInformation
 }
 
 type announceResponse struct {
@@ -18,14 +19,21 @@ type announceResponse struct {
 }
 
 // Register a system by using the given regcode. You also need to provide the
-// hostname of the system plus extra info that is to be bundled when registering
+// hostname of the system plus extra system information that is to be bundled when registering
 // a system.
-func Register(conn connection.Connection, regcode, hostname string, systemInformation any) (int, error) {
+// Additionally extraData can be supplied when extra information such as instance data or online at data is required
+func Register(conn connection.Connection, regcode, hostname string, systemInformation SystemInformation, extraData ExtraData) (int, error) {
 	reg := announceResponse{}
 	payload := announceRequest{
-		Hostname:          hostname,
-		SystemInformation: systemInformation,
+		Hostname: hostname,
 	}
+
+	enrichWithSystemInformation(&payload.requestWithInformation, systemInformation)
+	enrichErr := enrichWithExtraData(&payload.requestWithInformation, extraData)
+	if enrichErr != nil {
+		return 0, enrichErr
+	}
+
 	creds := conn.GetCredentials()
 
 	request, buildErr := conn.BuildRequest("POST", "/connect/subscriptions/systems", payload)

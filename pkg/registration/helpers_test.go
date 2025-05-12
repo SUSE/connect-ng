@@ -30,7 +30,7 @@ func fixture(t *testing.T, path string) []byte {
 
 }
 
-func matchBody(t *testing.T, body string) func(mock.Arguments) {
+func matchBody(t *testing.T, testBody string) func(mock.Arguments) {
 	assert := assert.New(t)
 
 	return func(args mock.Arguments) {
@@ -38,7 +38,7 @@ func matchBody(t *testing.T, body string) func(mock.Arguments) {
 		body, readErr := io.ReadAll(request.Body)
 
 		assert.NoError(readErr)
-		assert.Equal(strings.TrimSpace(string(body)), string(body), "request.Body matches")
+		assert.Equal(strings.TrimSpace(string(body)), strings.TrimSpace(testBody), "request.Body does not match")
 	}
 }
 
@@ -50,7 +50,7 @@ func checkAuthByRegcode(t *testing.T, regcode string) func(mock.Arguments) {
 		token := request.Header.Get("Authorization")
 
 		expected := fmt.Sprintf("Token token=%s", regcode)
-		assert.Equal(expected, token, "regcode is set as authorization header")
+		assert.Equal(expected, token, "regcode is not set as authorization header")
 	}
 }
 
@@ -63,6 +63,6 @@ func checkAuthBySystemCredentials(t *testing.T, login, password string) func(moc
 		token := request.Header.Get("Authorization")
 
 		expected := fmt.Sprintf("Basic %s", encoded)
-		assert.Equal(expected, token, "system credentials are set as authorization header")
+		assert.Equal(expected, token, "system credentials are not set as authorization header")
 	}
 }

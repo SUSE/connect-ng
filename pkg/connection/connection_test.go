@@ -2,6 +2,7 @@ package connection
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -33,6 +34,21 @@ func TestConnectionBuildRequest(t *testing.T) {
 	assert.Contains(request.Header.Get("User-Agent"), "testApp/1.0")
 	assert.Equal(request.Header.Get("Accept"), DefaultAPIVersion)
 	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
+}
+
+func TestConnectionBuildRequestNoHTMLEscaping(t *testing.T) {
+	assert := assert.New(t)
+
+	opts := DefaultOptions("testApp", "1.0", "en_US")
+	creds := NoCredentials{}
+	conn := New(opts, creds)
+
+	request, err := conn.BuildRequest("GET", "/test/api", "<xml></xml>")
+	assert.NoError(err)
+
+	body, _ := io.ReadAll(request.Body)
+	// If escaping is not disabled this will convert < and > into \u003c and \u003e
+	assert.Equal("\"<xml></xml>\"\n", string(body))
 }
 
 func TestConnectionDoGet(t *testing.T) {
