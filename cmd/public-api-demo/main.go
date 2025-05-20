@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/labels"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -14,7 +16,7 @@ const (
 	hostname = "public-api-demo"
 )
 
-func bold(format string, args ...interface{}) {
+func bold(format string, args ...any) {
 	fmt.Printf("\033[1m"+format+"\033[0m", args...)
 }
 
@@ -30,10 +32,15 @@ func waitForUser(message string) {
 func runDemo(identifier, version, arch, regcode string) error {
 	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
 	isProxy := false
+	creds := &SccCredentials{}
 
 	if url := os.Getenv("SCC_URL"); url != "" {
 		opts.URL = url
 		isProxy = true
+	}
+
+	if credentialTracing := os.Getenv("TRACE_CREDENTIAL_UPDATES"); credentialTracing != "" {
+		creds.ShowTraces = true
 	}
 
 	bold("1) Setup connection and perform an request\n")
@@ -125,11 +132,60 @@ func runDemo(identifier, version, arch, regcode string) error {
 	}
 	waitForUser("All activated products are listed")
 
-	bold("7) Deregistration of the client\n")
+	bold("7) Label management\n")
+	toAssign := []labels.Label{
+		labels.Label{Name: "public-library-demo", Description: "Demo label created by the public-api-demo executable"},
+		labels.Label{Name: "to-be-removed", Description: "Demo label create by the public-api-demo-executable"},
+	}
+
+	fmt.Printf("Assigning labels..\n")
+	assigned, assignErr := labels.AssignLabels(conn, toAssign)
+
+	if assignErr != nil {
+		return assignErr
+	}
+
+	fmt.Printf("Newly assigned labels:\n")
+	for _, label := range assigned {
+		fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
+	}
+
+	waitForUser("Now lets unassign a label")
+
+	index := slices.IndexFunc(assigned, func(l labels.Label) bool {
+		return l.Name == "to-be-removed"
+	})
+
+	if index == -1 {
+		return fmt.Errorf("Could not find to-be-removed label for this system! Something went wrong!")
+	}
+
+	fmt.Printf("Unassign %s (id: %d)..\n", assigned[index].Name, assigned[index].Id)
+	_, unassignErr := labels.UnassignLabel(conn, assigned[index].Id)
+
+	if unassignErr != nil {
+		return unassignErr
+	}
+
+	fmt.Printf("Fetch updated list of labels..\n")
+	updated, listErr := labels.ListLabels(conn)
+
+	if listErr != nil {
+		return listErr
+	}
+
+	fmt.Printf("Up to date list from SCC:\n")
+	for _, label := range updated {
+		fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
+	}
+
+	waitForUser("Labels managed")
+
+	bold("8) Deregistration of the client\n")
 	if err := registration.Deregister(conn); err != nil {
 		return err
 	}
-	bold("-- System deregistered")
+	bold("\n-- System deregistered\n")
 	return nil
 }
 
