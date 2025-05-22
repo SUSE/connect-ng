@@ -262,7 +262,7 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), opts)
 		}
-		err := connect.Rollback(opts.Insecure)
+		err := connect.Rollback(opts)
 		exitOnError(err, opts)
 	} else if info {
 		sysInfo, err := connect.FetchSystemInformation()
