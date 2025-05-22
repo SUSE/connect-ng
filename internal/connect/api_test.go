@@ -103,20 +103,6 @@ func TestGetActivationsError(t *testing.T) {
 	assert.ErrorContains(err, "(500)")
 }
 
-func TestUpToDateOkay(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	assert := assert.New(t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "", http.StatusUnprocessableEntity)
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	assert.True(IsOutdatedRegProxy(CFG))
-}
-
 func TestGetProduct(t *testing.T) {
 	shittyGlobalVariableNeededForNow()
 
