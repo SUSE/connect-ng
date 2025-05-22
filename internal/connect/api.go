@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"os"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
@@ -15,21 +14,6 @@ import (
 const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
-
-func upToDate() bool {
-	// REVIST 404 case - see original
-	// Should fail in any case. 422 error means that the endpoint is there and working right
-	_, err := callHTTP("GET", "/connect/repositories/installer", nil, nil, authNone)
-	if err == nil {
-		return false
-	}
-	if ae, ok := err.(APIError); ok {
-		if ae.Code == http.StatusUnprocessableEntity {
-			return true
-		}
-	}
-	return false
-}
 
 // systemActivations returns a map keyed by "Identifier/Version/Arch"
 func systemActivations() (map[string]Activation, error) {
@@ -303,18 +287,6 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 		return migrations, JSONError{err}
 	}
 	return migrations, nil
-}
-
-func installerUpdates(product Product) ([]zypper.Repository, error) {
-	repos := make([]zypper.Repository, 0)
-	resp, err := callHTTP("GET", "/connect/repositories/installer", nil, product.toQuery(), authNone)
-	if err != nil {
-		return repos, err
-	}
-	if err = json.Unmarshal(resp, &repos); err != nil {
-		return repos, JSONError{err}
-	}
-	return repos, nil
 }
 
 func setLabels(labels []Label) error {

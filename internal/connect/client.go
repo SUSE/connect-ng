@@ -3,12 +3,14 @@ package connect
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -320,10 +322,30 @@ func IsRegistered() bool {
 	return err == nil
 }
 
-// UpToDate Checks if API endpoint is up-to-date,
-// useful when dealing with RegistrationProxy errors
-func UpToDate() bool {
-	return upToDate()
+// Returns true if the current system is targetting an old registration proxy.
+func IsOutdatedRegProxy(opts *Options) bool {
+	// This is not a registration proxy, bail out.
+	if opts.IsScc() {
+		return false
+	}
+
+	// The trick is to check on an API endpoint which is not supported by SMT.
+	wrapper := New(opts)
+	req, err := wrapper.Connection.BuildRequest("GET", "/connect/repositories/installer", nil)
+	if err != nil {
+		return false
+	}
+
+	_, err = wrapper.Connection.Do(req)
+	if err == nil {
+		return false
+	}
+	if ae, ok := err.(*connection.ApiError); ok {
+		if ae.Code == http.StatusUnprocessableEntity {
+			return true
+		}
+	}
+	return true
 }
 
 // Print the given message plus some extra registration information that might
