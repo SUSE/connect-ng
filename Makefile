@@ -21,6 +21,7 @@ all: clean build test
 dist: clean internal/connect/version.txt vendor
 	@mkdir -p $(DIST)/build/packaging
 	@cp -r internal $(DIST)
+	@cp -r pkg $(DIST)
 	@cp -r third_party $(DIST)
 	@cp -r cmd $(DIST)
 	@cp -r docs $(DIST)
