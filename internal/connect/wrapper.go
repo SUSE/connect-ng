@@ -60,7 +60,7 @@ func (w Wrapper) KeepAlive() error {
 	}
 	hostname := collectors.FromResult(hwinfo, "hostname", "")
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo)
+	code, err := registration.Status(w.Connection, hostname, hwinfo, registration.NoExtraData)
 	if code != registration.Registered {
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
@@ -75,7 +75,7 @@ func (w Wrapper) Register(regcode string) error {
 	hostname := collectors.FromResult(hwinfo, "hostname", "")
 
 	// TODO: do something with the code
-	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo)
+	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, registration.NoExtraData)
 	return err
 }
 
