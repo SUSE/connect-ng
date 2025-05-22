@@ -24,6 +24,10 @@ var (
 	connectUsageText string
 )
 
+const (
+	outdatedRegProxy = "Your Registration Proxy server doesn't support this function."
+)
+
 // singleStringFlag cannot be set more than once.
 // e.g. `cmd -p abc -p def` will give a parse error.
 type singleStringFlag struct {
@@ -331,16 +335,6 @@ func main() {
 	}
 }
 
-func maybeBrokenSMTError(opts *connect.Options) error {
-	// TODO(mssola): to be removed once we sort out the token callback
-	// for the `internal/connect` library.
-	if !connect.CFG.IsScc() && !connect.UpToDate() {
-		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
-			"Please update it and try again.")
-	}
-	return nil
-}
-
 func exitOnError(err error, opts *connect.Options) {
 	if err == nil {
 		return
@@ -354,8 +348,8 @@ func exitOnError(err error, opts *connect.Options) {
 		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
-		if err := maybeBrokenSMTError(opts); err != nil {
-			fmt.Println(err)
+		if connect.IsOutdatedRegProxy(opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Print("Error: Cannot parse response from server\n")
 			fmt.Println(je)
@@ -368,8 +362,8 @@ func exitOnError(err error, opts *connect.Options) {
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
 			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
-		} else if err := maybeBrokenSMTError(opts); err != nil {
-			fmt.Println(err)
+		} else if connect.IsOutdatedRegProxy(opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Println(ae)
 		}
