@@ -221,7 +221,7 @@ func main() {
 	}
 	util.SetSystemEcho(echo)
 
-	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys, opts.Insecure)
+	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys, opts)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -367,7 +367,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false, autoImportRepoKeys, opts.Insecure)
+		_, err := checkSystemProducts(false, autoImportRepoKeys, opts)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -385,7 +385,7 @@ func main() {
 			fmt.Printf("Zypper restore failed: %v\n", err)
 		}
 
-		if err := connect.Rollback(opts.Insecure); err == nil {
+		if err := connect.Rollback(opts); err == nil {
 			QuietOut.Println("Rollback successful.")
 		} else {
 			fmt.Printf("Rollback failed: %v\n", err)
@@ -394,7 +394,7 @@ func main() {
 	}
 }
 
-func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys, insecure bool) ([]connect.Product, error) {
+func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]connect.Product, error) {
 	systemProducts, err := connect.SystemProducts()
 	if err != nil {
 		return systemProducts, err
@@ -414,7 +414,7 @@ func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys, insecure bool) (
 	if releasePackageMissing && rollbackOnFailure {
 		// some release packages are missing and can't be installed
 		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
-		if err := connect.Rollback(insecure); err != nil {
+		if err := connect.Rollback(opts); err != nil {
 			return systemProducts, err
 		}
 		// re-read the list of products

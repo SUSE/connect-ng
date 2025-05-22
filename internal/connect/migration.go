@@ -11,7 +11,7 @@ import (
 type MigrationPath []Product
 
 // Rollback restores system state to before failed migration
-func Rollback(insecure bool) error {
+func Rollback(opts *Options) error {
 	util.Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
 	base, err := zypper.BaseProduct()
@@ -24,7 +24,7 @@ func Rollback(insecure bool) error {
 	if err != nil {
 		return err
 	}
-	if err = migrationRefreshService(service, insecure); err != nil {
+	if err = migrationRefreshService(service, opts.Insecure); err != nil {
 		return err
 	}
 
@@ -57,7 +57,7 @@ func Rollback(insecure bool) error {
 		if err != nil {
 			return err
 		}
-		if err := migrationRefreshService(service, insecure); err != nil {
+		if err := migrationRefreshService(service, opts.Insecure); err != nil {
 			return err
 		}
 	}
