@@ -9,6 +9,22 @@ import (
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
+// Wrap everything into an interface so we can mock this calls later on
+// when unit testing
+type WrappedAPI interface {
+	KeepAlive() error
+	Register(regcode string) error
+	RegisterOrKeepAlive(regcode string) error
+
+	// Return the underlying API object in case an unknown API needs to be
+	// implemented in SUSEConnect.
+	GetConnection() connection.Connection
+}
+
+func NewWrappedAPI(opts *Options) WrappedAPI {
+	return NewWrapper(opts)
+}
+
 // Wrapper is a bridge between API connections via `pkg/connection/` and
 // `internal/credentials/`. Use this wrapper in order to perform any API
 // requests on the context of SUSEConnect.
@@ -23,6 +39,7 @@ type Wrapper struct {
 // Returns a new Wrapper object by taking the given Options into account. Note
 // that it will also make an attempt to read any available credentials, and set
 // Wrapper.Registered accordingly.
+// TODO(felixsch): When we are done, this should return WrappedAPI instead of Wrapper directly
 func NewWrapper(opts *Options) *Wrapper {
 	connectionOpts := connection.Options{
 		URL:              opts.BaseURL,
@@ -86,4 +103,8 @@ func (w Wrapper) RegisterOrKeepAlive(regcode string) error {
 		return w.KeepAlive()
 	}
 	return w.Register(regcode)
+}
+
+func (w Wrapper) GetConnection() connection.Connection {
+	return w.Connection
 }
