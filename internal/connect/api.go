@@ -288,17 +288,3 @@ func offlineProductMigrations(installed []Product, target Product) ([]MigrationP
 	}
 	return migrations, nil
 }
-
-func setLabels(labels []Label) error {
-	var payload struct {
-		Labels []Label `json:"labels"`
-	}
-	payload.Labels = labels
-	body, err := json.Marshal(payload)
-
-	if err != nil {
-		return err
-	}
-	_, err = callHTTP("POST", "/connect/systems/labels", body, nil, authSystem)
-	return err
-}
