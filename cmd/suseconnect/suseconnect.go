@@ -325,7 +325,8 @@ func main() {
 			// TODO(mssola): to be removed once we sort out the token callback
 			// for the `internal/connect` library.
 			if connect.CFG.IsScc() && len(labels) > 0 {
-				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
+				wrapper := connect.New(opts)
+				_, err := connect.AssignAndCreateLabels(wrapper.Connection, strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
 				}
