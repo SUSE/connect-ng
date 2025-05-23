@@ -30,7 +30,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // requests on the context of SUSEConnect.
 type Wrapper struct {
 	// Connection is the API connection as defined in `pkg/connection/`.
-	Connection *connection.ApiConnection
+	Connection connection.Connection
 
 	// Whether the current system is registered or not. Set after calling `New.`
 	Registered bool
