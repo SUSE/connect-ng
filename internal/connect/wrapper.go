@@ -23,7 +23,7 @@ type Wrapper struct {
 // Returns a new Wrapper object by taking the given Options into account. Note
 // that it will also make an attempt to read any available credentials, and set
 // Wrapper.Registered accordingly.
-func New(opts *Options) *Wrapper {
+func NewWrapper(opts *Options) *Wrapper {
 	connectionOpts := connection.Options{
 		URL:              opts.BaseURL,
 		Secure:           !opts.Insecure,
