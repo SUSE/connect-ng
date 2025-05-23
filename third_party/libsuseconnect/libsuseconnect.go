@@ -82,7 +82,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 func update_system(clientParams, distroTarget *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 
-	apiConnection := connect.New(opts)
+	apiConnection := connect.NewWrapper(opts)
 	if err := apiConnection.KeepAlive(); err != nil {
 		return C.CString(errorToJSON(err))
 	}
