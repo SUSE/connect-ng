@@ -24,6 +24,10 @@ var (
 	connectUsageText string
 )
 
+const (
+	outdatedRegProxy = "Your Registration Proxy server doesn't support this function."
+)
+
 // singleStringFlag cannot be set more than once.
 // e.g. `cmd -p abc -p def` will give a parse error.
 type singleStringFlag struct {
@@ -216,13 +220,16 @@ func main() {
 	// TODO(mssola): to be removed by the end of RR4.
 	connect.CFG = opts
 
-	if status {
+	if status || statusText {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status' command"), opts)
+			exitOnError(errors.New("cannot use the json option with this command"), opts)
 		}
-		output, err := connect.GetProductStatuses("json")
+		if status {
+			err = connect.PrintProductStatuses(opts, connect.StatusJSON)
+		} else {
+			err = connect.PrintProductStatuses(opts, connect.StatusText)
+		}
 		exitOnError(err, opts)
-		fmt.Println(output)
 	} else if keepAlive {
 		if isSumaManaged() {
 			os.Exit(0)
@@ -230,22 +237,17 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), opts)
 		}
-		err := connect.SendKeepAlivePing()
+		apiConnection := connect.NewWrapper(opts)
+		err = apiConnection.KeepAlive()
 		exitOnError(err, opts)
-	} else if statusText {
-		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status-text' command"), opts)
-		}
-		output, err := connect.GetProductStatuses("text")
-		exitOnError(err, opts)
-		fmt.Print(output)
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
 		output, err := connect.RenderExtensionTree(jsonFlag)
 		exitOnError(err, opts)
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister(jsonFlag)
+		err := connect.Deregister(opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
 			str, _ := json.Marshal(&out)
@@ -258,13 +260,13 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), opts)
 		}
-		err := connect.Cleanup()
+		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
 		exitOnError(err, opts)
 	} else if rollback {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), opts)
 		}
-		err := connect.Rollback()
+		err := connect.Rollback(opts)
 		exitOnError(err, opts)
 	} else if info {
 		sysInfo, err := connect.FetchSystemInformation()
@@ -300,7 +302,7 @@ func main() {
 				exitOnError(err, opts)
 			}
 
-			err := connect.Register(jsonFlag)
+			err := connect.Register(opts)
 			if err != nil {
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -333,16 +335,6 @@ func main() {
 	}
 }
 
-func maybeBrokenSMTError(opts *connect.Options) error {
-	// TODO(mssola): to be removed once we sort out the token callback
-	// for the `internal/connect` library.
-	if !connect.CFG.IsScc() && !connect.UpToDate() {
-		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
-			"Please update it and try again.")
-	}
-	return nil
-}
-
 func exitOnError(err error, opts *connect.Options) {
 	if err == nil {
 		return
@@ -356,8 +348,8 @@ func exitOnError(err error, opts *connect.Options) {
 		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
-		if err := maybeBrokenSMTError(opts); err != nil {
-			fmt.Println(err)
+		if connect.IsOutdatedRegProxy(opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Print("Error: Cannot parse response from server\n")
 			fmt.Println(je)
@@ -370,8 +362,8 @@ func exitOnError(err error, opts *connect.Options) {
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
 			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
-		} else if err := maybeBrokenSMTError(opts); err != nil {
-			fmt.Println(err)
+		} else if connect.IsOutdatedRegProxy(opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Println(ae)
 		}

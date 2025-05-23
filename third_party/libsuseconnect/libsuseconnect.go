@@ -63,37 +63,37 @@ func free_string(str *C.char) {
 
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	login, password, err := connect.AnnounceSystem(C.GoString(distroTarget), "", false)
+	if err := connect.Register(opts); err != nil {
+		return C.CString(errorToJSON(err))
+	}
+
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(opts.FsRoot))
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
-	var res struct {
-		Credentials []string `json:"credentials"`
-	}
-	res.Credentials = []string{login, password, ""}
-	jsn, _ := json.Marshal(&res)
+	jsn, _ := json.Marshal(&creds)
 	return C.CString(string(jsn))
 }
 
 //export update_system
 func update_system(clientParams, distroTarget *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	if err := connect.UpdateSystem(C.GoString(distroTarget), "", false, false); err != nil {
+	apiConnection := connect.NewWrapper(opts)
+	if err := apiConnection.KeepAlive(); err != nil {
 		return C.CString(errorToJSON(err))
 	}
-
 	return C.CString("{}")
 }
 
 //export deactivate_system
 func deactivate_system(clientParams *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	err := connect.DeregisterSystem()
+	err := connect.Deregister(opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -352,7 +352,13 @@ func getstatus(format *C.char) *C.char {
 	connect.CFG = opts
 
 	gFormat := C.GoString(format)
-	output, err := connect.GetProductStatuses(gFormat)
+	var f connect.StatusFormat
+	if gFormat == "text" {
+		f = connect.StatusText
+	} else {
+		f = connect.StatusJSON
+	}
+	output, err := connect.GetProductStatuses(opts, f)
 	if err != nil {
 		return C.CString(err.Error())
 	}
@@ -379,14 +385,14 @@ func reload_certificates() *C.char {
 
 //export list_installer_updates
 func list_installer_updates(clientParams, product *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var productQuery connect.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	repos, err := connect.InstallerUpdates(productQuery)
+	repos, err := connect.InstallerUpdates(opts, productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

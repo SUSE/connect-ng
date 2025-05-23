@@ -33,6 +33,40 @@ type Credentials struct {
 	SystemToken string `json:"system_token"`
 }
 
+// Returns always true, needed to implement the Credentials interface from
+// `pkg/`.
+func (c Credentials) HasAuthentication() bool {
+	return true
+}
+
+// Returns the current system token, needed to implement the Credentials
+// interface from `pkg/`.
+func (c Credentials) Token() (string, error) {
+	return c.SystemToken, nil
+}
+
+// Writes into the configuration the given system token and updates the value of
+// this instance. Needed to implement the Credentials interface from `pkg/`.
+func (c Credentials) UpdateToken(token string) error {
+	c.SystemToken = token
+	return c.write()
+}
+
+// Returns the username and password from the system, needed to implement the
+// Credentials interface from `pkg/`.
+func (c Credentials) Login() (string, string, error) {
+	return c.Username, c.Password, nil
+}
+
+// Writes into the configuration the given username and password and updates
+// their values of this instance. Needed to implement the Credentials interface
+// from `pkg/`.
+func (c Credentials) SetLogin(username, password string) error {
+	c.Username = username
+	c.Password = password
+	return c.write()
+}
+
 func (c Credentials) String() string {
 	return fmt.Sprintf("file: %s, username: %s, password: REDACTED, system_token: %s",
 		c.Filename, c.Username, c.SystemToken)

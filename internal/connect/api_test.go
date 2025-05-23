@@ -30,33 +30,6 @@ func setRootToTmp() {
 	CFG.FsRoot = "/tmp"
 }
 
-func TestAnnounceSystem(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	assert := assert.New(t)
-
-	setRootToTmp()
-	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("System-Token", "token")
-		io.WriteString(w, `{"login":"test-user","password":"test-password"}`)
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	user, password, err := announceSystem(nil)
-	assert.NoError(err)
-	assert.Equal("test-user", user)
-	assert.Equal("test-password", password)
-
-	// System token should have been updated.
-	creds, err := credentials.ReadCredentials(credentials.SystemCredentialsPath(CFG.FsRoot))
-	assert.NoError(err)
-	assert.Equal("token", creds.SystemToken, "system token mismatch")
-}
-
 func TestGetActivations(t *testing.T) {
 	shittyGlobalVariableNeededForNow()
 
@@ -128,20 +101,6 @@ func TestGetActivationsError(t *testing.T) {
 
 	_, err := systemActivations()
 	assert.ErrorContains(err, "(500)")
-}
-
-func TestUpToDateOkay(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	assert := assert.New(t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "", http.StatusUnprocessableEntity)
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	assert.True(UpToDate())
 }
 
 func TestGetProduct(t *testing.T) {

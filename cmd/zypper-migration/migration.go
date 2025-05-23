@@ -221,7 +221,7 @@ func main() {
 	}
 	util.SetSystemEcho(echo)
 
-	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys)
+	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys, opts)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -335,7 +335,7 @@ func main() {
 
 	dupArgs := zypperDupArgs()
 	fsInconsistent, err := applyMigration(migration, opts.BaseURL, systemProducts,
-		quiet, verbose, nonInteractive, disableRepos, autoAgreeLicenses, autoImportRepoKeys,
+		quiet, verbose, nonInteractive, opts.Insecure, disableRepos, autoAgreeLicenses, autoImportRepoKeys,
 		failDupOnlyOnFatalErrors, dupArgs)
 
 	if err != nil {
@@ -367,7 +367,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false, autoImportRepoKeys)
+		_, err := checkSystemProducts(false, autoImportRepoKeys, opts)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -385,7 +385,7 @@ func main() {
 			fmt.Printf("Zypper restore failed: %v\n", err)
 		}
 
-		if err := connect.Rollback(); err == nil {
+		if err := connect.Rollback(opts); err == nil {
 			QuietOut.Println("Rollback successful.")
 		} else {
 			fmt.Printf("Rollback failed: %v\n", err)
@@ -394,7 +394,7 @@ func main() {
 	}
 }
 
-func checkSystemProducts(rollbackOnFailure bool, autoImportRepoKeys bool) ([]connect.Product, error) {
+func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]connect.Product, error) {
 	systemProducts, err := connect.SystemProducts()
 	if err != nil {
 		return systemProducts, err
@@ -414,7 +414,7 @@ func checkSystemProducts(rollbackOnFailure bool, autoImportRepoKeys bool) ([]con
 	if releasePackageMissing && rollbackOnFailure {
 		// some release packages are missing and can't be installed
 		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
-		if err := connect.Rollback(); err != nil {
+		if err := connect.Rollback(opts); err != nil {
 			return systemProducts, err
 		}
 		// re-read the list of products
@@ -584,7 +584,7 @@ func isSUSEService(service zypper.ZypperService, baseURL string) bool {
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
-func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys bool) (string, error) {
+func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys, insecure bool) (string, error) {
 	var baseProductVersion string
 
 	systemServices, _ := zypper.InstalledServices()
@@ -613,7 +613,7 @@ func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisable
 
 		msg = "Adding service " + service.Name
 		VerboseOut.Println(msg)
-		err = connect.MigrationAddService(service.URL, service.Name)
+		err = connect.MigrationAddService(service.URL, service.Name, insecure)
 		if err != nil {
 			return baseProductVersion, err
 		}
@@ -669,8 +669,9 @@ func isFatalZypperError(code int) bool {
 }
 
 // returns fs_inconsistent flag
+// TODO: have you ever wondered "is this too much?". Fear no more: *this* is too much. WTF with so many arguments.
 func applyMigration(migration connect.MigrationPath, baseURL string, systemProducts []connect.Product,
-	quiet, verbose, nonInteractive, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
+	quiet, verbose, nonInteractive, insecure, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
 	fsInconsistent := false
@@ -698,7 +699,7 @@ func applyMigration(migration connect.MigrationPath, baseURL string, systemProdu
 		}
 	}
 
-	baseProductVersion, err := migrateSystem(migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys)
+	baseProductVersion, err := migrateSystem(migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys, insecure)
 	if err != nil {
 		return fsInconsistent, err
 	}
