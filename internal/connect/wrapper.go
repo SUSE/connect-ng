@@ -19,6 +19,7 @@ type WrappedAPI interface {
 	Register(regcode string) error
 	RegisterOrKeepAlive(regcode string) error
 	IsRegistered() bool
+	AssignLabels(labels []string) ([]labels.Label, error)
 
 	// Return the underlying API object in case an unknown API needs to be
 	// implemented in SUSEConnect.

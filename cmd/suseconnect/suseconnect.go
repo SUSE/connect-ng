@@ -136,6 +136,8 @@ func main() {
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	exitOnError(err, nil)
 
+	wrapper := connect.NewWrappedAPI(opts)
+
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			fmt.Printf("SUSEConnect error: URL \"%s\" not valid: %s\n", baseURL, err)
@@ -320,8 +322,7 @@ func main() {
 			// TODO(mssola): to be removed once we sort out the token callback
 			// for the `internal/connect` library.
 			if connect.CFG.IsScc() && len(labels) > 0 {
-				wrapper := connect.New(opts)
-				_, err := connect.AssignAndCreateLabels(wrapper.Connection, strings.Split(labels, ","))
+				_, err := wrapper.AssignLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
 				}
