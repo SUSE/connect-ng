@@ -82,8 +82,8 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 func update_system(clientParams, distroTarget *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 
-	apiConnection := connect.NewWrapper(opts)
-	if err := apiConnection.KeepAlive(); err != nil {
+	api := connect.NewWrappedAPI(opts)
+	if err := api.KeepAlive(); err != nil {
 		return C.CString(errorToJSON(err))
 	}
 	return C.CString("{}")

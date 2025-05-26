@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -100,7 +101,7 @@ func TestProductTraverseExtensionsSkipBranch(t *testing.T) {
 func TestFetchProductInfo(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	payload := fixture(t, "pkg/registration/product_tree.json")
