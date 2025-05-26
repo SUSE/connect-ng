@@ -47,6 +47,12 @@ func (m *MockWrappedAPI) RegisterOrKeepAlive(regcode string) error {
 	return args.Error(0)
 }
 
+func (m *MockWrappedAPI) AssignLabels(labels []string]) ([]labels.Label, error) {
+	args := m.Called(labels)
+
+	return args.Get(0).([]labels.Label), args.Error(1)
+}
+
 // If you need to access the underlying connection object you are
 // in API territory. Check MockConnectionWithCredentials to see how
 // to mock the connection object. Use
