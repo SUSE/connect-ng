@@ -84,11 +84,11 @@ func getStatuses(opts *Options) ([]Status, error) {
 		return nil, err
 	}
 
-	apiConnection := NewWrapper(opts)
+	api := NewWrappedAPI(opts)
 
 	activations := make(map[string]*registration.Activation) // default empty map
-	if apiConnection.Registered {
-		rawActivations, err := registration.FetchActivations(apiConnection.Connection)
+	if api.IsRegistered() {
+		rawActivations, err := registration.FetchActivations(api.GetConnection())
 		if err != nil {
 			return nil, err
 		}

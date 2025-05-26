@@ -1,6 +1,10 @@
-package testutil
+package connection
 
 import "github.com/stretchr/testify/mock"
+
+func NewMockCredentials() *MockCredentials {
+	return &MockCredentials{}
+}
 
 type MockCredentials struct {
 	mock.Mock
