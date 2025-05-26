@@ -1,4 +1,4 @@
-package testutil
+package connect
 
 import (
 	"github.com/SUSE/connect-ng/pkg/connection"

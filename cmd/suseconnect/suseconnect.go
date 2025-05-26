@@ -237,8 +237,8 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), opts)
 		}
-		apiConnection := connect.NewWrapper(opts)
-		err = apiConnection.KeepAlive()
+		api := connect.NewWrappedAPI(opts)
+		err = api.KeepAlive()
 		exitOnError(err, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {

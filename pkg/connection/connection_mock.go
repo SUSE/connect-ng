@@ -1,20 +1,19 @@
-package testutil
+package connection
 
 import (
 	"io"
 	"net/http"
 
-	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/mock"
 )
 
 type MockConnection struct {
 	mock.Mock
-	real connection.Connection
+	real Connection
 }
 
-func MockConnectionWithCredentials() (*MockConnection, *MockCredentials) {
-	creds := &MockCredentials{}
+func NewMockConnectionWithCredentials() (*MockConnection, *MockCredentials) {
+	creds := NewMockCredentials()
 	conn := NewMockConnection(creds, "testing")
 
 	creds.On("Token").Return("sample-token", nil)
@@ -27,11 +26,11 @@ func MockConnectionWithCredentials() (*MockConnection, *MockCredentials) {
 	return conn, creds
 }
 
-func NewMockConnection(creds connection.Credentials, hostname string) *MockConnection {
-	opts := connection.DefaultOptions("testing", "---", "---")
+func NewMockConnection(creds Credentials, hostname string) *MockConnection {
+	opts := DefaultOptions("testing", "---", "---")
 	opts.URL = "http://local-testing/"
 
-	conn := connection.New(opts, creds)
+	conn := New(opts, creds)
 
 	return &MockConnection{
 		real: conn,
@@ -54,8 +53,8 @@ func (m *MockConnection) Do(request *http.Request) ([]byte, error) {
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func (m *MockConnection) GetCredentials() connection.Credentials {
+func (m *MockConnection) GetCredentials() Credentials {
 	args := m.Called()
 
-	return args.Get(0).(connection.Credentials)
+	return args.Get(0).(Credentials)
 }
