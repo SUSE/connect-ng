@@ -7,12 +7,13 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/SUSE/connect-ng/internal/testutil"
+	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
 func TestAssignLabelSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := testutil.MockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	labels := []Label{
 		Label{Name: "label1", Description: "label1 description"},

@@ -50,10 +50,10 @@ var (
 // product on SCC and adds the service to the system
 func Register(opts *Options) error {
 	out := &RegisterOut{}
-	apiConnection := NewWrapper(opts)
+	api := NewWrappedAPI(opts)
 
 	printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
-	if err := apiConnection.RegisterOrKeepAlive(opts.Token); err != nil {
+	if err := api.RegisterOrKeepAlive(opts.Token); err != nil {
 		return err
 	}
 
@@ -229,8 +229,8 @@ func Deregister(opts *Options) error {
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
-	apiConnection := NewWrapper(opts)
-	if err := registration.Deregister(apiConnection.Connection); err != nil {
+	api := NewWrappedAPI(opts)
+	if err := registration.Deregister(api.GetConnection()); err != nil {
 		return err
 	}
 
@@ -330,13 +330,15 @@ func IsOutdatedRegProxy(opts *Options) bool {
 	}
 
 	// The trick is to check on an API endpoint which is not supported by SMT.
-	wrapper := NewWrapper(opts)
-	req, err := wrapper.Connection.BuildRequest("GET", "/connect/repositories/installer", nil)
+	api := NewWrappedAPI(opts)
+	conn := api.GetConnection()
+
+	req, err := conn.BuildRequest("GET", "/connect/repositories/installer", nil)
 	if err != nil {
 		return false
 	}
 
-	_, err = wrapper.Connection.Do(req)
+	_, err = conn.Do(req)
 	if err == nil {
 		return false
 	}
@@ -443,14 +445,16 @@ func DeactivateProduct(product Product) (Service, error) {
 func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, error) {
 	repos := make([]zypper.Repository, 0)
 
-	wrapper := NewWrapper(opts)
-	req, err := wrapper.Connection.BuildRequest("GET", "/connect/repositories/installer", nil)
+	api := NewWrappedAPI(opts)
+	conn := api.GetConnection()
+
+	req, err := conn.BuildRequest("GET", "/connect/repositories/installer", nil)
 	if err != nil {
 		return repos, err
 	}
 	req = connection.AddQuery(req, product.toQuery())
 
-	resp, err := wrapper.Connection.Do(req)
+	resp, err := conn.Do(req)
 	if err != nil {
 		return repos, err
 	}
