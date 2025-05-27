@@ -8,7 +8,7 @@ SOURCE=${SOURCE:-/usr/src/connect-ng}
 PRODUCT=${PRODUCT:-SLE_15_SP6}
 
 # exported variables we expect to exist to run the tests
-KEYS_TO_CHECK=(VALID_REGCODE EXPIRED_REGCODE BETA_VALID_REGCODE BETA_NOT_ACTIVATED_REGCODE NOT_ACTIVATED_REGCODE)
+KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE INACTIVE_REGCODE HA_REGCODE)
 
 group() { echo "::group::$1"; }
 groupend() { echo "::groupend::"; }
@@ -29,6 +29,6 @@ groupend
 
 group "run feature tests"
 pushd "$SOURCE"
- echo "NOT IMPLEMENTED"
+ go test -v features/suseconnect/*
 popd
 groupend
