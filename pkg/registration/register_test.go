@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -11,7 +12,7 @@ import (
 func TestRegisterSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	response := fixture(t, "pkg/registration/announce_success.json")
@@ -28,7 +29,7 @@ func TestRegisterSuccess(t *testing.T) {
 func TestRegisterFailed(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Invalid registration token supplied"))
@@ -55,7 +56,7 @@ func TestRegsiterWithSystemInformation(t *testing.T) {
 	response := fixture(t, "pkg/registration/announce_success.json")
 	body := fixture(t, "pkg/registration/register_with_system_information.json")
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 	conn.On("Do", mock.Anything).Return(response, nil).Run(matchBody(t, string(body)))
 	creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
 
@@ -81,7 +82,7 @@ func TestRegisterWithEnrichedAttributes(t *testing.T) {
 	response := fixture(t, "pkg/registration/announce_success.json")
 	body := fixture(t, "pkg/registration/register_with_extra_data.json")
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 	conn.On("Do", mock.Anything).Return(response, nil).Run(matchBody(t, string(body)))
 	creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
 
@@ -94,7 +95,7 @@ func TestRegisterWithEnrichedAttributes(t *testing.T) {
 func TestDeRegisterSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, nil)
@@ -109,7 +110,7 @@ func TestDeRegisterSuccess(t *testing.T) {
 func TestDeRegisterInvalid(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Not found"))
