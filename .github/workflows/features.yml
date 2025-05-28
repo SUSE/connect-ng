@@ -20,8 +20,8 @@ on: [pull_request]
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
-  REGCODE: ${{ secrets.EXPIRED_REGCODE }}
-  HA_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
+  REGCODE: ${{ secrets.REGCODE }}
+  HA_REGCODE: ${{ secrets.HA_REGCODE }}
   EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
 
 jobs:
