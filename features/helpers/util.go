@@ -14,7 +14,7 @@ func AssertValidJSON[R any](t *testing.T, jsonString string) R {
 
 	err := json.Unmarshal([]byte(jsonString), &result)
 	if err != nil {
-		assert.FailNow(t, "String is not valid JSON: "+err.Error())
+		assert.FailNow(t, "String is not valid JSON: ", err.Error())
 	}
 	return result
 }
