@@ -4,11 +4,8 @@ set -e
 # Where the connect-ng source is located within the container
 SOURCE=${SOURCE:-/usr/src/connect-ng}
 
-# Base product to run feature tests against
-PRODUCT=${PRODUCT:-SLE_15_SP6}
-
 # exported variables we expect to exist to run the tests
-KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE INACTIVE_REGCODE HA_REGCODE)
+KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE HA_REGCODE)
 
 group() { echo "::group::$1"; }
 groupend() { echo "::groupend::"; }
