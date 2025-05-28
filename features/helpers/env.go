@@ -11,10 +11,9 @@ import (
 )
 
 type FeatureTestEnv struct {
-	REGCODE          string
-	EXPIRED_REGCODE  string
-	INACTIVE_REGCODE string
-	HA_REGCODE       string
+	REGCODE         string
+	EXPIRED_REGCODE string
+	HA_REGCODE      string
 
 	CREDENTIALS_PATH string
 }
@@ -37,9 +36,10 @@ func NewEnv(t *testing.T) *FeatureTestEnv {
 		CREDENTIALS_PATH: "/etc/zypp/credentials.d",
 	}
 
+	// FIXME: Move to REGCODE in the CI. For now stay with
+	//        VALID_REGCODE to not duplicate secrets too much
 	fetch(&env.REGCODE, "REGCODE")
 	fetch(&env.EXPIRED_REGCODE, "EXPIRED_REGCODE")
-	fetch(&env.INACTIVE_REGCODE, "INACTIVE_REGCODE")
 	fetch(&env.HA_REGCODE, "HA_REGCODE")
 
 	return env
@@ -53,7 +53,6 @@ func (env *FeatureTestEnv) allRegcodes() []string {
 	return []string{
 		env.REGCODE,
 		env.EXPIRED_REGCODE,
-		env.INACTIVE_REGCODE,
 		env.HA_REGCODE,
 	}
 }
