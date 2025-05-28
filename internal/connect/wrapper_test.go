@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/testutil"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/labels"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,7 +13,7 @@ import (
 func TestAssignLabelsWithSpacesAndNewlines(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := testutil.MockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 	wrapper := Wrapper{
 		Connection: conn,
 		Registered: true,
