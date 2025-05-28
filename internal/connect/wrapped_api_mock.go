@@ -2,6 +2,7 @@ package connect
 
 import (
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/labels"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -47,8 +48,8 @@ func (m *MockWrappedAPI) RegisterOrKeepAlive(regcode string) error {
 	return args.Error(0)
 }
 
-func (m *MockWrappedAPI) AssignLabels(labels []string]) ([]labels.Label, error) {
-	args := m.Called(labels)
+func (m *MockWrappedAPI) AssignLabels(assigned []string) ([]labels.Label, error) {
+	args := m.Called(assigned)
 
 	return args.Get(0).([]labels.Label), args.Error(1)
 }
