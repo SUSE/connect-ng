@@ -204,6 +204,11 @@ func main() {
 		})
 	}
 
+	// Set the JSON output specifier early on so all later usages can access this information
+	if jsonFlag {
+		opts.OutputKind = connect.JSON
+	}
+
 	// Reading the configuration/flags is done, now let's check if the
 	// filesystem can handle operations from SUSEConnect for specific actions
 	// which require filesystem to be read write (aka writing outside of /etc)
