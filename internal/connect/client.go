@@ -322,7 +322,7 @@ func IsRegistered() bool {
 	return err == nil
 }
 
-// Returns true if the current system is targetting an old registration proxy.
+// Returns true if the current system is targeting an old registration proxy.
 func IsOutdatedRegProxy(opts *Options) bool {
 	// This is not a registration proxy, bail out.
 	if opts.IsScc() {
@@ -330,21 +330,25 @@ func IsOutdatedRegProxy(opts *Options) bool {
 	}
 
 	// The trick is to check on an API endpoint which is not supported by SMT.
+	// If the endpoint exists it will return 422 since we are omitting required
+	// parameters. Then we know we are not dealing with an outdated registration
+	// proxy.
 	api := NewWrappedAPI(opts)
 	conn := api.GetConnection()
 
 	req, err := conn.BuildRequest("GET", "/connect/repositories/installer", nil)
 	if err != nil {
-		return false
+		return true
 	}
 
 	_, err = conn.Do(req)
 	if err == nil {
-		return false
+		return true
 	}
+
 	if ae, ok := err.(*connection.ApiError); ok {
 		if ae.Code == http.StatusUnprocessableEntity {
-			return true
+			return false
 		}
 	}
 	return true
