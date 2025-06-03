@@ -52,7 +52,10 @@ func Register(opts *Options) error {
 	out := &RegisterOut{}
 	api := NewWrappedAPI(opts)
 
-	printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
+	if opts.OutputKind != JSON {
+		printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
+	}
+
 	if err := api.RegisterOrKeepAlive(opts.Token); err != nil {
 		return err
 	}
