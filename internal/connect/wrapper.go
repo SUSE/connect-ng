@@ -77,7 +77,7 @@ func (w Wrapper) KeepAlive() error {
 	if code != registration.Registered {
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
-	return err
+	return ToAPIError(err)
 }
 
 func (w Wrapper) Register(regcode string) error {
@@ -89,7 +89,7 @@ func (w Wrapper) Register(regcode string) error {
 
 	// TODO: do something with the code
 	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, registration.NoExtraData)
-	return err
+	return ToAPIError(err)
 }
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
