@@ -21,10 +21,9 @@ type Activation struct {
 	Product  *Product
 }
 
-// Returns the activation identified by the product's "triplet".
+// Returns the activations triplet identifier.
 func (a *Activation) ToTriplet() string {
-	p := a.Product
-	return p.Name + "/" + p.Version + "/" + p.Arch
+	return a.Product.ToTriplet()
 }
 
 type activationResponse struct {

@@ -30,6 +30,7 @@ func TestFetchProductActivations(t *testing.T) {
 	}
 	assert.Equal("15.6", sles.Product.Version)
 	assert.Equal("SUSE_Linux_Enterprise_Server_15_SP6_x86_64", sles.Metadata.Name)
+	assert.Equal("SLES/15.6/x86_64", sles.ToTriplet())
 }
 
 func TestFetchProductActivationsEmpty(t *testing.T) {
