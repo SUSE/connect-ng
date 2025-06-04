@@ -141,7 +141,7 @@ func TestConnectionUpdateToken(t *testing.T) {
 	opts := DefaultOptions("testApp", "1.0", "en_US")
 	opts.URL = server.URL
 
-	creds := &mockCredentials{}
+	creds := &MockCredentials{}
 	creds.On("Token").Return(oldToken, nil)
 	creds.On("UpdateToken", newToken).Return(nil)
 

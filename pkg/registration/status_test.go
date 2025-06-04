@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -15,7 +16,7 @@ const (
 func TestStatusRegistered(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	// 204 No Content
@@ -29,7 +30,7 @@ func TestStatusRegistered(t *testing.T) {
 func TestStatusUnregistered(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not Found
 	conn.On("Do", mock.Anything).Return([]byte(""), errors.New("system not found"))
@@ -46,7 +47,7 @@ func TestStatusWithSystemInformation(t *testing.T) {
 		"key": "value",
 	}
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	expected := string(fixture(t, "pkg/registration/status_with_system_information.json"))
@@ -70,7 +71,7 @@ func TestStatusWithExtraData(t *testing.T) {
 		"instance_data": "<document>{\"instanceId\": \"dummy_instance_data\"}</document>",
 	}
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	expected := string(fixture(t, "pkg/registration/status_with_extra_data.json"))
