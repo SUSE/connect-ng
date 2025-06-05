@@ -21,6 +21,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 // log level
@@ -139,7 +140,7 @@ func curlrc_credentials() *C.char {
 func show_product(clientParams, product *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	var productQuery connect.Product
+	var productQuery registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -157,14 +158,14 @@ func show_product(clientParams, product *C.char) *C.char {
 
 //export activate_product
 func activate_product(clientParams, product, email *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.ActivateProduct(p, C.GoString(email))
+	service, err := connect.ActivateProduct(p, opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -194,7 +195,7 @@ func activated_products(clientParams *C.char) *C.char {
 func deactivate_product(clientParams, product *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -387,7 +388,7 @@ func reload_certificates() *C.char {
 func list_installer_updates(clientParams, product *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 
-	var productQuery connect.Product
+	var productQuery registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -407,7 +408,7 @@ func list_installer_updates(clientParams, product *C.char) *C.char {
 func system_migrations(clientParams, products *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	installed := make([]connect.Product, 0)
+	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -427,12 +428,12 @@ func system_migrations(clientParams, products *C.char) *C.char {
 func offline_system_migrations(clientParams, products, targetBaseProduct *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	installed := make([]connect.Product, 0)
+	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	var target connect.Product
+	var target registration.Product
 	if err := json.Unmarshal([]byte(C.GoString(targetBaseProduct)), &target); err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
@@ -451,7 +452,7 @@ func offline_system_migrations(clientParams, products, targetBaseProduct *C.char
 func upgrade_product(clientParams, product *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	var prod connect.Product
+	var prod registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &prod)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -471,7 +472,7 @@ func upgrade_product(clientParams, product *C.char) *C.char {
 func synchronize(clientParams, products *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	prods := make([]connect.Product, 0)
+	prods := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &prods)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
@@ -511,7 +512,7 @@ func system_activations(clientParams *C.char) *C.char {
 func search_package(clientParams, product, query *C.char) *C.char {
 	_ = loadConfig(C.GoString(clientParams))
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))

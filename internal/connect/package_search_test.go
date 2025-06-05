@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 func TestSearchPackage(t *testing.T) {
@@ -16,7 +17,7 @@ func TestSearchPackage(t *testing.T) {
 	defer ts.Close()
 
 	CFG.BaseURL = ts.URL
-	baseProduct := Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
+	baseProduct := registration.Product{Name: "SLES", Version: "15.2", Arch: "x86_64"}
 	packages, err := searchPackage("gcc", baseProduct)
 	if err != nil {
 		t.Fatalf("%s", err)
