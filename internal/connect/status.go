@@ -96,8 +96,7 @@ func getStatuses(opts *Options) ([]Status, error) {
 			activations[activation.ToTriplet()] = activation
 		}
 	}
-	installedProducts := zypper.ToProductList(installed)
-	statuses := buildStatuses(installedProducts, activations)
+	statuses := buildStatuses(installed, activations)
 	return statuses, nil
 }
 
@@ -146,8 +145,7 @@ func getStatusText(statuses []Status) (string, error) {
 // activations as they have summary field which is missing
 // in the latter.
 func SystemProducts() ([]registration.Product, error) {
-	installed, err := zypper.InstalledProducts()
-	products := zypper.ToProductList(installed)
+	products, err := zypper.InstalledProducts()
 	if err != nil {
 		return products, err
 	}

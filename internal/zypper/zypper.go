@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -43,47 +42,6 @@ const (
 	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
 )
 
-// ZypperProduct handles the products that we receive specifically from Zypper.
-// This allows us to separate the logic for Zypper into a separate package
-// without having to clutter either `pkg/` nor `internal/connect/`.
-type ZypperProduct struct {
-	Name        string `xml:"name,attr"`
-	Version     string `xml:"version,attr"`
-	Arch        string `xml:"arch,attr"`
-	Release     string `xml:"release,attr"`
-	Summary     string `xml:"summary,attr"`
-	IsBase      bool   `xml:"isbase,attr"`
-	ReleaseType string `xml:"registerrelease,attr"`
-	ProductLine string `xml:"productline,attr"`
-
-	// Used by YaST.
-	Description string `xml:"description"`
-}
-
-// Translate a ZypperProduct struct into the Product from `pkg/registration`.
-func (zp ZypperProduct) ToProduct() registration.Product {
-	return registration.Product{
-		Name:        zp.Name,
-		Version:     zp.Version,
-		Arch:        zp.Arch,
-		Summary:     zp.Summary,
-		IsBase:      zp.IsBase,
-		ReleaseType: zp.ReleaseType,
-		ProductLine: zp.ProductLine,
-		Description: zp.Description,
-	}
-}
-
-// Translate the given ZypperProduct list into a one made of
-// registration.Product.
-func ToProductList(list []ZypperProduct) []registration.Product {
-	var productList []registration.Product
-	for _, zp := range list {
-		productList = append(productList, zp.ToProduct())
-	}
-	return productList
-}
-
 type ZypperService struct {
 	URL  string `xml:"url,attr"`
 	Name string `xml:"name,attr"`
@@ -117,11 +75,11 @@ func zypperRun(args []string, validExitCodes []int) ([]byte, error) {
 }
 
 // installedProducts returns installed products
-func InstalledProducts() ([]ZypperProduct, error) {
+func InstalledProducts() ([]registration.Product, error) {
 	args := []string{"--disable-repositories", "--xmlout", "--non-interactive", "products", "-i"}
 	output, err := zypperRun(args, []int{zypperOK})
 	if err != nil {
-		return []ZypperProduct{}, err
+		return []registration.Product{}, err
 	}
 	return parseProductsXML(output)
 }
@@ -147,12 +105,12 @@ func oemReleaseType(productLine string) (string, error) {
 }
 
 // parseProductsXML returns products parsed from zypper XML
-func parseProductsXML(xmlDoc []byte) ([]ZypperProduct, error) {
+func parseProductsXML(xmlDoc []byte) ([]registration.Product, error) {
 	var products struct {
-		Products []ZypperProduct `xml:"product-list>product"`
+		Products []registration.Product `xml:"product-list>product"`
 	}
 	if err := xml.Unmarshal(xmlDoc, &products); err != nil {
-		return []ZypperProduct{}, err
+		return []registration.Product{}, err
 	}
 	// override ProductType with OEM value if defined
 	for i, p := range products.Products {
@@ -185,17 +143,17 @@ func parseServicesXML(xmlDoc []byte) ([]ZypperService, error) {
 }
 
 // TODO: memoize?
-func BaseProduct() (ZypperProduct, error) {
+func BaseProduct() (registration.Product, error) {
 	products, err := InstalledProducts()
 	if err != nil {
-		return ZypperProduct{}, err
+		return registration.Product{}, err
 	}
 	for _, product := range products {
 		if product.IsBase {
 			return product, nil
 		}
 	}
-	return ZypperProduct{}, ErrCannotDetectBaseProduct
+	return registration.Product{}, ErrCannotDetectBaseProduct
 }
 
 func DistroTarget() (string, error) {
@@ -434,18 +392,4 @@ func Patch(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) erro
 	}
 	_, err := zypperRun(args, []int{zypperOK})
 	return err
-}
-
-// ToTriplet returns <name>/<version>/<arch> string for product
-func (zp ZypperProduct) ToTriplet() string {
-	return zp.Name + "/" + zp.Version + "/" + zp.Arch
-}
-
-// SplitTriplet returns a product from given or error for invalid input
-func SplitTriplet(p string) (ZypperProduct, error) {
-	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, p); !match {
-		return ZypperProduct{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
-	}
-	parts := strings.Split(p, "/")
-	return ZypperProduct{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }

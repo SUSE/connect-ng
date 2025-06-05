@@ -36,9 +36,9 @@ func (zypp *Zypper) run(params ...string) []byte {
 	return result
 }
 
-func (zypp *Zypper) FetchProducts() []zypper.ZypperProduct {
+func (zypp *Zypper) FetchProducts() []registration.Product {
 	var products struct {
-		Products []zypper.ZypperProduct `xml:"product-list>product"`
+		Products []registration.Product `xml:"product-list>product"`
 	}
 
 	doc := zypp.run("--no-refresh", "--non-interactive", "--quiet", "--xmlout", "products", "--installed-only")
