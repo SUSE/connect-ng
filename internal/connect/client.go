@@ -62,20 +62,20 @@ func Register(opts *Options) error {
 
 	installReleasePkg := true
 	product := opts.Product
-	if product.isEmpty() {
+	if product.IsEmpty() {
 		base, err := zypper.BaseProduct()
 		if err != nil {
 			return err
 		}
-		product = zypperProductToProduct(base)
+		product = base.ToProduct()
 		installReleasePkg = false
 	}
 
 	if service, err := registerProduct(opts, product, installReleasePkg); err == nil {
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
-				Name:       product.LongName,
-				Identifier: product.Name,
+				Name:       product.Name,
+				Identifier: product.Identifier,
 				Version:    product.Version,
 				Arch:       product.Arch,
 			},
@@ -115,11 +115,12 @@ func Register(opts *Options) error {
 	return nil
 }
 
-// registerProduct activates the product, adds the service and installs the release package
-func registerProduct(opts *Options, product Product, installReleasePkg bool) (Service, error) {
+// registerProduct activates the product, adds the service and installs the
+// release package
+func registerProduct(opts *Options, product registration.Product, installReleasePkg bool) (Service, error) {
 	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
 
-	service, err := activateProduct(product, opts.Email)
+	service, err := ActivateProduct(product, opts)
 	if err != nil {
 		return Service{}, err
 	}
@@ -144,14 +145,14 @@ func registerProduct(opts *Options, product Product, installReleasePkg bool) (Se
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(opts *Options, product Product, out *RegisterOut) error {
+func registerProductTree(opts *Options, product registration.Product, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
 			if service, err := registerProduct(opts, extension, true); err == nil {
 				out.Products = append(out.Products, ProductService{
 					Product: ProductOut{
-						Name:       product.LongName,
-						Identifier: product.Name,
+						Name:       product.Name,
+						Identifier: product.Identifier,
 						Version:    product.Version,
 						Arch:       product.Arch,
 					},
@@ -174,7 +175,7 @@ func registerProductTree(opts *Options, product Product, out *RegisterOut) error
 
 // Deregister the current system.
 func Deregister(opts *Options) error {
-	if util.FileExists("/usr/sbin/registercloudguest") && opts.Product.isEmpty() {
+	if util.FileExists("/usr/sbin/registercloudguest") && opts.Product.IsEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration via SUSEConnect is disabled by registercloudguest." +
 			"Use `registercloudguest --clean` instead.")
@@ -188,14 +189,14 @@ func Deregister(opts *Options) error {
 	out := &RegisterOut{}
 
 	printInformation(fmt.Sprintf("Deregistering system to %s", opts.ServerName()), opts)
-	if !opts.Product.isEmpty() {
+	if !opts.Product.IsEmpty() {
 		return deregisterProduct(opts.Product, opts, out)
 	}
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
 	}
-	baseProd := zypperProductToProduct(base)
+	baseProd := base.ToProduct()
 	baseProductService, err := upgradeProduct(baseProd)
 	if err != nil {
 		return err
@@ -211,8 +212,8 @@ func Deregister(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	dependencies := make([]Product, 0)
-	for _, e := range tree.toExtensionsList() {
+	dependencies := make([]registration.Product, 0)
+	for _, e := range tree.ToExtensionsList() {
 		if installedIDs.Contains(e.Name) {
 			dependencies = append(dependencies, e)
 		}
@@ -264,12 +265,12 @@ func Deregister(opts *Options) error {
 	return nil
 }
 
-func deregisterProduct(product Product, opts *Options, out *RegisterOut) error {
+func deregisterProduct(product registration.Product, opts *Options, out *RegisterOut) error {
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
 	}
-	if product.ToTriplet() == zypperProductToProduct(base).ToTriplet() {
+	if product.ToTriplet() == base.ToProduct().ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
@@ -292,8 +293,8 @@ func deregisterProduct(product Product, opts *Options, out *RegisterOut) error {
 	case JSON:
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
-				Name:       product.LongName,
-				Identifier: product.Name,
+				Name:       product.Name,
+				Identifier: product.Identifier,
 				Version:    product.Version,
 				Arch:       product.Arch,
 			},
@@ -384,43 +385,45 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 }
 
 // ProductMigrations returns the online migration paths for the installed products
-func ProductMigrations(installed []Product) ([]MigrationPath, error) {
+func ProductMigrations(installed []registration.Product) ([]MigrationPath, error) {
 	return productMigrations(installed)
 }
 
 // OfflineProductMigrations returns the offline migration paths for the installed products and target
-func OfflineProductMigrations(installed []Product, targetBaseProduct Product) ([]MigrationPath, error) {
+func OfflineProductMigrations(installed []registration.Product, targetBaseProduct registration.Product) ([]MigrationPath, error) {
 	return offlineProductMigrations(installed, targetBaseProduct)
 }
 
 // UpgradeProduct upgades the records for given product in SCC/SMT
 // The service record for new product is returned
-func UpgradeProduct(product Product) (Service, error) {
+// TODO
+func UpgradeProduct(product registration.Product) (Service, error) {
 	return upgradeProduct(product)
 }
 
 // SearchPackage returns packages which are available in the extensions tree for given base product
-func SearchPackage(query string, baseProd Product) ([]SearchPackageResult, error) {
+func SearchPackage(query string, baseProd registration.Product) ([]SearchPackageResult, error) {
 	// default to system base product if empty product passed
-	if baseProd.isEmpty() {
+	if baseProd.IsEmpty() {
 		var err error
 		base, err := zypper.BaseProduct()
 		if err != nil {
 			return []SearchPackageResult{}, err
 		}
-		baseProd = zypperProductToProduct(base)
+		baseProd = base.ToProduct()
 	}
 	return searchPackage(query, baseProd)
 }
 
 // ShowProduct fetches product details from SCC/SMT
-func ShowProduct(productQuery Product) (Product, error) {
+// TODO: see registration.FetchProductInfo
+func ShowProduct(productQuery registration.Product) (registration.Product, error) {
 	return showProduct(productQuery)
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT
-func ActivatedProducts() ([]Product, error) {
-	var products []Product
+func ActivatedProducts() ([]registration.Product, error) {
+	var products []registration.Product
 	activations, err := systemActivations()
 	if err != nil {
 		return products, err
@@ -433,8 +436,20 @@ func ActivatedProducts() ([]Product, error) {
 
 // ActivateProduct activates given product in SMT/SCC
 // returns Service to be added to zypper
-func ActivateProduct(product Product, email string) (Service, error) {
-	return activateProduct(product, email)
+func ActivateProduct(product registration.Product, opts *Options) (Service, error) {
+	wrapper := NewWrapper(opts)
+	meta, pr, err := registration.Activate(wrapper.Connection, product.Name, product.Version, product.Arch, opts.Token)
+	if err != nil {
+		return Service{}, err
+	}
+
+	return Service{
+		ID:            meta.ID,
+		URL:           meta.URL,
+		Name:          meta.Name,
+		ObsoletedName: meta.ObsoletedName,
+		Product:       pr,
+	}, nil
 }
 
 // SystemActivations returns a map keyed by "Identifier/Version/Arch"
@@ -444,12 +459,12 @@ func SystemActivations() (map[string]Activation, error) {
 
 // DeactivateProduct deactivates given product in SMT/SCC
 // returns Service to be removed from zypper
-func DeactivateProduct(product Product) (Service, error) {
+func DeactivateProduct(product registration.Product) (Service, error) {
 	return deactivateProduct(product)
 }
 
 // Returns the zypper repositories for the installer updates endpoint.
-func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, error) {
+func InstallerUpdates(opts *Options, product registration.Product) ([]zypper.Repository, error) {
 	repos := make([]zypper.Repository, 0)
 
 	api := NewWrappedAPI(opts)
@@ -459,7 +474,7 @@ func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, erro
 	if err != nil {
 		return repos, err
 	}
-	req = connection.AddQuery(req, product.toQuery())
+	req = connection.AddQuery(req, product.ToQuery())
 
 	resp, err := conn.Do(req)
 	if err != nil {
@@ -472,6 +487,6 @@ func InstallerUpdates(opts *Options, product Product) ([]zypper.Repository, erro
 }
 
 // SyncProducts synchronizes activated system products to the registration server
-func SyncProducts(products []Product) ([]Product, error) {
+func SyncProducts(products []registration.Product) ([]registration.Product, error) {
 	return syncProducts(products)
 }

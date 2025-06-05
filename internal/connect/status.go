@@ -96,12 +96,12 @@ func getStatuses(opts *Options) ([]Status, error) {
 			activations[activation.ToTriplet()] = activation
 		}
 	}
-	installedProducts := zypperProductListToProductList(installed)
+	installedProducts := zypper.ToProductList(installed)
 	statuses := buildStatuses(installedProducts, activations)
 	return statuses, nil
 }
 
-func buildStatuses(products []Product, activations map[string]*registration.Activation) []Status {
+func buildStatuses(products []registration.Product, activations map[string]*registration.Activation) []Status {
 	var statuses []Status
 	for _, product := range products {
 		status := Status{
@@ -145,9 +145,9 @@ func getStatusText(statuses []Status) (string, error) {
 // Products from zypper have priority over products from
 // activations as they have summary field which is missing
 // in the latter.
-func SystemProducts() ([]Product, error) {
+func SystemProducts() ([]registration.Product, error) {
 	installed, err := zypper.InstalledProducts()
-	products := zypperProductListToProductList(installed)
+	products := zypper.ToProductList(installed)
 	if err != nil {
 		return products, err
 	}

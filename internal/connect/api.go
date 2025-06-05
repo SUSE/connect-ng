@@ -9,6 +9,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 const (
@@ -32,19 +33,12 @@ func systemActivations() (map[string]Activation, error) {
 	return activeMap, nil
 }
 
-func showProduct(productQuery Product) (Product, error) {
-	resp, err := callHTTP("GET", "/connect/systems/products", nil, productQuery.toQuery(), authSystem)
-	remoteProduct := Product{}
-	if err != nil {
-		return remoteProduct, err
-	}
-	if err = json.Unmarshal(resp, &remoteProduct); err != nil {
-		return remoteProduct, JSONError{err}
-	}
-	return remoteProduct, nil
+// TODO
+func showProduct(productQuery registration.Product) (registration.Product, error) {
+	return registration.Product{}, nil
 }
 
-func upgradeProduct(product Product) (Service, error) {
+func upgradeProduct(product registration.Product) (Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
 	payload, err := json.Marshal(product)
@@ -62,44 +56,12 @@ func upgradeProduct(product Product) (Service, error) {
 	return remoteService, nil
 }
 
-func downgradeProduct(product Product) (Service, error) {
+// TODO
+func downgradeProduct(product registration.Product) (Service, error) {
 	return upgradeProduct(product)
 }
 
-func activateProduct(product Product, email string) (Service, error) {
-	var payload = struct {
-		Indentifier string `json:"identifier"`
-		Version     string `json:"version"`
-		Arch        string `json:"arch"`
-		ReleaseType string `json:"release_type"`
-		Token       string `json:"token"`
-		Email       string `json:"email"`
-	}{
-		product.Name,
-		product.Version,
-		product.Arch,
-		product.ReleaseType,
-		CFG.Token,
-		email,
-	}
-
-	service := Service{}
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return service, err
-	}
-	resp, err := callHTTP("POST", "/connect/systems/products", body, nil, authSystem)
-	if err != nil {
-		return service, err
-	}
-	err = json.Unmarshal(resp, &service)
-	if err != nil {
-		return service, JSONError{err}
-	}
-	return service, nil
-}
-
-func deactivateProduct(product Product) (Service, error) {
+func deactivateProduct(product registration.Product) (Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
 	payload, err := json.Marshal(product)
@@ -117,10 +79,10 @@ func deactivateProduct(product Product) (Service, error) {
 	return remoteService, nil
 }
 
-func syncProducts(products []Product) ([]Product, error) {
-	remoteProducts := make([]Product, 0)
+func syncProducts(products []registration.Product) ([]registration.Product, error) {
+	remoteProducts := make([]registration.Product, 0)
 	var payload struct {
-		Products []Product `json:"products"`
+		Products []registration.Product `json:"products"`
 	}
 	payload.Products = products
 	body, err := json.Marshal(payload)
@@ -247,10 +209,10 @@ func FetchSystemInformation() (collectors.Result, error) {
 	return collectors.CollectInformation(arch, mandatoryCollectors)
 }
 
-func productMigrations(installed []Product) ([]MigrationPath, error) {
+func productMigrations(installed []registration.Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
 	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
+		InstalledProducts []registration.Product `json:"installed_products"`
 	}
 	payload.InstalledProducts = installed
 	body, err := json.Marshal(payload)
@@ -267,11 +229,11 @@ func productMigrations(installed []Product) ([]MigrationPath, error) {
 	return migrations, nil
 }
 
-func offlineProductMigrations(installed []Product, target Product) ([]MigrationPath, error) {
+func offlineProductMigrations(installed []registration.Product, target registration.Product) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
 	var payload struct {
-		InstalledProducts []Product `json:"installed_products"`
-		TargetBaseProduct Product   `json:"target_base_product"`
+		InstalledProducts []registration.Product `json:"installed_products"`
+		TargetBaseProduct registration.Product   `json:"target_base_product"`
 	}
 	payload.InstalledProducts = installed
 	payload.TargetBaseProduct = target
