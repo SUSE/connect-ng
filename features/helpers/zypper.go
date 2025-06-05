@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/xml"
+	"fmt"
 	"os/exec"
 	"testing"
 
@@ -22,10 +23,13 @@ func NewZypper(t *testing.T) *Zypper {
 
 func (zypp *Zypper) run(params ...string) []byte {
 	cmd := exec.Command("zypper", params...)
+	env := NewEnv(zypp.t)
 	result, err := cmd.CombinedOutput()
 
 	if err != nil {
-		assert.FailNow(zypp.t, "Running zypper failed", err)
+		fmt.Println(env.RedactRegcodes(string(result)))
+		assert.FailNow(zypp.t, fmt.Sprintf("Running zypper failed with exit code %d", cmd.ProcessState.ExitCode()), err)
+
 		return []byte{}
 	}
 
