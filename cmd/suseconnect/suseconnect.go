@@ -294,16 +294,12 @@ func main() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
+			// NOTE: if the base system/extensions have EULAs we need to make
+			// sure that they are accepted before proceeding on the registering.
+			// But this has been disabled for now due to bsc#1218878,
+			// bsc#1218649.
 
-			// If the base system/extensions have EULAs, we need to make sure
-			// that they are accepted before proceeding on the registering. If
-			// they don't have EULA's, then this is a no-op.
-
-			// disabling the license dialog feature for now due to bsc#1218878, bsc#1218649
-			// err := connect.AcceptEULA()
-			// exitOnError(err, opts)
-
-			// we need a read-write filesystem to install release packages
+			// We need a read-write filesystem to install release packages.
 			if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
 				exitOnError(err, opts)
 			}
