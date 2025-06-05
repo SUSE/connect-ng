@@ -5,10 +5,11 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 // MigrationPath holds a list of products
-type MigrationPath []Product
+type MigrationPath []registration.Product
 
 // Rollback restores system state to before failed migration
 func Rollback(opts *Options) error {
@@ -20,7 +21,7 @@ func Rollback(opts *Options) error {
 	}
 
 	// First rollback the base_product
-	service, err := downgradeProduct(zypperProductToProduct(base))
+	service, err := downgradeProduct(base.ToProduct())
 	if err != nil {
 		return err
 	}
@@ -38,14 +39,14 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := showProduct(zypperProductToProduct(base))
+	tree, err := showProduct(base.ToProduct())
 	if err != nil {
 		return err
 	}
 
 	// Get all installed products in right order
-	extensions := make([]Product, 0)
-	for _, e := range tree.toExtensionsList() {
+	extensions := make([]registration.Product, 0)
+	for _, e := range tree.ToExtensionsList() {
 		if installedIDs.Contains(e.Name) {
 			extensions = append(extensions, e)
 		}
@@ -62,8 +63,9 @@ func Rollback(opts *Options) error {
 		}
 	}
 
-	// Synchronize installed products with SCC activations (removes obsolete activations)
-	if _, err := syncProducts(zypperProductListToProductList(installed)); err != nil {
+	// Synchronize installed products with SCC activations (removes obsolete
+	// activations)
+	if _, err := syncProducts(zypper.ToProductList(installed)); err != nil {
 		return err
 	}
 

@@ -43,7 +43,7 @@ type activateResponse struct {
 // Activate a product by pairing an authorized connection (which contains the
 // system at hand), plus the "triplet" being used to identify the desired
 // product.
-func Activate(conn connection.Connection, identifier, version, arch, regcode string) (*Metadata, *Product, error) {
+func Activate(conn connection.Connection, identifier, version, arch, regcode string) (*Metadata, Product, error) {
 	payload := activateRequest{
 		Identifier: identifier,
 		Version:    version,
@@ -54,24 +54,24 @@ func Activate(conn connection.Connection, identifier, version, arch, regcode str
 	login, password, credErr := creds.Login()
 
 	if credErr != nil {
-		return nil, nil, credErr
+		return nil, Product{}, credErr
 	}
 
 	request, buildErr := conn.BuildRequest("POST", "/connect/systems/products", payload)
 	if buildErr != nil {
-		return nil, nil, buildErr
+		return nil, Product{}, buildErr
 	}
 
 	connection.AddSystemAuth(request, login, password)
 
 	response, doErr := conn.Do(request)
 	if doErr != nil {
-		return nil, nil, doErr
+		return nil, Product{}, doErr
 	}
 
 	activation := activateResponse{}
 	if err := json.Unmarshal(response, &activation); err != nil {
-		return nil, nil, err
+		return nil, Product{}, err
 	}
 
 	meta := Metadata{
@@ -81,7 +81,7 @@ func Activate(conn connection.Connection, identifier, version, arch, regcode str
 		ObsoletedName: activation.ObsoletedName,
 	}
 
-	return &meta, &activation.Product, nil
+	return &meta, activation.Product, nil
 }
 
 // Deactivate a product by pairing an authorized connection (which contains the

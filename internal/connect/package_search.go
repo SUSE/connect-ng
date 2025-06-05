@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 // NOTE: package_search API is not related to connect API
@@ -31,7 +33,7 @@ type SearchPackageResult struct {
 	Products []SearchPackageProduct `json:"products"`
 }
 
-func searchPackage(query string, baseProduct Product) ([]SearchPackageResult, error) {
+func searchPackage(query string, baseProduct registration.Product) ([]SearchPackageResult, error) {
 	args := map[string]string{
 		"product_id": baseProduct.ToTriplet(),
 		"query":      query,

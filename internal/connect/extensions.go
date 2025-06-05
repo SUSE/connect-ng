@@ -10,6 +10,7 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -38,7 +39,7 @@ type extension struct {
 	Extensions   []*extension `json:"extensions"`
 }
 
-func extensionTree(as map[string]Activation, p Product) *extension {
+func extensionTree(as map[string]Activation, p registration.Product) *extension {
 	current := productToExtension(as, p)
 
 	for _, extProduct := range p.Extensions {
@@ -47,7 +48,7 @@ func extensionTree(as map[string]Activation, p Product) *extension {
 	return current
 }
 
-func productToExtension(as map[string]Activation, p Product) *extension {
+func productToExtension(as map[string]Activation, p registration.Product) *extension {
 	_, activated := as[p.ToTriplet()]
 	return &extension{
 		Name:         p.Name,
@@ -77,7 +78,7 @@ func RenderExtensionTree(outputJson bool) (string, error) {
 		return "", err
 	}
 
-	product, err := localShowProduct(zypperProductToProduct(base))
+	product, err := localShowProduct(base.ToProduct())
 	if err != nil {
 		return "", err
 	}
