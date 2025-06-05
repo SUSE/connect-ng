@@ -17,6 +17,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -166,7 +167,7 @@ func main() {
 		opts.Token = processedToken
 	}
 	if product.isSet {
-		if p, err := connect.SplitTriplet(product.value); err != nil {
+		if p, err := registration.FromTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")

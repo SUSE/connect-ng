@@ -12,6 +12,7 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 const (
@@ -42,6 +43,9 @@ const (
 	zypperInfoReposSkipped    = 106 // Some repository had to be disabled temporarily because it failed to refresh
 )
 
+// ZypperProduct handles the products that we receive specifically from Zypper.
+// This allows us to separate the logic for Zypper into a separate package
+// without having to clutter either `pkg/` nor `internal/connect/`.
 type ZypperProduct struct {
 	Name        string `xml:"name,attr"`
 	Version     string `xml:"version,attr"`
@@ -52,8 +56,32 @@ type ZypperProduct struct {
 	ReleaseType string `xml:"registerrelease,attr"`
 	ProductLine string `xml:"productline,attr"`
 
-	// these are used by YaST
+	// Used by YaST.
 	Description string `xml:"description"`
+}
+
+// Translate a ZypperProduct struct into the Product from `pkg/registration`.
+func (zp ZypperProduct) ToProduct() registration.Product {
+	return registration.Product{
+		Name:        zp.Name,
+		Version:     zp.Version,
+		Arch:        zp.Arch,
+		Summary:     zp.Summary,
+		IsBase:      zp.IsBase,
+		ReleaseType: zp.ReleaseType,
+		ProductLine: zp.ProductLine,
+		Description: zp.Description,
+	}
+}
+
+// Translate the given ZypperProduct list into a one made of
+// registration.Product.
+func ToProductList(list []ZypperProduct) []registration.Product {
+	var productList []registration.Product
+	for _, zp := range list {
+		productList = append(productList, zp.ToProduct())
+	}
+	return productList
 }
 
 type ZypperService struct {
