@@ -14,6 +14,7 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -346,7 +347,7 @@ func searchInRepos(patterns []string, matchExact, caseSensitive bool) []searchRe
 func searchInModules(patterns []string, matchExact, caseSensitive bool) []searchResult {
 	ret := make([]searchResult, 0)
 	for _, query := range patterns {
-		found, err := connect.SearchPackage(query, connect.Product{})
+		found, err := connect.SearchPackage(query, registration.Product{})
 		if err != nil {
 			fmt.Printf("Could not search for the package: %v", err)
 		}
