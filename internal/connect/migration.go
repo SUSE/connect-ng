@@ -21,7 +21,7 @@ func Rollback(opts *Options) error {
 	}
 
 	// First rollback the base_product
-	service, err := downgradeProduct(base.ToProduct())
+	service, err := downgradeProduct(base)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := showProduct(base.ToProduct())
+	tree, err := showProduct(base)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func Rollback(opts *Options) error {
 
 	// Synchronize installed products with SCC activations (removes obsolete
 	// activations)
-	if _, err := syncProducts(zypper.ToProductList(installed)); err != nil {
+	if _, err := syncProducts(installed); err != nil {
 		return err
 	}
 
