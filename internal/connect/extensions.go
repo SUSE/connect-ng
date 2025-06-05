@@ -78,7 +78,7 @@ func RenderExtensionTree(outputJson bool) (string, error) {
 		return "", err
 	}
 
-	product, err := localShowProduct(base.ToProduct())
+	product, err := localShowProduct(base)
 	if err != nil {
 		return "", err
 	}
