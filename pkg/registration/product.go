@@ -11,24 +11,26 @@ import (
 
 // Product as defined from SCC'S API.
 type Product struct {
-	Name       string `json:"name"`
+	// NOTE: zypper does not handle this, hence XML parsing is left out.
 	Identifier string `json:"identifier"`
-	Version    string `json:"version"`
-	Arch       string `json:"arch"`
-	Release    string `xml:"release,attr" json:"-"`
-	Summary    string `json:"summary,omitempty"`
-	IsBase     bool   `json:"isbase"`
+
+	Name    string `xml:"name,attr" json:"name"`
+	Version string `xml:"version,attr" json:"version"`
+	Arch    string `xml:"arch,attr" json:"arch"`
+	Release string `xml:"release,attr" json:"-"`
+	Summary string `xml:"summary,attr" json:"summary,omitempty"`
+	IsBase  bool   `xml:"isbase,attr" json:"isbase"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
-	ReleaseType  string `json:"release_type,omitempty"`
+	ReleaseType  string `xml:"registerrelease,attr" json:"release_type,omitempty"`
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
 	Recommended  bool   `json:"recommended"`
 
-	// optional extension products
+	// Optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
 
-	Description  string       `json:"description,omitempty"`
+	Description  string       `xml:"description" json:"description,omitempty"`
 	EULAURL      string       `json:"eula_url,omitempty"`
 	FormerName   string       `json:"former_identifier,omitempty"`
 	ProductType  string       `json:"product_type,omitempty"`
