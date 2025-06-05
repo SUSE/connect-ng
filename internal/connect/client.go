@@ -12,6 +12,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/zypper"
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
+	"github.com/SUSE/connect-ng/pkg/search"
 )
 
 type RegisterOut struct {
@@ -400,18 +401,19 @@ func UpgradeProduct(product registration.Product) (Service, error) {
 	return upgradeProduct(product)
 }
 
-// SearchPackage returns packages which are available in the extensions tree for given base product
-func SearchPackage(query string, baseProd registration.Product) ([]SearchPackageResult, error) {
-	// default to system base product if empty product passed
-	if baseProd.IsEmpty() {
-		var err error
-		base, err := zypper.BaseProduct()
-		if err != nil {
-			return []SearchPackageResult{}, err
-		}
-		baseProd = base
+// SearchPackage returns all the packages which are available in the extensions
+// tree for the given base product.
+func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, error) {
+	// The base product from which the search will occur is the system's base
+	// product.
+	var err error
+	base, err := zypper.BaseProduct()
+	if err != nil {
+		return []search.SearchPackageResult{}, err
 	}
-	return searchPackage(query, baseProd)
+
+	apiConnection := NewWrapper(opts)
+	return search.Package(apiConnection.Connection, query, base.ToTriplet())
 }
 
 // ShowProduct fetches product details from SCC/SMT
