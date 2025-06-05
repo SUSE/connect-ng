@@ -19,9 +19,3 @@ pushd "$BUILD_DIR/RPMS/${ARCH}"
   zypper --non-interactive --no-refresh install systemd
 popd
 groupend
-
-group "install cucumber"
-pushd "$SOURCE/features"
-  bundle install
-popd
-groupend
