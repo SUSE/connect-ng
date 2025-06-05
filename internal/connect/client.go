@@ -67,7 +67,7 @@ func Register(opts *Options) error {
 		if err != nil {
 			return err
 		}
-		product = base.ToProduct()
+		product = base
 		installReleasePkg = false
 	}
 
@@ -196,13 +196,12 @@ func Deregister(opts *Options) error {
 	if err != nil {
 		return err
 	}
-	baseProd := base.ToProduct()
-	baseProductService, err := upgradeProduct(baseProd)
+	baseProductService, err := upgradeProduct(base)
 	if err != nil {
 		return err
 	}
 
-	tree, err := showProduct(baseProd)
+	tree, err := showProduct(base)
 	if err != nil {
 		return err
 	}
@@ -270,7 +269,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 	if err != nil {
 		return err
 	}
-	if product.ToTriplet() == base.ToProduct().ToTriplet() {
+	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
@@ -410,7 +409,7 @@ func SearchPackage(query string, baseProd registration.Product) ([]SearchPackage
 		if err != nil {
 			return []SearchPackageResult{}, err
 		}
-		baseProd = base.ToProduct()
+		baseProd = base
 	}
 	return searchPackage(query, baseProd)
 }
