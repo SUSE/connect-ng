@@ -22,6 +22,7 @@ import (
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/registration"
+	"github.com/SUSE/connect-ng/pkg/search"
 )
 
 // log level
@@ -510,14 +511,16 @@ func system_activations(clientParams *C.char) *C.char {
 
 //export search_package
 func search_package(clientParams, product, query *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	results, err := connect.SearchPackage(C.GoString(query), p)
+
+	conn := connect.NewWrapper(opts)
+	results, err := search.Package(conn.Connection, C.GoString(query), p.ToTriplet())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
