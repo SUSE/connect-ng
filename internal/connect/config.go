@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 // TODO(mssola): to be removed by the end of RR4.
@@ -52,7 +53,7 @@ type Options struct {
 	Namespace                  string `json:"namespace"`
 	FsRoot                     string
 	Token                      string
-	Product                    Product
+	Product                    registration.Product
 	InstanceDataFile           string
 	Email                      string `json:"email"`
 	AutoAgreeEULA              bool
