@@ -44,7 +44,6 @@ var (
 	localInstallReleasePackage  = zypper.InstallReleasePackage
 	localRemoveOrRefreshService = removeOrRefreshService
 	localMakeSysInfoBody        = makeSysInfoBody
-	localUpdateSystem           = updateSystem
 )
 
 // Register announces the system, activates the
@@ -418,14 +417,16 @@ func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, e
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT
-func ActivatedProducts() ([]registration.Product, error) {
-	var products []registration.Product
-	activations, err := systemActivations()
+func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
+	var products []*registration.Product
+
+	wrapper := NewWrapper(opts)
+	activations, err := registration.FetchActivations(wrapper.Connection)
 	if err != nil {
 		return products, err
 	}
 	for _, a := range activations {
-		products = append(products, a.Service.Product)
+		products = append(products, a.Product)
 	}
 	return products, nil
 }
@@ -446,11 +447,6 @@ func ActivateProduct(product registration.Product, opts *Options) (Service, erro
 		ObsoletedName: meta.ObsoletedName,
 		Product:       pr,
 	}, nil
-}
-
-// SystemActivations returns a map keyed by "Identifier/Version/Arch"
-func SystemActivations() (map[string]Activation, error) {
-	return systemActivations()
 }
 
 // DeactivateProduct deactivates given product in SMT/SCC

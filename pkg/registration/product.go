@@ -175,3 +175,16 @@ func FetchProductInfo(conn connection.Connection, identifier, version, arch stri
 
 	return &product, nil
 }
+
+// Returns true if the given `product` can be found in the list of
+// `activations`.
+func ProductInActivations(product *Product, activations []*Activation) bool {
+	triplet := product.ToTriplet()
+
+	for _, activation := range activations {
+		if triplet == activation.Product.ToTriplet() {
+			return true
+		}
+	}
+	return false
+}
