@@ -23,7 +23,6 @@ var (
 	// test method overwrites
 	localIsRegistered      = IsRegistered
 	localBaseProduct       = zypper.BaseProduct
-	localShowProduct       = showProduct
 	localSystemActivations = systemActivations
 	localRootWritable      = util.IsRootFSWritable
 )
@@ -39,16 +38,16 @@ type extension struct {
 	Extensions   []*extension `json:"extensions"`
 }
 
-func extensionTree(as map[string]Activation, p registration.Product) *extension {
+func extensionTree(as map[string]Activation, p *registration.Product) *extension {
 	current := productToExtension(as, p)
 
 	for _, extProduct := range p.Extensions {
-		current.Extensions = append(current.Extensions, extensionTree(as, extProduct))
+		current.Extensions = append(current.Extensions, extensionTree(as, &extProduct))
 	}
 	return current
 }
 
-func productToExtension(as map[string]Activation, p registration.Product) *extension {
+func productToExtension(as map[string]Activation, p *registration.Product) *extension {
 	_, activated := as[p.ToTriplet()]
 	return &extension{
 		Name:         p.Name,
@@ -62,7 +61,7 @@ func productToExtension(as map[string]Activation, p registration.Product) *exten
 	}
 }
 
-func RenderExtensionTree(outputJson bool) (string, error) {
+func RenderExtensionTree(opts *Options, outputJson bool) (string, error) {
 	// The system is registered remotely
 	if !localIsRegistered() {
 		return "", ErrListExtensionsUnregistered
@@ -78,7 +77,8 @@ func RenderExtensionTree(outputJson bool) (string, error) {
 		return "", err
 	}
 
-	product, err := localShowProduct(base)
+	apiConnection := NewWrapper(opts)
+	product, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return "", err
 	}
