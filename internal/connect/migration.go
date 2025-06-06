@@ -20,8 +20,10 @@ func Rollback(opts *Options) error {
 		return err
 	}
 
+	apiConnection := NewWrapper(opts)
+
 	// First rollback the base_product
-	service, err := downgradeProduct(base)
+	service, err := registration.UpdateProduct(apiConnection.Connection, base)
 	if err != nil {
 		return err
 	}
@@ -39,7 +41,6 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	apiConnection := NewWrapper(opts)
 	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
@@ -55,7 +56,7 @@ func Rollback(opts *Options) error {
 
 	// Rollback all extensions
 	for _, e := range extensions {
-		service, err := downgradeProduct(e)
+		service, err := registration.UpdateProduct(apiConnection.Connection, e)
 		if err != nil {
 			return err
 		}
@@ -92,7 +93,7 @@ func MigrationRemoveService(serviceName string) error {
 	return zypper.RemoveService(serviceName)
 }
 
-func migrationRefreshService(service Service, insecure bool) error {
+func migrationRefreshService(service registration.Service, insecure bool) error {
 	// INFO: Remove old and new service because this could be called after filesystem rollback or
 	// from inside a failed migration
 	if err := MigrationRemoveService(service.Name); err != nil {
