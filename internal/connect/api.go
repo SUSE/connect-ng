@@ -16,47 +16,6 @@ const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
 
-func upgradeProduct(product registration.Product) (Service, error) {
-	// NOTE: this can add some extra attributes to json payload which
-	//       seem to be safely ignored by the API.
-	payload, err := json.Marshal(product)
-	remoteService := Service{}
-	if err != nil {
-		return remoteService, err
-	}
-	resp, err := callHTTP("PUT", "/connect/systems/products", payload, nil, authSystem)
-	if err != nil {
-		return remoteService, err
-	}
-	if err = json.Unmarshal(resp, &remoteService); err != nil {
-		return remoteService, JSONError{err}
-	}
-	return remoteService, nil
-}
-
-// TODO
-func downgradeProduct(product registration.Product) (Service, error) {
-	return upgradeProduct(product)
-}
-
-func deactivateProduct(product registration.Product) (Service, error) {
-	// NOTE: this can add some extra attributes to json payload which
-	//       seem to be safely ignored by the API.
-	payload, err := json.Marshal(product)
-	remoteService := Service{}
-	if err != nil {
-		return remoteService, err
-	}
-	resp, err := callHTTP("DELETE", "/connect/systems/products", payload, nil, authSystem)
-	if err != nil {
-		return remoteService, err
-	}
-	if err = json.Unmarshal(resp, &remoteService); err != nil {
-		return remoteService, JSONError{err}
-	}
-	return remoteService, nil
-}
-
 func syncProducts(products []registration.Product) ([]registration.Product, error) {
 	remoteProducts := make([]registration.Product, 0)
 	var payload struct {

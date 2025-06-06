@@ -196,14 +196,16 @@ func activated_products(clientParams *C.char) *C.char {
 
 //export deactivate_product
 func deactivate_product(clientParams, product *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.DeactivateProduct(p)
+
+	apiConnection := connect.NewWrapper(opts)
+	service, err := registration.RemoveProduct(apiConnection.Connection, p)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -453,14 +455,16 @@ func offline_system_migrations(clientParams, products, targetBaseProduct *C.char
 
 //export upgrade_product
 func upgrade_product(clientParams, product *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var prod registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &prod)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.UpgradeProduct(prod)
+
+	conn := connect.NewWrapper(opts)
+	service, err := registration.UpdateProduct(conn.Connection, prod)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
