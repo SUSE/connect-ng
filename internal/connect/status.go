@@ -144,7 +144,7 @@ func getStatusText(statuses []Status) (string, error) {
 // Products from zypper have priority over products from
 // activations as they have summary field which is missing
 // in the latter.
-func SystemProducts() ([]registration.Product, error) {
+func SystemProducts(opts *Options) ([]registration.Product, error) {
 	products, err := zypper.InstalledProducts()
 	if err != nil {
 		return products, err
@@ -156,13 +156,15 @@ func SystemProducts() ([]registration.Product, error) {
 	if !IsRegistered() {
 		return products, nil
 	}
-	activations, err := systemActivations()
+
+	apiConnection := NewWrapper(opts)
+	activations, err := registration.FetchActivations(apiConnection.Connection)
 	if err != nil {
 		return products, err
 	}
 	for _, a := range activations {
-		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
-			products = append(products, a.Service.Product)
+		if !installedIDs.Contains(a.Product.ToTriplet()) {
+			products = append(products, *a.Product)
 		}
 	}
 

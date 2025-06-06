@@ -181,9 +181,9 @@ func activate_product(clientParams, product, email *C.char) *C.char {
 
 //export activated_products
 func activated_products(clientParams *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	products, err := connect.ActivatedProducts()
+	products, err := connect.ActivatedProducts(opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -493,18 +493,14 @@ func synchronize(clientParams, products *C.char) *C.char {
 
 //export system_activations
 func system_activations(clientParams *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	// converting from map to list as expected by Ruby clients
-	actList := make([]connect.Activation, 0)
-	actMap, err := connect.SystemActivations()
+	conn := connect.NewWrapper(opts)
+	activations, err := registration.FetchActivations(conn.Connection)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
-	for _, a := range actMap {
-		actList = append(actList, a)
-	}
-	jsn, err := json.Marshal(actList)
+	jsn, err := json.Marshal(activations)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

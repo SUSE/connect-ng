@@ -16,23 +16,6 @@ const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
 
-// systemActivations returns a map keyed by "Identifier/Version/Arch"
-func systemActivations() (map[string]Activation, error) {
-	activeMap := make(map[string]Activation)
-	resp, err := callHTTP("GET", "/connect/systems/activations", nil, nil, authSystem)
-	if err != nil {
-		return activeMap, err
-	}
-	var activations []Activation
-	if err = json.Unmarshal(resp, &activations); err != nil {
-		return activeMap, JSONError{err}
-	}
-	for _, activation := range activations {
-		activeMap[activation.toTriplet()] = activation
-	}
-	return activeMap, nil
-}
-
 func upgradeProduct(product registration.Product) (Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.
@@ -93,14 +76,6 @@ func syncProducts(products []registration.Product) ([]registration.Product, erro
 		return remoteProducts, JSONError{err}
 	}
 	return remoteProducts, nil
-}
-
-// updateSystem updates the system's hardware information on SCC
-// https://scc.suse.com/connect/v4/documentation#/systems/put_systems
-// The body parameter is produced by makeSysInfoBody()
-func updateSystem(body []byte) error {
-	_, err := callHTTP("PUT", "/connect/systems", body, nil, authSystem)
-	return err
 }
 
 // readUptimeLogFile reads the system uptime log from a given file and
