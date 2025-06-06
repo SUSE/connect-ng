@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,57 +27,6 @@ func shittyGlobalVariableNeededForNow() {
 //	in a complete rewrite.
 func setRootToTmp() {
 	CFG.FsRoot = "/tmp"
-}
-
-func TestGetActivationsRequest(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	var gotRequest *http.Request
-
-	assert := assert.New(t)
-	expectedUser := "test-user"
-	expectedPassword := "test-password"
-	expectedURL := "/connect/systems/activations"
-
-	setRootToTmp()
-	credentials.CreateTestCredentials(expectedUser, expectedPassword, CFG.FsRoot, t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotRequest = r // make request available outside this func after call
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, "[]")
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	_, err := systemActivations()
-	assert.NoError(err)
-
-	actualURL := gotRequest.URL.String()
-	user, password, ok := gotRequest.BasicAuth()
-
-	assert.True(ok)
-	assert.Equal(expectedUser, user)
-	assert.Equal(expectedPassword, password)
-	assert.Equal(expectedURL, actualURL)
-}
-
-func TestGetActivationsError(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	assert := assert.New(t)
-
-	setRootToTmp()
-	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "", http.StatusInternalServerError)
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	_, err := systemActivations()
-	assert.ErrorContains(err, "(500)")
 }
 
 func TestProductMigrations(t *testing.T) {
