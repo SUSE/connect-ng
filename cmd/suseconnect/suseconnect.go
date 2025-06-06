@@ -248,7 +248,7 @@ func main() {
 		exitOnError(err, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
-		output, err := connect.RenderExtensionTree(jsonFlag)
+		output, err := connect.RenderExtensionTree(opts, jsonFlag)
 		exitOnError(err, opts)
 		fmt.Println(output)
 		os.Exit(0)
