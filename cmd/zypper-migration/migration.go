@@ -335,7 +335,7 @@ func main() {
 	}()
 
 	dupArgs := zypperDupArgs()
-	fsInconsistent, err := applyMigration(migration, opts.BaseURL, systemProducts,
+	fsInconsistent, err := applyMigration(opts, migration, opts.BaseURL, systemProducts,
 		quiet, verbose, nonInteractive, opts.Insecure, disableRepos, autoAgreeLicenses, autoImportRepoKeys,
 		failDupOnlyOnFatalErrors, dupArgs)
 
@@ -585,16 +585,18 @@ func isSUSEService(service zypper.ZypperService, baseURL string) bool {
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
-func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys, insecure bool) (string, error) {
+func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys, insecure bool) (string, error) {
 	var baseProductVersion string
 
 	systemServices, _ := zypper.InstalledServices()
 	migratedServices := connect.NewStringSet()
 
+	conn := connect.NewWrapper(opts)
+
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
 		QuietOut.Println(msg)
-		service, err := connect.UpgradeProduct(p)
+		service, err := registration.UpdateProduct(conn.Connection, p)
 		if err != nil {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
 		}
@@ -671,7 +673,7 @@ func isFatalZypperError(code int) bool {
 
 // returns fs_inconsistent flag
 // TODO: have you ever wondered "is this too much?". Fear no more: *this* is too much. WTF with so many arguments.
-func applyMigration(migration connect.MigrationPath, baseURL string, systemProducts []registration.Product,
+func applyMigration(opts *connect.Options, migration connect.MigrationPath, baseURL string, systemProducts []registration.Product,
 	quiet, verbose, nonInteractive, insecure, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
@@ -700,7 +702,7 @@ func applyMigration(migration connect.MigrationPath, baseURL string, systemProdu
 		}
 	}
 
-	baseProductVersion, err := migrateSystem(migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys, insecure)
+	baseProductVersion, err := migrateSystem(opts, migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys, insecure)
 	if err != nil {
 		return fsInconsistent, err
 	}

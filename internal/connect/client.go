@@ -117,19 +117,19 @@ func Register(opts *Options) error {
 
 // registerProduct activates the product, adds the service and installs the
 // release package
-func registerProduct(opts *Options, product registration.Product, installReleasePkg bool) (Service, error) {
+func registerProduct(opts *Options, product registration.Product, installReleasePkg bool) (registration.Service, error) {
 	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
 
 	service, err := ActivateProduct(product, opts)
 	if err != nil {
-		return Service{}, err
+		return registration.Service{}, err
 	}
 
 	if !opts.SkipServiceInstall {
 		opts.Print("-> Adding service to system ...")
 
 		if err := localAddService(service.URL, service.Name, !opts.NoZypperRefresh, opts.Insecure); err != nil {
-			return Service{}, err
+			return registration.Service{}, err
 		}
 	}
 
@@ -137,7 +137,7 @@ func registerProduct(opts *Options, product registration.Product, installRelease
 		opts.Print("-> Installing release package ...")
 
 		if err := localInstallReleasePackage(product.Name, opts.AutoImportRepoKeys); err != nil {
-			return Service{}, err
+			return registration.Service{}, err
 		}
 	}
 	return service, nil
@@ -196,12 +196,13 @@ func Deregister(opts *Options) error {
 	if err != nil {
 		return err
 	}
-	baseProductService, err := upgradeProduct(base)
+
+	apiConnection := NewWrapper(opts)
+	baseProductService, err := registration.UpdateProduct(apiConnection.Connection, base)
 	if err != nil {
 		return err
 	}
 
-	apiConnection := NewWrapper(opts)
 	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
@@ -273,8 +274,10 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 	if product.ToTriplet() == base.ToTriplet() {
 		return ErrBaseProductDeactivation
 	}
+
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
-	service, err := deactivateProduct(product)
+	apiConnection := NewWrapper(opts)
+	service, err := registration.RemoveProduct(apiConnection.Connection, product)
 	if err != nil {
 		return err
 	}
@@ -310,7 +313,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 
 // SMT provides one service for all products, removing it would remove all repositories.
 // Refreshing the service instead to remove the repos of deregistered product.
-func removeOrRefreshService(service Service, opts *Options) error {
+func removeOrRefreshService(service registration.Service, opts *Options) error {
 	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
 		opts.Print("-> Refreshing service ...")
 		zypper.RefreshAllServices()
@@ -394,13 +397,6 @@ func OfflineProductMigrations(installed []registration.Product, targetBaseProduc
 	return offlineProductMigrations(installed, targetBaseProduct)
 }
 
-// UpgradeProduct upgades the records for given product in SCC/SMT
-// The service record for new product is returned
-// TODO
-func UpgradeProduct(product registration.Product) (Service, error) {
-	return upgradeProduct(product)
-}
-
 // SearchPackage returns all the packages which are available in the extensions
 // tree for the given base product.
 func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, error) {
@@ -433,26 +429,20 @@ func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
 
 // ActivateProduct activates given product in SMT/SCC
 // returns Service to be added to zypper
-func ActivateProduct(product registration.Product, opts *Options) (Service, error) {
+func ActivateProduct(product registration.Product, opts *Options) (registration.Service, error) {
 	wrapper := NewWrapper(opts)
 	meta, pr, err := registration.Activate(wrapper.Connection, product.Name, product.Version, product.Arch, opts.Token)
 	if err != nil {
-		return Service{}, err
+		return registration.Service{}, err
 	}
 
-	return Service{
+	return registration.Service{
 		ID:            meta.ID,
 		URL:           meta.URL,
 		Name:          meta.Name,
 		ObsoletedName: meta.ObsoletedName,
 		Product:       pr,
 	}, nil
-}
-
-// DeactivateProduct deactivates given product in SMT/SCC
-// returns Service to be removed from zypper
-func DeactivateProduct(product registration.Product) (Service, error) {
-	return deactivateProduct(product)
 }
 
 // Returns the zypper repositories for the installer updates endpoint.
