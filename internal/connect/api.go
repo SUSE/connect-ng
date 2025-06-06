@@ -33,11 +33,6 @@ func systemActivations() (map[string]Activation, error) {
 	return activeMap, nil
 }
 
-// TODO
-func showProduct(productQuery registration.Product) (registration.Product, error) {
-	return registration.Product{}, nil
-}
-
 func upgradeProduct(product registration.Product) (Service, error) {
 	// NOTE: this can add some extra attributes to json payload which
 	//       seem to be safely ignored by the API.

@@ -139,14 +139,16 @@ func curlrc_credentials() *C.char {
 
 //export show_product
 func show_product(clientParams, product *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	var productQuery registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	productData, err := connect.ShowProduct(productQuery)
+
+	apiConnection := connect.NewWrapper(opts)
+	productData, err := registration.FetchProductInfo(apiConnection.Connection, productQuery.Identifier, productQuery.Version, productQuery.Arch)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
