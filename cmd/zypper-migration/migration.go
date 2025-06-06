@@ -396,7 +396,7 @@ func main() {
 }
 
 func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]registration.Product, error) {
-	systemProducts, err := connect.SystemProducts()
+	systemProducts, err := connect.SystemProducts(opts)
 	if err != nil {
 		return systemProducts, err
 	}
@@ -419,7 +419,7 @@ func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *conne
 			return systemProducts, err
 		}
 		// re-read the list of products
-		systemProducts, err := connect.SystemProducts()
+		systemProducts, err := connect.SystemProducts(opts)
 		if err != nil {
 			return systemProducts, err
 		}
