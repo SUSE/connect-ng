@@ -88,7 +88,7 @@ func Register(opts *Options) error {
 	}
 
 	if product.IsBase {
-		p, err := showProduct(product)
+		p, err := registration.FetchProductInfo(apiConnection.Connection, product.Identifier, product.Version, product.Arch)
 		if err != nil {
 			return err
 		}
@@ -143,7 +143,7 @@ func registerProduct(opts *Options, product registration.Product, installRelease
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(opts *Options, product registration.Product, out *RegisterOut) error {
+func registerProductTree(opts *Options, product *registration.Product, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
 			if service, err := registerProduct(opts, extension, true); err == nil {
@@ -163,7 +163,7 @@ func registerProductTree(opts *Options, product registration.Product, out *Regis
 			} else {
 				return err
 			}
-			if err := registerProductTree(opts, extension, out); err != nil {
+			if err := registerProductTree(opts, &extension, out); err != nil {
 				return err
 			}
 		}
@@ -199,7 +199,8 @@ func Deregister(opts *Options) error {
 		return err
 	}
 
-	tree, err := showProduct(base)
+	apiConnection := NewWrapper(opts)
+	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -230,7 +231,6 @@ func Deregister(opts *Options) error {
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
-	apiConnection := NewWrapper(opts)
 	if err := registration.Deregister(apiConnection.Connection); err != nil {
 		return err
 	}
@@ -405,12 +405,6 @@ func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, e
 
 	apiConnection := NewWrapper(opts)
 	return search.Package(apiConnection.Connection, query, base.ToTriplet())
-}
-
-// ShowProduct fetches product details from SCC/SMT
-// TODO: see registration.FetchProductInfo
-func ShowProduct(productQuery registration.Product) (registration.Product, error) {
-	return showProduct(productQuery)
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT

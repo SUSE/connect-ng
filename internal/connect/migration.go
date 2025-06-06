@@ -39,7 +39,8 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := showProduct(base)
+	apiConnection := NewWrapper(opts)
+	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
