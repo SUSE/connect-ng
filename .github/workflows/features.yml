@@ -20,11 +20,9 @@ on: [pull_request]
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
-  BETA_VALID_REGCODE: ${{ secrets.BETA_VALID_REGCODE }}
-  VALID_REGCODE: ${{ secrets.VALID_REGCODE }}
+  REGCODE: ${{ secrets.REGCODE }}
+  HA_REGCODE: ${{ secrets.HA_REGCODE }}
   EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
-  NOT_ACTIVATED_REGCODE: ${{ secrets.NOT_ACTIVATED_REGCODE }}
-  BETA_NOT_ACTIVATED_REGCODE: ${{ secrets.BETA_NOT_ACTIVATED_REGCODE }}
 
 jobs:
   feature-tests:
