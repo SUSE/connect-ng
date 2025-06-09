@@ -70,13 +70,13 @@ func RenderExtensionTree(opts *Options, outputJson bool) (string, error) {
 		return "", err
 	}
 
-	apiConnection := NewWrapper(opts)
-	as, err := registration.FetchActivations(apiConnection.Connection)
+	wrapper := NewWrappedAPI(opts)
+	as, err := registration.FetchActivations(wrapper.GetConnection())
 	if err != nil {
 		return "", err
 	}
 
-	product, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
+	product, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return "", err
 	}
