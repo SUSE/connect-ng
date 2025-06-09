@@ -242,7 +242,7 @@ func main() {
 		installedIDs.Add(prod.ToTriplet())
 	}
 
-	allMigrations, err := fetchAllMigrations(systemProducts, toProduct)
+	allMigrations, err := fetchAllMigrations(opts, systemProducts, toProduct)
 	if err != nil {
 		fmt.Printf("Can't get available migrations from server: %v\n", err)
 		os.Exit(1)
@@ -798,15 +798,15 @@ func zypperDupArgs() []string {
 	return args
 }
 
-func fetchAllMigrations(installed []registration.Product, target string) ([]connect.MigrationPath, error) {
+func fetchAllMigrations(opts *connect.Options, installed []registration.Product, target string) ([]connect.MigrationPath, error) {
 	// offline migrations to given product
 	if target != "" {
 		newProduct, err := registration.FromTriplet(target)
 		if err != nil {
 			return []connect.MigrationPath{}, err
 		}
-		return connect.OfflineProductMigrations(installed, newProduct)
+		return connect.OfflineProductMigrations(opts, installed, newProduct)
 	}
 	// online migrations
-	return connect.ProductMigrations(installed)
+	return connect.ProductMigrations(opts, installed)
 }
