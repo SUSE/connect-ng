@@ -43,9 +43,5 @@ func Cleanup(baseURL, basePath string) error {
 func UpdateCertificates() error {
 	cmd := []string{"/usr/sbin/update-ca-certificates"}
 	_, err := util.Execute(cmd, []int{0})
-	if err != nil {
-		return err
-	}
-	// reload CA certs in Go
-	return ReloadCertPool()
+	return err
 }
