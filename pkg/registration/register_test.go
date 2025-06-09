@@ -1,6 +1,7 @@
 package registration
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -37,6 +38,63 @@ func TestRegisterFailed(t *testing.T) {
 	assert.ErrorContains(err, "Invalid registration token")
 
 	conn.AssertExpectations(t)
+}
+
+func TestRegisterErrorCases(t *testing.T) {
+	assert := assert.New(t)
+
+	type testCase struct {
+		mockResponse announceResponse
+		err          error
+	}
+
+	testCases := []testCase{
+		{
+			mockResponse: announceResponse{
+				Id:       RegistrationSystemIdEmpty,
+				Login:    "SCC_login",
+				Password: "sample-password",
+			},
+			err: ErrRegistrationSystemIdEmpty,
+		},
+		{
+			mockResponse: announceResponse{
+				Id:       RegistrationSystemIdError,
+				Login:    "SCC_login",
+				Password: "sample-password",
+			},
+			err: ErrRegistrationSystemIdError,
+		},
+		{
+			mockResponse: announceResponse{
+				Id:       RegistrationSystemIdKeepAlive,
+				Login:    "SCC_login",
+				Password: "sample-password",
+			},
+			err: ErrRegistrationSystemIdKeepAlive,
+		},
+		{
+			mockResponse: announceResponse{
+				Id:       RegistrationSystemIdOffline,
+				Login:    "SCC_login",
+				Password: "sample-password",
+			},
+			err: ErrRegistrationSystemIdOffline,
+		},
+	}
+
+	for _, tc := range testCases {
+		conn, creds := mockConnectionWithCredentials()
+		creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
+		data, err := json.Marshal(tc.mockResponse)
+		assert.NoError(err)
+		conn.On("Do", mock.Anything).Return(data, nil)
+
+		_, regErr := Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
+		assert.ErrorIs(regErr, tc.err)
+		conn.AssertExpectations(t)
+	}
+
 }
 
 func TestRegsiterWithSystemInformation(t *testing.T) {

@@ -2,6 +2,7 @@ package registration
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
@@ -17,6 +18,20 @@ type announceResponse struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
+
+const (
+	RegistrationSystemIdEmpty     = 0
+	RegistrationSystemIdError     = -1
+	RegistrationSystemIdKeepAlive = -2
+	RegistrationSystemIdOffline   = -3
+)
+
+var (
+	ErrRegistrationSystemIdEmpty     = errors.New("registration system id is empty")
+	ErrRegistrationSystemIdError     = errors.New("registration encountered an error")
+	ErrRegistrationSystemIdKeepAlive = errors.New("registration system id was handled via keepalive")
+	ErrRegistrationSystemIdOffline   = errors.New("registration system id was handled offline")
+)
 
 // Register a system by using the given regcode. You also need to provide the
 // hostname of the system plus extra system information that is to be bundled when registering
@@ -53,8 +68,26 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 	}
 
 	credErr := creds.SetLogin(reg.Login, reg.Password)
+	if credErr != nil {
+		return reg.Id, credErr
+	}
+	regErr := mapRegIdToErr(reg.Id)
+	return reg.Id, regErr
+}
 
-	return reg.Id, credErr
+func mapRegIdToErr(regId int) error {
+	switch regId {
+	case RegistrationSystemIdEmpty:
+		return ErrRegistrationSystemIdEmpty
+	case RegistrationSystemIdError:
+		return ErrRegistrationSystemIdError
+	case RegistrationSystemIdKeepAlive:
+		return ErrRegistrationSystemIdKeepAlive
+	case RegistrationSystemIdOffline:
+		return ErrRegistrationSystemIdOffline
+	default:
+		return nil
+	}
 }
 
 // De-register the system pointed by the given authorized connection.
