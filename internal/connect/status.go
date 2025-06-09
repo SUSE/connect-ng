@@ -157,8 +157,8 @@ func SystemProducts(opts *Options) ([]registration.Product, error) {
 		return products, nil
 	}
 
-	apiConnection := NewWrapper(opts)
-	activations, err := registration.FetchActivations(apiConnection.Connection)
+	wrapper := NewWrappedAPI(opts)
+	activations, err := registration.FetchActivations(wrapper.GetConnection())
 	if err != nil {
 		return products, err
 	}
