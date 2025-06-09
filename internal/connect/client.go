@@ -90,7 +90,7 @@ func Register(opts *Options) error {
 	}
 
 	if product.IsBase {
-		p, err := registration.FetchProductInfo(apiConnection.Connection, product.Identifier, product.Version, product.Arch)
+		p, err := registration.FetchProductInfo(api.GetConnection(), product.Identifier, product.Version, product.Arch)
 		if err != nil {
 			return err
 		}
@@ -197,13 +197,13 @@ func Deregister(opts *Options) error {
 		return err
 	}
 
-	apiConnection := NewWrapper(opts)
-	baseProductService, err := registration.UpdateProduct(apiConnection.Connection, base)
+	api := NewWrappedAPI(opts)
+	baseProductService, err := registration.UpdateProduct(api.GetConnection(), base)
 	if err != nil {
 		return err
 	}
 
-	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
+	tree, err := registration.FetchProductInfo(api.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,6 @@ func Deregister(opts *Options) error {
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
-	api := NewWrappedAPI(opts)
 	if err := registration.Deregister(api.GetConnection()); err != nil {
 		return err
 	}
@@ -276,8 +275,8 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 	}
 
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
-	apiConnection := NewWrapper(opts)
-	service, err := registration.RemoveProduct(apiConnection.Connection, product)
+	wrapper := NewWrappedAPI(opts)
+	service, err := registration.RemoveProduct(wrapper.GetConnection(), product)
 	if err != nil {
 		return err
 	}
@@ -408,16 +407,16 @@ func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, e
 		return []search.SearchPackageResult{}, err
 	}
 
-	apiConnection := NewWrapper(opts)
-	return search.Package(apiConnection.Connection, query, base.ToTriplet())
+	api := NewWrappedAPI(opts)
+	return search.Package(api.GetConnection(), query, base.ToTriplet())
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT
 func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
 	var products []*registration.Product
 
-	wrapper := NewWrapper(opts)
-	activations, err := registration.FetchActivations(wrapper.Connection)
+	wrapper := NewWrappedAPI(opts)
+	activations, err := registration.FetchActivations(wrapper.GetConnection())
 	if err != nil {
 		return products, err
 	}
@@ -430,8 +429,8 @@ func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
 // ActivateProduct activates given product in SMT/SCC
 // returns Service to be added to zypper
 func ActivateProduct(product registration.Product, opts *Options) (registration.Service, error) {
-	wrapper := NewWrapper(opts)
-	meta, pr, err := registration.Activate(wrapper.Connection, product.Name, product.Version, product.Arch, opts.Token)
+	wrapper := NewWrappedAPI(opts)
+	meta, pr, err := registration.Activate(wrapper.GetConnection(), product.Name, product.Version, product.Arch, opts.Token)
 	if err != nil {
 		return registration.Service{}, err
 	}

@@ -20,10 +20,10 @@ func Rollback(opts *Options) error {
 		return err
 	}
 
-	apiConnection := NewWrapper(opts)
+	wrapper := NewWrappedAPI(opts)
 
 	// First rollback the base_product
-	service, err := registration.UpdateProduct(apiConnection.Connection, base)
+	service, err := registration.UpdateProduct(wrapper.GetConnection(), base)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := registration.FetchProductInfo(apiConnection.Connection, base.Identifier, base.Version, base.Arch)
+	tree, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func Rollback(opts *Options) error {
 
 	// Rollback all extensions
 	for _, e := range extensions {
-		service, err := registration.UpdateProduct(apiConnection.Connection, e)
+		service, err := registration.UpdateProduct(wrapper.GetConnection(), e)
 		if err != nil {
 			return err
 		}
