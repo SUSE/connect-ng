@@ -2,10 +2,13 @@ package connect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/credentials"
+	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/labels"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -16,6 +19,7 @@ type WrappedAPI interface {
 	Register(regcode string) error
 	RegisterOrKeepAlive(regcode string) error
 	IsRegistered() bool
+	AssignLabels(labels []string) ([]labels.Label, error)
 
 	// Return the underlying API object in case an unknown API needs to be
 	// implemented in SUSEConnect.
@@ -107,4 +111,16 @@ func (w Wrapper) IsRegistered() bool {
 
 func (w Wrapper) GetConnection() connection.Connection {
 	return w.Connection
+}
+
+func (w Wrapper) AssignLabels(assigned []string) ([]labels.Label, error) {
+	collection := []labels.Label{}
+
+	for _, name := range assigned {
+		name = strings.TrimSpace(name)
+		collection = append(collection, labels.Label{Name: name})
+	}
+	util.Debug.Printf(util.Bold("Setting Labels %s"), strings.Join(assigned, ","))
+
+	return labels.AssignLabels(w.Connection, collection)
 }
