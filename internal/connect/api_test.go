@@ -29,25 +29,6 @@ func setRootToTmp() {
 	CFG.FsRoot = "/tmp"
 }
 
-func TestProductMigrations(t *testing.T) {
-	shittyGlobalVariableNeededForNow()
-
-	assert := assert.New(t)
-
-	setRootToTmp()
-	credentials.CreateTestCredentials("", "", CFG.FsRoot, t)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(util.ReadTestFile("migrations.json", t))
-	}))
-	defer ts.Close()
-	CFG.BaseURL = ts.URL
-
-	migrations, err := productMigrations(nil)
-	assert.NoError(err)
-	assert.Len(migrations, 2, "migrations")
-}
-
 func createTestUptimeLogFileWithContent(content string) (string, error) {
 	tempFile, err := os.CreateTemp("", "testUptimeLog")
 	if err != nil {

@@ -67,7 +67,7 @@ func Rollback(opts *Options) error {
 
 	// Synchronize installed products with SCC activations (removes obsolete
 	// activations)
-	if _, err := syncProducts(installed); err != nil {
+	if _, err := SyncProducts(opts, installed); err != nil {
 		return err
 	}
 
