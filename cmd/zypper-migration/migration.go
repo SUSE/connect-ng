@@ -591,12 +591,12 @@ func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseU
 	systemServices, _ := zypper.InstalledServices()
 	migratedServices := connect.NewStringSet()
 
-	conn := connect.NewWrapper(opts)
+	conn := connect.NewWrappedAPI(opts)
 
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
 		QuietOut.Println(msg)
-		service, err := registration.UpdateProduct(conn.Connection, p)
+		service, err := registration.UpdateProduct(conn.GetConnection(), p)
 		if err != nil {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
 		}

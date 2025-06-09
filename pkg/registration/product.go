@@ -84,11 +84,6 @@ func (p Product) ToQuery() map[string]string {
 // If true is returned, traversal is continued.
 type TraverseFunc func(product Product) (bool, error)
 
-// Returns the products triplet identifier.
-func (p *Product) ToTriplet() string {
-	return p.Identifier + "/" + p.Version + "/" + p.Arch
-}
-
 // TraverseExtensions traverse through the products extensions and theirs extensions.
 // When TraverseFunc returns false, the full product and its extensions are skipped.
 func (pro *Product) TraverseExtensions(fn TraverseFunc) error {
