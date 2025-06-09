@@ -147,8 +147,8 @@ func show_product(clientParams, product *C.char) *C.char {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 
-	apiConnection := connect.NewWrapper(opts)
-	productData, err := registration.FetchProductInfo(apiConnection.Connection, productQuery.Identifier, productQuery.Version, productQuery.Arch)
+	wrapper := connect.NewWrappedAPI(opts)
+	productData, err := registration.FetchProductInfo(wrapper.GetConnection(), productQuery.Identifier, productQuery.Version, productQuery.Arch)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -204,8 +204,8 @@ func deactivate_product(clientParams, product *C.char) *C.char {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 
-	apiConnection := connect.NewWrapper(opts)
-	service, err := registration.RemoveProduct(apiConnection.Connection, p)
+	wrapper := connect.NewWrappedAPI(opts)
+	service, err := registration.RemoveProduct(wrapper.GetConnection(), p)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -463,8 +463,8 @@ func upgrade_product(clientParams, product *C.char) *C.char {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 
-	conn := connect.NewWrapper(opts)
-	service, err := registration.UpdateProduct(conn.Connection, prod)
+	conn := connect.NewWrappedAPI(opts)
+	service, err := registration.UpdateProduct(conn.GetConnection(), prod)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -499,8 +499,8 @@ func synchronize(clientParams, products *C.char) *C.char {
 func system_activations(clientParams *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 
-	conn := connect.NewWrapper(opts)
-	activations, err := registration.FetchActivations(conn.Connection)
+	conn := connect.NewWrappedAPI(opts)
+	activations, err := registration.FetchActivations(conn.GetConnection())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -521,8 +521,8 @@ func search_package(clientParams, product, query *C.char) *C.char {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
 
-	conn := connect.NewWrapper(opts)
-	results, err := search.Package(conn.Connection, C.GoString(query), p.ToTriplet())
+	conn := connect.NewWrappedAPI(opts)
+	results, err := search.Package(conn.GetConnection(), C.GoString(query), p.ToTriplet())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
