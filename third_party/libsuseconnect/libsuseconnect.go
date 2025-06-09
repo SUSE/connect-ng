@@ -411,14 +411,14 @@ func list_installer_updates(clientParams, product *C.char) *C.char {
 
 //export system_migrations
 func system_migrations(clientParams, products *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	migrations, err := connect.ProductMigrations(installed)
+	migrations, err := connect.ProductMigrations(opts, installed)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -431,7 +431,7 @@ func system_migrations(clientParams, products *C.char) *C.char {
 
 //export offline_system_migrations
 func offline_system_migrations(clientParams, products, targetBaseProduct *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
@@ -442,7 +442,7 @@ func offline_system_migrations(clientParams, products, targetBaseProduct *C.char
 	if err := json.Unmarshal([]byte(C.GoString(targetBaseProduct)), &target); err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	migrations, err := connect.OfflineProductMigrations(installed, target)
+	migrations, err := connect.OfflineProductMigrations(opts, installed, target)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -477,14 +477,14 @@ func upgrade_product(clientParams, product *C.char) *C.char {
 
 //export synchronize
 func synchronize(clientParams, products *C.char) *C.char {
-	_ = loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
 	prods := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &prods)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	activated, err := connect.SyncProducts(prods)
+	activated, err := connect.SyncProducts(opts, prods)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

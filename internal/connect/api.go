@@ -9,33 +9,11 @@ import (
 	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
-	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 const (
 	UptimeLogFilePath = "/etc/zypp/suse-uptime.log"
 )
-
-func syncProducts(products []registration.Product) ([]registration.Product, error) {
-	remoteProducts := make([]registration.Product, 0)
-	var payload struct {
-		Products []registration.Product `json:"products"`
-	}
-	payload.Products = products
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return remoteProducts, err
-	}
-	resp, err := callHTTP("POST", "/connect/systems/products/synchronize", body, nil, authSystem)
-	if err != nil {
-		return remoteProducts, err
-	}
-	err = json.Unmarshal(resp, &remoteProducts)
-	if err != nil {
-		return remoteProducts, JSONError{err}
-	}
-	return remoteProducts, nil
-}
 
 // readUptimeLogFile reads the system uptime log from a given file and
 // returns them as a string array. If the given file does not exist,
@@ -136,46 +114,4 @@ func FetchSystemInformation() (collectors.Result, error) {
 		return collectors.NoResult, err
 	}
 	return collectors.CollectInformation(arch, mandatoryCollectors)
-}
-
-func productMigrations(installed []registration.Product) ([]MigrationPath, error) {
-	migrations := make([]MigrationPath, 0)
-	var payload struct {
-		InstalledProducts []registration.Product `json:"installed_products"`
-	}
-	payload.InstalledProducts = installed
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return migrations, err
-	}
-	resp, err := callHTTP("POST", "/connect/systems/products/migrations", body, nil, authSystem)
-	if err != nil {
-		return migrations, err
-	}
-	if err = json.Unmarshal(resp, &migrations); err != nil {
-		return migrations, JSONError{err}
-	}
-	return migrations, nil
-}
-
-func offlineProductMigrations(installed []registration.Product, target registration.Product) ([]MigrationPath, error) {
-	migrations := make([]MigrationPath, 0)
-	var payload struct {
-		InstalledProducts []registration.Product `json:"installed_products"`
-		TargetBaseProduct registration.Product   `json:"target_base_product"`
-	}
-	payload.InstalledProducts = installed
-	payload.TargetBaseProduct = target
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return migrations, err
-	}
-	resp, err := callHTTP("POST", "/connect/systems/products/offline_migrations", body, nil, authSystem)
-	if err != nil {
-		return migrations, err
-	}
-	if err = json.Unmarshal(resp, &migrations); err != nil {
-		return migrations, JSONError{err}
-	}
-	return migrations, nil
 }
