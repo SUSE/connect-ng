@@ -382,10 +382,8 @@ func update_certificates() *C.char {
 
 //export reload_certificates
 func reload_certificates() *C.char {
-	err := connect.ReloadCertPool()
-	if err != nil {
-		return C.CString(errorToJSON(err))
-	}
+	// NOTE: this is no longer relevant, but we keep it for
+	// backwards-compatibility.
 	return C.CString("{}")
 }
 

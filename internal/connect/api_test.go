@@ -1,14 +1,11 @@
 package connect
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
-	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/stretchr/testify/assert"
 )
