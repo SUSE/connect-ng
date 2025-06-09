@@ -386,16 +386,6 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 	return instanceData, nil
 }
 
-// ProductMigrations returns the online migration paths for the installed products
-func ProductMigrations(installed []registration.Product) ([]MigrationPath, error) {
-	return productMigrations(installed)
-}
-
-// OfflineProductMigrations returns the offline migration paths for the installed products and target
-func OfflineProductMigrations(installed []registration.Product, targetBaseProduct registration.Product) ([]MigrationPath, error) {
-	return offlineProductMigrations(installed, targetBaseProduct)
-}
-
 // SearchPackage returns all the packages which are available in the extensions
 // tree for the given base product.
 func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, error) {
@@ -467,7 +457,89 @@ func InstallerUpdates(opts *Options, product registration.Product) ([]zypper.Rep
 	return repos, nil
 }
 
-// SyncProducts synchronizes activated system products to the registration server
-func SyncProducts(products []registration.Product) ([]registration.Product, error) {
-	return syncProducts(products)
+// SyncProducts syncronizes the products from the current system with the SCC
+// server.
+func SyncProducts(opts *Options, products []registration.Product) ([]registration.Product, error) {
+	remoteProducts := make([]registration.Product, 0)
+
+	api := NewWrappedAPI(opts)
+	conn := api.GetConnection()
+
+	creds := conn.GetCredentials()
+	login, password, credErr := creds.Login()
+	if credErr != nil {
+		return remoteProducts, credErr
+	}
+
+	var payload struct {
+		Products []registration.Product `json:"products"`
+	}
+	payload.Products = products
+
+	request, buildErr := conn.BuildRequest("POST", "/connect/systems/products/synchronize", payload)
+	if buildErr != nil {
+		return remoteProducts, buildErr
+	}
+
+	connection.AddSystemAuth(request, login, password)
+
+	response, doErr := conn.Do(request)
+	if doErr != nil {
+		return remoteProducts, doErr
+	}
+
+	err := json.Unmarshal(response, &remoteProducts)
+	return remoteProducts, err
+}
+
+// Call `updateMigrations` for online migrations.
+func ProductMigrations(opts *Options, installed []registration.Product) ([]MigrationPath, error) {
+	var payload struct {
+		InstalledProducts []registration.Product `json:"installed_products"`
+	}
+	payload.InstalledProducts = installed
+
+	return updateMigrations(opts, "/connect/systems/products/migrations", payload)
+}
+
+// Call `updateMigrations` for offline migrations.
+func OfflineProductMigrations(opts *Options, installed []registration.Product, target registration.Product) ([]MigrationPath, error) {
+	var payload struct {
+		InstalledProducts []registration.Product `json:"installed_products"`
+		TargetBaseProduct registration.Product   `json:"target_base_product"`
+	}
+	payload.InstalledProducts = installed
+	payload.TargetBaseProduct = target
+
+	return updateMigrations(opts, "/connect/systems/products/offline_migrations", payload)
+}
+
+// Post on a product migrations endpoint and get back the list of MigrationPath
+// related to this operation.
+func updateMigrations(opts *Options, url string, payload any) ([]MigrationPath, error) {
+	migrations := make([]MigrationPath, 0)
+
+	api := NewWrappedAPI(opts)
+	conn := api.GetConnection()
+
+	creds := conn.GetCredentials()
+	login, password, credErr := creds.Login()
+	if credErr != nil {
+		return migrations, credErr
+	}
+
+	request, buildErr := conn.BuildRequest("POST", url, payload)
+	if buildErr != nil {
+		return migrations, buildErr
+	}
+
+	connection.AddSystemAuth(request, login, password)
+
+	response, doErr := conn.Do(request)
+	if doErr != nil {
+		return migrations, doErr
+	}
+
+	err := json.Unmarshal(response, &migrations)
+	return migrations, err
 }
