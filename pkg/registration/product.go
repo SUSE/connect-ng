@@ -9,12 +9,15 @@ import (
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
-// Product as defined from SCC'S API.
+// Product as defined from SCC's API.
 type Product struct {
-	// NOTE: zypper does not handle this, hence XML parsing is left out.
-	Identifier string `json:"identifier"`
+	// NOTE: what in SCC's API is called "identifier", it is the "name" in
+	// zypper's nomenclature, but that's different from SCC's "name". Hence,
+	// internally we will be consistent with SCC's API and name this attribute
+	// "identifier", regardless of the naming in zypper.
+	Identifier string `xml:"name,attr" json:"identifier"`
+	Name       string `json:"name"`
 
-	Name    string `xml:"name,attr" json:"name"`
 	Version string `xml:"version,attr" json:"version"`
 	Arch    string `xml:"arch,attr" json:"arch"`
 	Release string `xml:"release,attr" json:"-"`
@@ -48,17 +51,17 @@ func FromTriplet(triplet string) (Product, error) {
 	}
 
 	parts := strings.Split(triplet, "/")
-	return Product{Name: parts[0], Version: parts[1], Arch: parts[2]}, nil
+	return Product{Identifier: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }
 
 // ToTriplet returns <name>/<version>/<arch> string for this product.
 func (p Product) ToTriplet() string {
-	return p.Name + "/" + p.Version + "/" + p.Arch
+	return p.Identifier + "/" + p.Version + "/" + p.Arch
 }
 
 // Returns true if the product is empty, false otherwise.
 func (p Product) IsEmpty() bool {
-	return p.Name == "" || p.Version == "" || p.Arch == ""
+	return p.Identifier == "" || p.Version == "" || p.Arch == ""
 }
 
 // Returns VERSION[-RELEASE] for the current product.
@@ -73,7 +76,7 @@ func (p Product) Edition() string {
 // used as a query for an HTTP request.
 func (p Product) ToQuery() map[string]string {
 	return map[string]string{
-		"identifier":   p.Name,
+		"identifier":   p.Identifier,
 		"version":      p.Version,
 		"arch":         p.Arch,
 		"release_type": p.ReleaseType,

@@ -118,7 +118,7 @@ func Register(opts *Options) error {
 // registerProduct activates the product, adds the service and installs the
 // release package
 func registerProduct(opts *Options, product registration.Product, installReleasePkg bool) (registration.Service, error) {
-	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
+	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Identifier, product.Version, product.Arch))
 
 	service, err := ActivateProduct(product, opts)
 	if err != nil {
@@ -136,7 +136,7 @@ func registerProduct(opts *Options, product registration.Product, installRelease
 	if installReleasePkg && !opts.SkipServiceInstall {
 		opts.Print("-> Installing release package ...")
 
-		if err := localInstallReleasePackage(product.Name, opts.AutoImportRepoKeys); err != nil {
+		if err := localInstallReleasePackage(product.Identifier, opts.AutoImportRepoKeys); err != nil {
 			return registration.Service{}, err
 		}
 	}
@@ -430,7 +430,7 @@ func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
 // returns Service to be added to zypper
 func ActivateProduct(product registration.Product, opts *Options) (registration.Service, error) {
 	wrapper := NewWrappedAPI(opts)
-	meta, pr, err := registration.Activate(wrapper.GetConnection(), product.Name, product.Version, product.Arch, opts.Token)
+	meta, pr, err := registration.Activate(wrapper.GetConnection(), product.Identifier, product.Version, product.Arch, opts.Token)
 	if err != nil {
 		return registration.Service{}, err
 	}
