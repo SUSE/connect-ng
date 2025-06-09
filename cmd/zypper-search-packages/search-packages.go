@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -74,6 +75,12 @@ func (sr searchResult) MarshalXML(e *xml.Encoder, start xml.StartElement) error 
 }
 
 func main() {
+	// Ensure Zypper is installed.
+	if err := util.EnsureZypper(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	var (
 		matchExact    bool
 		caseSensitive bool
@@ -149,6 +156,14 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	// TODO(mssola): to be removed by the end of RR4.
+	connect.CFG = opts
 
 	results := searchInModules(flag.Args(), matchExact, caseSensitive)
 	if !noLocalRepos {
