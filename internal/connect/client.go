@@ -90,6 +90,9 @@ func Register(opts *Options) error {
 	}
 
 	if product.IsBase {
+		// TODO(mssola): credentials should be a pointer of sorts, so it can be
+		// re-used instead of having to re-reload them every time we need it.
+		api = NewWrappedAPI(opts)
 		p, err := registration.FetchProductInfo(api.GetConnection(), product.Identifier, product.Version, product.Arch)
 		if err != nil {
 			return err
