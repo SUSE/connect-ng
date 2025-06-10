@@ -3,7 +3,6 @@ package registration
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
@@ -46,11 +45,10 @@ type Product struct {
 // Builds a new Product object by parsing the given string considering to be a
 // product "triplet" (i.e. a string with the format "<name>/<version>/<arch>").
 func FromTriplet(triplet string) (Product, error) {
-	if match, _ := regexp.MatchString(`^\S+/\S+/\S+$`, triplet); !match {
+	parts := strings.Split(triplet, "/")
+	if len(parts) != 3 {
 		return Product{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
 	}
-
-	parts := strings.Split(triplet, "/")
 	return Product{Identifier: parts[0], Version: parts[1], Arch: parts[2]}, nil
 }
 
