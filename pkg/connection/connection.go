@@ -16,9 +16,12 @@ const (
 // Connection is to be implemented by any struct that attempts to perform
 // requests against a remote resource that implements the /connect API.
 type Connection interface {
-	// Returns an HTTP request object that can be used by a subsequent `Do`
-	// call.
+	// Builds a http.Request and setup up headers. The body can provided as json marshable object
+	// The created request can be used in a subsequent `Do` call.
 	BuildRequest(verb string, path string, body any) (*http.Request, error)
+
+	// Builds a http.Request and setup up headers. The body can provided as io.Reader
+	BuildRequestRaw(verb string, path string, body io.Reader) (*http.Request, error)
 
 	// Performs an HTTP request to the remote API. Returns the response body or
 	// an error object.
@@ -58,8 +61,11 @@ func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*htt
 		}
 		reader = bytes.NewReader(buffer.Bytes())
 	}
+	return conn.BuildRequestRaw(verb, path, reader)
+}
 
-	request, err := http.NewRequest(verb, conn.Options.URL, reader)
+func (conn ApiConnection) BuildRequestRaw(verb string, path string, body io.Reader) (*http.Request, error) {
+	request, err := http.NewRequest(verb, conn.Options.URL, body)
 	if err != nil {
 		return nil, err
 	}
