@@ -27,7 +27,7 @@ var (
 )
 
 type extension struct {
-	Name         string       `json:"identifier"`
+	Identifier   string       `json:"identifier"`
 	Version      string       `json:"version"`
 	Arch         string       `json:"arch"`
 	FriendlyName string       `json:"name"`
@@ -48,7 +48,7 @@ func extensionTree(as []*registration.Activation, p *registration.Product) *exte
 
 func productToExtension(as []*registration.Activation, p *registration.Product) *extension {
 	return &extension{
-		Name:         p.Name,
+		Identifier:   p.Identifier,
 		Version:      p.Version,
 		Arch:         p.Arch,
 		FriendlyName: p.FriendlyName,
@@ -124,7 +124,7 @@ func renderTextExtension(indent int, exts []*extension, command string) ([]strin
 
 	for _, ext := range exts {
 		output := bytes.Buffer{}
-		code := fmt.Sprintf("%s/%s/%s", ext.Name, ext.Version, ext.Arch)
+		code := fmt.Sprintf("%s/%s/%s", ext.Identifier, ext.Version, ext.Arch)
 
 		args := struct {
 			extension
