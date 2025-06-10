@@ -17,6 +17,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -166,7 +167,7 @@ func main() {
 		opts.Token = processedToken
 	}
 	if product.isSet {
-		if p, err := connect.SplitTriplet(product.value); err != nil {
+		if p, err := registration.FromTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
@@ -247,7 +248,7 @@ func main() {
 		exitOnError(err, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
-		output, err := connect.RenderExtensionTree(jsonFlag)
+		output, err := connect.RenderExtensionTree(opts, jsonFlag)
 		exitOnError(err, opts)
 		fmt.Println(output)
 		os.Exit(0)
@@ -293,16 +294,12 @@ func main() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
+			// NOTE: if the base system/extensions have EULAs we need to make
+			// sure that they are accepted before proceeding on the registering.
+			// But this has been disabled for now due to bsc#1218878,
+			// bsc#1218649.
 
-			// If the base system/extensions have EULAs, we need to make sure
-			// that they are accepted before proceeding on the registering. If
-			// they don't have EULA's, then this is a no-op.
-
-			// disabling the license dialog feature for now due to bsc#1218878, bsc#1218649
-			// err := connect.AcceptEULA()
-			// exitOnError(err, opts)
-
-			// we need a read-write filesystem to install release packages
+			// We need a read-write filesystem to install release packages.
 			if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
 				exitOnError(err, opts)
 			}

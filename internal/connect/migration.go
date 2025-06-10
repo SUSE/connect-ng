@@ -5,10 +5,11 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 // MigrationPath holds a list of products
-type MigrationPath []Product
+type MigrationPath []registration.Product
 
 // Rollback restores system state to before failed migration
 func Rollback(opts *Options) error {
@@ -19,8 +20,10 @@ func Rollback(opts *Options) error {
 		return err
 	}
 
+	wrapper := NewWrappedAPI(opts)
+
 	// First rollback the base_product
-	service, err := downgradeProduct(zypperProductToProduct(base))
+	service, err := registration.UpdateProduct(wrapper.GetConnection(), base)
 	if err != nil {
 		return err
 	}
@@ -38,14 +41,14 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
-	tree, err := showProduct(zypperProductToProduct(base))
+	tree, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
 
 	// Get all installed products in right order
-	extensions := make([]Product, 0)
-	for _, e := range tree.toExtensionsList() {
+	extensions := make([]registration.Product, 0)
+	for _, e := range tree.ToExtensionsList() {
 		if installedIDs.Contains(e.Name) {
 			extensions = append(extensions, e)
 		}
@@ -53,7 +56,7 @@ func Rollback(opts *Options) error {
 
 	// Rollback all extensions
 	for _, e := range extensions {
-		service, err := downgradeProduct(e)
+		service, err := registration.UpdateProduct(wrapper.GetConnection(), e)
 		if err != nil {
 			return err
 		}
@@ -62,8 +65,9 @@ func Rollback(opts *Options) error {
 		}
 	}
 
-	// Synchronize installed products with SCC activations (removes obsolete activations)
-	if _, err := syncProducts(zypperProductListToProductList(installed)); err != nil {
+	// Synchronize installed products with SCC activations (removes obsolete
+	// activations)
+	if _, err := SyncProducts(opts, installed); err != nil {
 		return err
 	}
 
@@ -89,7 +93,7 @@ func MigrationRemoveService(serviceName string) error {
 	return zypper.RemoveService(serviceName)
 }
 
-func migrationRefreshService(service Service, insecure bool) error {
+func migrationRefreshService(service registration.Service, insecure bool) error {
 	// INFO: Remove old and new service because this could be called after filesystem rollback or
 	// from inside a failed migration
 	if err := MigrationRemoveService(service.Name); err != nil {
