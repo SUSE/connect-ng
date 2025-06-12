@@ -1,6 +1,7 @@
 package registration
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
@@ -40,6 +41,12 @@ type mockConnection struct {
 func (m *mockConnection) BuildRequest(verb, path string, body any) (*http.Request, error) {
 
 	request, err := m.real.BuildRequest(verb, path, body)
+	return request, err
+}
+
+func (m *mockConnection) BuildRequestRaw(verb, path string, body io.Reader) (*http.Request, error) {
+
+	request, err := m.real.BuildRequestRaw(verb, path, body)
 	return request, err
 }
 
