@@ -35,7 +35,6 @@ type OfflineRequest struct {
 
 // Sets credentials to be included in the offline request. This method fails if credentials are not available.
 func (req *OfflineRequest) SetCredentials(creds connection.Credentials) error {
-
 	login, password, readErr := creds.Login()
 	if readErr != nil {
 		return readErr

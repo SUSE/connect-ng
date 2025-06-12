@@ -39,13 +39,11 @@ func NewMockConnection(creds connection.Credentials, hostname string) *MockConne
 }
 
 func (m *MockConnection) BuildRequest(verb, path string, body any) (*http.Request, error) {
-
 	request, err := m.real.BuildRequest(verb, path, body)
 	return request, err
 }
 
 func (m *MockConnection) BuildRequestRaw(verb, path string, body io.Reader) (*http.Request, error) {
-
 	request, err := m.real.BuildRequestRaw(verb, path, body)
 	return request, err
 }
