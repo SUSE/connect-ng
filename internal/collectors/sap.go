@@ -12,9 +12,9 @@ type SAP struct{}
 
 // sap follows directory structure of /usr/sap
 // systemId and workloadId will be under the main directory
-// eg /usr/sap/AB3/ERS1
-var sapSystemId = regexp.MustCompile("([A-Z][A-Z0-9]{2})")
-var workloadsRegex = regexp.MustCompile("([a-zA-Z]+)[0-9]{2}")
+// eg /usr/sap/AB3/ERS12
+var sapSystemId = regexp.MustCompile("^([A-Z][A-Z0-9]{2})$")
+var workloadsRegex = regexp.MustCompile("^([a-zA-Z]+)[0-9]{2}$")
 var localOsReaddir = os.ReadDir
 var sapInstallationDir = "/usr/sap"
 
