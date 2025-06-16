@@ -36,7 +36,7 @@ func runDemo(identifier, version, arch, regcode string) error {
 	isProxy := false
 	creds := &SccCredentials{}
 
-	if url := os.Getenv("SCC_URL"); url != "" {
+	if url := os.Getenv("REGISTRATION_HOST_URL"); url != "" {
 		opts.URL = url
 		isProxy = true
 	}
