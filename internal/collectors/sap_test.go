@@ -166,3 +166,33 @@ func TestSAPRunWithNoWorkloadDetected(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(NoResult, res, "Should not detect SAP")
 }
+
+func TestSAPRunWithNoWorkloadDetectedInvalidSystemId(t *testing.T) {
+	assert := assert.New(t)
+	sap := SAP{}
+
+	mockUtilFileExists(true)
+	mockLocalOsReaddir(map[string][]string{
+		"/usr/sap":     []string{"DEV2025", "2025DEV", "DoesNOTmatch", ".config"},
+		"/usr/sap/DEV": []string{"ASCS01", "J01"},
+	})
+
+	res, err := sap.run(ARCHITECTURE_X86_64)
+	assert.NoError(err)
+	assert.Equal(NoResult, res, "Should not detect SAP")
+}
+
+func TestSAPRunWithNoWorkloadDetectedInvalidInstName(t *testing.T) {
+	assert := assert.New(t)
+	sap := SAP{}
+
+	mockUtilFileExists(true)
+	mockLocalOsReaddir(map[string][]string{
+		"/usr/sap":     []string{"DEV"},
+		"/usr/sap/DEV": []string{"ASCS2025", "H00J01"},
+	})
+
+	res, err := sap.run(ARCHITECTURE_X86_64)
+	assert.NoError(err)
+	assert.Equal(NoResult, res, "Should not detect SAP, no valid instances found")
+}
