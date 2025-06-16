@@ -3,6 +3,7 @@ package connection
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -125,10 +126,17 @@ func (conn ApiConnection) setupGenericHeaders(request *http.Request) {
 
 func (conn ApiConnection) setupHTTPClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: conn.Options.Secure}
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: !conn.Options.Secure}
 
 	if conn.Options.Proxy != nil {
 		transport.Proxy = conn.Options.Proxy
+	}
+
+	if conn.Options.Certificate != nil {
+		pool := x509.NewCertPool()
+		pool.AddCert(conn.Options.Certificate)
+
+		transport.TLSClientConfig.RootCAs = pool
 	}
 
 	return &http.Client{Transport: transport, Timeout: conn.Options.Timeout}

@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"crypto/x509"
 	"net/http"
 	"net/url"
 	"time"
@@ -26,6 +27,10 @@ type Options struct {
 	// Optional callback that enables connections to establish configuration for
 	// HTTP proxies.
 	Proxy ProxyCallbackFunc
+
+	// Set a certificate to allow connections to TLS enabled API hosts with self
+	// signed certificates.
+	Certificate *x509.Certificate
 
 	// True if a secure connection is required.
 	Secure bool
