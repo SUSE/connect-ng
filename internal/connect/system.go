@@ -38,10 +38,3 @@ func Cleanup(baseURL, basePath string) error {
 	}
 	return nil
 }
-
-// UpdateCertificates runs system certificate update command
-func UpdateCertificates() error {
-	cmd := []string{"/usr/sbin/update-ca-certificates"}
-	_, err := util.Execute(cmd, []int{0})
-	return err
-}
