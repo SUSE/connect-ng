@@ -24,7 +24,7 @@ func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]st
 	if err != nil || len(subDirectories) == 0 {
 		return []string{}, err
 	}
-	var match []string
+	match := []string{}
 	for _, subDirectory := range subDirectories {
 		// filter for nil values from FindStringSubmatch
 		matches := matcher.FindStringSubmatch(subDirectory.Name())
@@ -51,7 +51,7 @@ func (sap SAP) run(arch string) (Result, error) {
 		systemPath := path.Join(sapInstallationDir, systemId)
 		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
 
-		if workloads != nil {
+		if len(workloads) > 0 {
 			detected = append(detected, map[string]interface{}{
 				"system_id":      systemId,
 				"instance_types": workloads,
