@@ -380,10 +380,8 @@ func getstatus(format *C.char) *C.char {
 
 //export update_certificates
 func update_certificates() *C.char {
-	err := connect.UpdateCertificates()
-	if err != nil {
-		return C.CString(errorToJSON(err))
-	}
+	// NOTE: this is no longer relevant, but we keep it for
+	// backwards-compatibility.
 	return C.CString("{}")
 }
 
