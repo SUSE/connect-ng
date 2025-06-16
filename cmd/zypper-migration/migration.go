@@ -591,20 +591,19 @@ func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseU
 	systemServices, _ := zypper.InstalledServices()
 	migratedServices := connect.NewStringSet()
 
-	conn := connect.NewWrappedAPI(opts)
-
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
 		QuietOut.Println(msg)
-		service, err := registration.UpdateProduct(conn.GetConnection(), p)
+		conn := connect.NewWrappedAPI(opts)
+		meta, _, err := registration.Upgrade(conn.GetConnection(), p.Identifier, p.Version, p.Arch)
 		if err != nil {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
 		}
 
-		if service.ObsoletedName != "" {
-			msg := "Removing service " + service.ObsoletedName
+		if meta.ObsoletedName != "" {
+			msg := "Removing service " + meta.ObsoletedName
 			VerboseOut.Println(msg)
-			err = connect.MigrationRemoveService(service.ObsoletedName)
+			err = connect.MigrationRemoveService(meta.ObsoletedName)
 			if err != nil {
 				return baseProductVersion, err
 			}
@@ -614,9 +613,9 @@ func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseU
 			return baseProductVersion, err
 		}
 
-		msg = "Adding service " + service.Name
+		msg = "Adding service " + meta.Name
 		VerboseOut.Println(msg)
-		err = connect.MigrationAddService(service.URL, service.Name, insecure)
+		err = connect.MigrationAddService(meta.URL, meta.Name, insecure)
 		if err != nil {
 			return baseProductVersion, err
 		}
@@ -629,7 +628,7 @@ func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseU
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, ErrInterrupted)
 		}
 		// mark OLD service as migrated to skip it from cleanup step below
-		migratedServices.Add(service.ObsoletedName)
+		migratedServices.Add(meta.ObsoletedName)
 	}
 	// remove SUSE services which don't have migration available (bsc#1161891)
 	for _, s := range systemServices {

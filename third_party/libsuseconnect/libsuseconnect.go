@@ -205,9 +205,16 @@ func deactivate_product(clientParams, product *C.char) *C.char {
 	}
 
 	wrapper := connect.NewWrappedAPI(opts)
-	service, err := registration.RemoveProduct(wrapper.GetConnection(), p)
+	metadata, pr, err := registration.Deactivate(wrapper.GetConnection(), p.Identifier, p.Version, p.Arch)
 	if err != nil {
 		return C.CString(errorToJSON(err))
+	}
+	service := &registration.Service{
+		ID:            metadata.ID,
+		URL:           metadata.URL,
+		Name:          metadata.Name,
+		ObsoletedName: metadata.ObsoletedName,
+		Product:       *pr,
 	}
 	jsn, err := json.Marshal(service)
 	if err != nil {
@@ -462,7 +469,14 @@ func upgrade_product(clientParams, product *C.char) *C.char {
 	}
 
 	conn := connect.NewWrappedAPI(opts)
-	service, err := registration.UpdateProduct(conn.GetConnection(), prod)
+	meta, pr, err := registration.Upgrade(conn.GetConnection(), prod.Identifier, prod.Version, prod.Arch)
+	service := &registration.Service{
+		ID:            meta.ID,
+		URL:           meta.URL,
+		Name:          meta.Name,
+		ObsoletedName: meta.ObsoletedName,
+		Product:       *pr,
+	}
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
