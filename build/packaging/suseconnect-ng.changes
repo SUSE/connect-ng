@@ -6,6 +6,7 @@
  - Enhanced SAP detected. Take TREX into account and remove empty values when
    only /usr/sap but no installation exists (bsc#1241002)
  - Fixed modules and extension link to point to version less documentation. (bsc#1239439)
+ - Fixed SAP instance detection (bsc#1244550)
 
 -------------------------------------------------------------------
 Thu Nov 14 11:01:05 UTC 2024 - Miquel Sabaté Solà <msabate@suse.com>
