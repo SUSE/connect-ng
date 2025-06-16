@@ -51,10 +51,12 @@ func (sap SAP) run(arch string) (Result, error) {
 		systemPath := path.Join(sapInstallationDir, systemId)
 		workloads, _ := getMatchedSubdirectories(systemPath, workloadsRegex)
 
-		detected = append(detected, map[string]interface{}{
-			"system_id":      systemId,
-			"instance_types": workloads,
-		})
+		if workloads != nil {
+			detected = append(detected, map[string]interface{}{
+				"system_id":      systemId,
+				"instance_types": workloads,
+			})
+		}
 	}
 
 	if len(detected) > 0 {

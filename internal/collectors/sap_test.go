@@ -184,12 +184,6 @@ func TestSAPRunWithNoWorkloadDetectedInvalidSystemId(t *testing.T) {
 
 func TestSAPRunWithNoWorkloadDetectedInvalidInstName(t *testing.T) {
 	assert := assert.New(t)
-	expected := Result{"sap": []map[string]interface{}{
-		{
-			"system_id":      "DEV",
-			"instance_types": []string(nil),
-		},
-	}}
 	sap := SAP{}
 
 	mockUtilFileExists(true)
@@ -200,5 +194,5 @@ func TestSAPRunWithNoWorkloadDetectedInvalidInstName(t *testing.T) {
 
 	res, err := sap.run(ARCHITECTURE_X86_64)
 	assert.NoError(err)
-	assert.Equal(expected, res, "Should not detect SAP, no valid instances found")
+	assert.Equal(NoResult, res, "Should not detect SAP, no valid instances found")
 }
