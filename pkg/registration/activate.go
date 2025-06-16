@@ -43,7 +43,28 @@ type activateResponse struct {
 // Activate a product by pairing an authorized connection (which contains the
 // system at hand), plus the "triplet" being used to identify the desired
 // product.
-func Activate(conn connection.Connection, identifier, version, arch, regcode string) (*Metadata, Product, error) {
+func Activate(conn connection.Connection, identifier, version, arch, regcode string) (*Metadata, *Product, error) {
+	return doActivateCall(conn, "POST", identifier, version, arch, regcode)
+}
+
+// Upgrade/Downgrade a product by pairing an authorized connection (which
+// contains the system at hand), plus the "triplet" being used to identify the
+// product to be upgraded/downgraded for the system.
+func Upgrade(conn connection.Connection, identifier, version, arch string) (*Metadata, *Product, error) {
+	return doActivateCall(conn, "PUT", identifier, version, arch, "")
+}
+
+// Deactivate a product by pairing an authorized connection (which contains the
+// system at hand), plus the "triplet" being used to identify the product to be
+// deactivated for the system.
+func Deactivate(conn connection.Connection, identifier, version, arch string) (*Metadata, *Product, error) {
+	return doActivateCall(conn, "DELETE", identifier, version, arch, "")
+}
+
+// Catch-all function for POST/PUT/DELETE /connect/systems/products. These three
+// verbs are practically the same except for an empty regcode in the case of PUT
+// and DELETE, which is omitted in the JSON request.
+func doActivateCall(conn connection.Connection, verb, identifier, version, arch, regcode string) (*Metadata, *Product, error) {
 	payload := activateRequest{
 		Identifier: identifier,
 		Version:    version,
@@ -54,24 +75,24 @@ func Activate(conn connection.Connection, identifier, version, arch, regcode str
 	login, password, credErr := creds.Login()
 
 	if credErr != nil {
-		return nil, Product{}, credErr
+		return nil, &Product{}, credErr
 	}
 
-	request, buildErr := conn.BuildRequest("POST", "/connect/systems/products", payload)
+	request, buildErr := conn.BuildRequest(verb, "/connect/systems/products", payload)
 	if buildErr != nil {
-		return nil, Product{}, buildErr
+		return nil, &Product{}, buildErr
 	}
 
 	connection.AddSystemAuth(request, login, password)
 
 	response, doErr := conn.Do(request)
 	if doErr != nil {
-		return nil, Product{}, doErr
+		return nil, &Product{}, doErr
 	}
 
 	activation := activateResponse{}
 	if err := json.Unmarshal(response, &activation); err != nil {
-		return nil, Product{}, err
+		return nil, &Product{}, err
 	}
 
 	meta := Metadata{
@@ -81,48 +102,5 @@ func Activate(conn connection.Connection, identifier, version, arch, regcode str
 		ObsoletedName: activation.ObsoletedName,
 	}
 
-	return &meta, activation.Product, nil
-}
-
-// Deactivate a product by pairing an authorized connection (which contains the
-// system at hand), plus the "triplet" being used to identify the product to be
-// deactivated for the system.
-func Deactivate(conn connection.Connection, identifier, version, arch string) (*Metadata, *Product, error) {
-	payload := activateRequest{
-		Identifier: identifier,
-		Version:    version,
-		Arch:       arch,
-	}
-	creds := conn.GetCredentials()
-	login, password, credErr := creds.Login()
-
-	if credErr != nil {
-		return nil, nil, credErr
-	}
-
-	request, buildErr := conn.BuildRequest("DELETE", "/connect/systems/products", payload)
-	if buildErr != nil {
-		return nil, nil, buildErr
-	}
-
-	connection.AddSystemAuth(request, login, password)
-
-	response, doErr := conn.Do(request)
-	if doErr != nil {
-		return nil, nil, doErr
-	}
-
-	deactivation := activateResponse{}
-	if err := json.Unmarshal(response, &deactivation); err != nil {
-		return nil, nil, err
-	}
-
-	meta := Metadata{
-		ID:            deactivation.ID,
-		URL:           deactivation.URL,
-		Name:          deactivation.Name,
-		ObsoletedName: deactivation.ObsoletedName,
-	}
-
-	return &meta, &deactivation.Product, nil
+	return &meta, &activation.Product, nil
 }

@@ -76,6 +76,7 @@ func RenderExtensionTree(opts *Options, outputJson bool) (string, error) {
 		return "", err
 	}
 
+	wrapper = NewWrappedAPI(opts)
 	product, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return "", err

@@ -201,11 +201,12 @@ func Deregister(opts *Options) error {
 	}
 
 	api := NewWrappedAPI(opts)
-	baseProductService, err := registration.UpdateProduct(api.GetConnection(), base)
+	baseMeta, _, err := registration.Upgrade(api.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
 
+	api = NewWrappedAPI(opts)
 	tree, err := registration.FetchProductInfo(api.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
@@ -242,7 +243,7 @@ func Deregister(opts *Options) error {
 	}
 
 	if !opts.SkipServiceInstall {
-		if err := localRemoveOrRefreshService(baseProductService, opts); err != nil {
+		if err := localRemoveOrRefreshService(baseMeta.Name, opts); err != nil {
 			return err
 		}
 	}
@@ -279,7 +280,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
 	wrapper := NewWrappedAPI(opts)
-	service, err := registration.RemoveProduct(wrapper.GetConnection(), product)
+	metadata, _, err := registration.Deactivate(wrapper.GetConnection(), product.Identifier, product.Version, product.Arch)
 	if err != nil {
 		return err
 	}
@@ -288,7 +289,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 		return nil
 	}
 
-	if err := localRemoveOrRefreshService(service, opts); err != nil {
+	if err := localRemoveOrRefreshService(metadata.Name, opts); err != nil {
 		return err
 	}
 
@@ -304,25 +305,26 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 				Arch:       product.Arch,
 			},
 			Service: ServiceOut{
-				Id:   service.ID,
-				Name: service.Name,
-				Url:  service.URL,
+				Id:   metadata.ID,
+				Name: metadata.Name,
+				Url:  metadata.URL,
 			},
 		})
 	}
 	return zypper.RemoveReleasePackage(product.Name)
 }
 
-// SMT provides one service for all products, removing it would remove all repositories.
-// Refreshing the service instead to remove the repos of deregistered product.
-func removeOrRefreshService(service registration.Service, opts *Options) error {
-	if service.Name == "SMT_DUMMY_NOREMOVE_SERVICE" {
+// SMT provides one service for all products, removing it would remove all
+// repositories. Refreshing the service instead to remove the repos of
+// deregistered product.
+func removeOrRefreshService(serviceName string, opts *Options) error {
+	if serviceName == "SMT_DUMMY_NOREMOVE_SERVICE" {
 		opts.Print("-> Refreshing service ...")
 		zypper.RefreshAllServices()
 		return nil
 	}
 	opts.Print("-> Removing service from system ...")
-	return zypper.RemoveService(service.Name)
+	return zypper.RemoveService(serviceName)
 }
 
 // IsRegistered returns true if there is a valid credentials file
@@ -433,7 +435,7 @@ func ActivateProduct(product registration.Product, opts *Options) (registration.
 		URL:           meta.URL,
 		Name:          meta.Name,
 		ObsoletedName: meta.ObsoletedName,
-		Product:       pr,
+		Product:       *pr,
 	}, nil
 }
 
