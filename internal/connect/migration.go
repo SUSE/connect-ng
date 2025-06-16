@@ -23,11 +23,11 @@ func Rollback(opts *Options) error {
 	wrapper := NewWrappedAPI(opts)
 
 	// First rollback the base_product
-	service, err := registration.UpdateProduct(wrapper.GetConnection(), base)
+	meta, _, err := registration.Upgrade(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
-	if err = migrationRefreshService(service, opts.Insecure); err != nil {
+	if err = migrationRefreshService(meta, opts.Insecure); err != nil {
 		return err
 	}
 
@@ -41,6 +41,7 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Name)
 	}
 
+	wrapper = NewWrappedAPI(opts)
 	tree, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
@@ -56,11 +57,12 @@ func Rollback(opts *Options) error {
 
 	// Rollback all extensions
 	for _, e := range extensions {
-		service, err := registration.UpdateProduct(wrapper.GetConnection(), e)
+		wrapper = NewWrappedAPI(opts)
+		meta, _, err := registration.Upgrade(wrapper.GetConnection(), e.Identifier, e.Version, e.Arch)
 		if err != nil {
 			return err
 		}
-		if err := migrationRefreshService(service, opts.Insecure); err != nil {
+		if err := migrationRefreshService(meta, opts.Insecure); err != nil {
 			return err
 		}
 	}
@@ -93,18 +95,18 @@ func MigrationRemoveService(serviceName string) error {
 	return zypper.RemoveService(serviceName)
 }
 
-func migrationRefreshService(service registration.Service, insecure bool) error {
+func migrationRefreshService(meta *registration.Metadata, insecure bool) error {
 	// INFO: Remove old and new service because this could be called after filesystem rollback or
 	// from inside a failed migration
-	if err := MigrationRemoveService(service.Name); err != nil {
+	if err := MigrationRemoveService(meta.Name); err != nil {
 		return err
 	}
-	if err := MigrationRemoveService(service.ObsoletedName); err != nil {
+	if err := MigrationRemoveService(meta.ObsoletedName); err != nil {
 		return err
 	}
 
 	// INFO: Add new service for the same product but with new/valid service url
-	MigrationAddService(service.URL, service.Name, insecure)
+	MigrationAddService(meta.URL, meta.Name, insecure)
 
 	return nil
 }

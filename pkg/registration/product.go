@@ -172,46 +172,6 @@ func FetchProductInfo(conn connection.Connection, identifier, version, arch stri
 	return &product, nil
 }
 
-// Updates the given product (i.e. upgrades/downgrades it) depending on what the
-// SCC server determines. An SCC service is given in return.
-func UpdateProduct(conn connection.Connection, product Product) (Service, error) {
-	return touchProduct(conn, product, "PUT")
-}
-
-// Removes the given product as part of the system (i.e. deactivates it). An SCC
-// service is given in return.
-func RemoveProduct(conn connection.Connection, product Product) (Service, error) {
-	return touchProduct(conn, product, "DELETE")
-}
-
-// Calls Connect's /connect/system/products API endpoint with the given `verb`
-// and for the given `product` as the payload.
-func touchProduct(conn connection.Connection, product Product, verb string) (Service, error) {
-	creds := conn.GetCredentials()
-	login, password, credErr := creds.Login()
-	if credErr != nil {
-		return Service{}, credErr
-	}
-
-	request, buildErr := conn.BuildRequest(verb, "/connect/systems/products", product)
-	if buildErr != nil {
-		return Service{}, buildErr
-	}
-
-	connection.AddSystemAuth(request, login, password)
-
-	response, doErr := conn.Do(request)
-	if doErr != nil {
-		return Service{}, doErr
-	}
-
-	service := Service{}
-	if err := json.Unmarshal(response, &service); err != nil {
-		return Service{}, err
-	}
-	return service, nil
-}
-
 // Returns true if the given `product` can be found in the list of
 // `activations`.
 func ProductInActivations(product *Product, activations []*Activation) bool {
