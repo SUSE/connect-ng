@@ -1,6 +1,9 @@
 package connection
 
 import (
+	"bytes"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
@@ -154,4 +157,65 @@ func TestConnectionUpdateToken(t *testing.T) {
 	assert.NoError(doErr)
 
 	creds.AssertExpectations(t)
+}
+
+func TestCustomCertificateSuccess(t *testing.T) {
+	assert := assert.New(t)
+
+	expected := []byte("server response")
+
+	handler := func(response http.ResponseWriter) {
+		response.WriteHeader(http.StatusOK)
+		response.Write(expected)
+	}
+
+	server := NewTestTLSServerSetupWith(t, "GET", "/test/api", handler)
+	defer server.Close()
+
+	opts := DefaultOptions("testApp", "1.0", "en_US")
+	opts.URL = server.URL
+	opts.Certificate = server.Certificate()
+
+	creds := NoCredentials{}
+	conn := New(opts, creds)
+
+	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
+	assert.NoError(buildErr)
+
+	result, doErr := conn.Do(request)
+	assert.NoError(doErr)
+	assert.Equal(expected, result)
+}
+
+func TestCustomCertificateUnknownCertificate(t *testing.T) {
+	assert := assert.New(t)
+
+	handler := func(response http.ResponseWriter) {
+		response.WriteHeader(http.StatusOK)
+	}
+	server := NewTestTLSServerSetupWith(t, "GET", "/test/api", handler)
+	defer server.Close()
+
+	crt := bytes.TrimSpace(fixture(t, "pkg/connection/unknown_server.crt"))
+	block, _ := pem.Decode(crt)
+
+	unknownCertificate, crtErr := x509.ParseCertificate(block.Bytes)
+	assert.NoError(crtErr, "Can not parse certificate. Unit test is broken")
+
+	opts := DefaultOptions("testApp", "1.0", "en_US")
+	opts.URL = server.URL
+
+	// This is a custom certificate which does not match the automatically generated
+	// certificate from the test server
+	opts.Certificate = unknownCertificate
+
+	creds := NoCredentials{}
+	conn := New(opts, creds)
+
+	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
+	assert.NoError(buildErr)
+
+	_, doErr := conn.Do(request)
+	// The same behavior applies when no certificate was provided on client side
+	assert.ErrorContains(doErr, "certificate signed by unknown authority")
 }

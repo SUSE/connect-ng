@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -25,7 +27,7 @@ func waitForUser(message string) {
 		bold("\n%s. Enter to continue\n", message)
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	} else {
-		bold("\n%s", message)
+		bold("\n%s\n", message)
 	}
 }
 
@@ -41,6 +43,26 @@ func runDemo(identifier, version, arch, regcode string) error {
 
 	if credentialTracing := os.Getenv("TRACE_CREDENTIAL_UPDATES"); credentialTracing != "" {
 		creds.ShowTraces = true
+	}
+
+	if certificatePath := os.Getenv("API_CERT"); certificatePath != "" {
+		crt, certReadErr := os.ReadFile(certificatePath)
+		if certReadErr != nil {
+			return certReadErr
+		}
+
+		block, _ := pem.Decode(crt)
+		if block == nil {
+			return fmt.Errorf("Could not decode the servers certificate")
+		}
+
+		cert, parseErr := x509.ParseCertificate(block.Bytes)
+		if parseErr != nil {
+			return parseErr
+		}
+
+		// Set the certificate
+		opts.Certificate = cert
 	}
 
 	bold("1) Setup connection and perform an request\n")
@@ -197,11 +219,9 @@ func main() {
 		return
 	}
 
+	// Allow empty regcodes see registering against RMT without a registration
+	// code working
 	regcode := os.Getenv("REGCODE")
-	if regcode == "" {
-		fmt.Printf("ERROR: Requireing REGCODE to set as environment variable\n")
-		os.Exit(1)
-	}
 
 	err := runDemo(os.Args[1], os.Args[2], os.Args[3], regcode)
 
