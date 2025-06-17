@@ -201,25 +201,24 @@ func Deregister(opts *Options) error {
 	}
 
 	api := NewWrappedAPI(opts)
-	baseMeta, _, err := registration.Upgrade(api.GetConnection(), base.Identifier, base.Version, base.Arch)
+	baseMeta, tree, err := registration.Upgrade(api.GetConnection(), base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
 
-	api = NewWrappedAPI(opts)
-	tree, err := registration.FetchProductInfo(api.GetConnection(), base.Identifier, base.Version, base.Arch)
+	installed, err := zypper.InstalledProducts()
 	if err != nil {
 		return err
 	}
-	installed, _ := zypper.InstalledProducts()
+
 	installedIDs := NewStringSet()
 	for _, prod := range installed {
-		installedIDs.Add(prod.Name)
+		installedIDs.Add(prod.Identifier)
 	}
 
 	dependencies := make([]registration.Product, 0)
 	for _, e := range tree.ToExtensionsList() {
-		if installedIDs.Contains(e.Name) {
+		if installedIDs.Contains(e.Identifier) {
 			dependencies = append(dependencies, e)
 		}
 	}
@@ -238,6 +237,7 @@ func Deregister(opts *Options) error {
 		removeRegistryAuthentication(creds.Username, creds.Password)
 	}
 
+	api = NewWrappedAPI(opts)
 	if err := registration.Deregister(api.GetConnection()); err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 		return ErrBaseProductDeactivation
 	}
 
-	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Name, product.Version, product.Arch))
+	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Identifier, product.Version, product.Arch))
 	wrapper := NewWrappedAPI(opts)
 	metadata, _, err := registration.Deactivate(wrapper.GetConnection(), product.Identifier, product.Version, product.Arch)
 	if err != nil {
@@ -311,7 +311,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 			},
 		})
 	}
-	return zypper.RemoveReleasePackage(product.Name)
+	return zypper.RemoveReleasePackage(product.Identifier)
 }
 
 // SMT provides one service for all products, removing it would remove all
