@@ -105,7 +105,7 @@ func buildStatuses(products []registration.Product, activations map[string]*regi
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
-			Identifier: product.Name,
+			Identifier: product.Identifier,
 			Version:    product.Version,
 			Arch:       product.Arch,
 			Status:     notRegistered,

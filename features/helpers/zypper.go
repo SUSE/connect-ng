@@ -67,7 +67,7 @@ func (zypp *Zypper) BaseProduct() (string, string, string) {
 
 	for _, product := range products {
 		if product.IsBase {
-			return product.Name, product.Version, product.Arch
+			return product.Identifier, product.Version, product.Arch
 		}
 	}
 

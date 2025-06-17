@@ -311,7 +311,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 			},
 		})
 	}
-	return zypper.RemoveReleasePackage(product.Name)
+	return zypper.RemoveReleasePackage(product.Identifier)
 }
 
 // SMT provides one service for all products, removing it would remove all
