@@ -42,6 +42,35 @@ type Product struct {
 	Repositories []Repository `json:"repositories,omitempty"`
 }
 
+// Implement the `Unmarshaler` interface from encoding/json to account for some
+// discrepancies between implementations from the /connect product's type.
+func (p *Product) UnmarshalJSON(data []byte) error {
+	// Only SMT/RMT send the "available" field in their JSON responses.
+	// SCC does not, and the default Unmarshal() sets Available to the
+	// boolean zero-value which is false. This sets it to true instead.
+	type product Product
+	prod := product{
+		Available: true,
+	}
+	if err := json.Unmarshal(data, &prod); err != nil {
+		return err
+	}
+
+	// Migration paths contain is-base information as "base" attribute while we
+	// default to "isbase" for YaST integration. The rest of the SCC API uses
+	// `product_type="base"` instead.
+	mProd := struct {
+		Base bool `json:"base"`
+	}{}
+	if err := json.Unmarshal(data, &mProd); err != nil {
+		return err
+	}
+	prod.IsBase = prod.IsBase || mProd.Base || prod.ProductType == "base"
+
+	*p = Product(prod)
+	return nil
+}
+
 // Builds a new Product object by parsing the given string considering to be a
 // product "triplet" (i.e. a string with the format "<name>/<version>/<arch>").
 func FromTriplet(triplet string) (Product, error) {
