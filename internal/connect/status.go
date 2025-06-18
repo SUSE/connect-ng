@@ -96,17 +96,16 @@ func getStatuses(opts *Options) ([]Status, error) {
 			activations[activation.ToTriplet()] = activation
 		}
 	}
-	installedProducts := zypperProductListToProductList(installed)
-	statuses := buildStatuses(installedProducts, activations)
+	statuses := buildStatuses(installed, activations)
 	return statuses, nil
 }
 
-func buildStatuses(products []Product, activations map[string]*registration.Activation) []Status {
+func buildStatuses(products []registration.Product, activations map[string]*registration.Activation) []Status {
 	var statuses []Status
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
-			Identifier: product.Name,
+			Identifier: product.Identifier,
 			Version:    product.Version,
 			Arch:       product.Arch,
 			Status:     notRegistered,
@@ -145,9 +144,8 @@ func getStatusText(statuses []Status) (string, error) {
 // Products from zypper have priority over products from
 // activations as they have summary field which is missing
 // in the latter.
-func SystemProducts() ([]Product, error) {
-	installed, err := zypper.InstalledProducts()
-	products := zypperProductListToProductList(installed)
+func SystemProducts(api WrappedAPI, opts *Options) ([]registration.Product, error) {
+	products, err := zypper.InstalledProducts()
 	if err != nil {
 		return products, err
 	}
@@ -155,16 +153,17 @@ func SystemProducts() ([]Product, error) {
 	for _, prod := range products {
 		installedIDs.Add(prod.ToTriplet())
 	}
-	if !IsRegistered() {
+	if !api.IsRegistered() {
 		return products, nil
 	}
-	activations, err := systemActivations()
+
+	activations, err := registration.FetchActivations(api.GetConnection())
 	if err != nil {
 		return products, err
 	}
 	for _, a := range activations {
-		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
-			products = append(products, a.Service.Product)
+		if !installedIDs.Contains(a.Product.ToTriplet()) {
+			products = append(products, *a.Product)
 		}
 	}
 

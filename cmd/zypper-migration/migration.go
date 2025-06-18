@@ -18,6 +18,8 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -146,6 +148,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	api := connect.NewWrappedAPI(opts)
+
 	// pass root to connect config
 	if fsRoot != "" {
 		opts.FsRoot = fsRoot
@@ -221,7 +225,7 @@ func main() {
 	}
 	util.SetSystemEcho(echo)
 
-	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys, opts)
+	systemProducts, err := checkSystemProducts(api, true, autoImportRepoKeys, opts)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -241,7 +245,7 @@ func main() {
 		installedIDs.Add(prod.ToTriplet())
 	}
 
-	allMigrations, err := fetchAllMigrations(systemProducts, toProduct)
+	allMigrations, err := fetchAllMigrations(api.GetConnection(), opts, systemProducts, toProduct)
 	if err != nil {
 		fmt.Printf("Can't get available migrations from server: %v\n", err)
 		os.Exit(1)
@@ -334,7 +338,7 @@ func main() {
 	}()
 
 	dupArgs := zypperDupArgs()
-	fsInconsistent, err := applyMigration(migration, opts.BaseURL, systemProducts,
+	fsInconsistent, err := applyMigration(opts, migration, opts.BaseURL, systemProducts,
 		quiet, verbose, nonInteractive, opts.Insecure, disableRepos, autoAgreeLicenses, autoImportRepoKeys,
 		failDupOnlyOnFatalErrors, dupArgs)
 
@@ -367,7 +371,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false, autoImportRepoKeys, opts)
+		_, err := checkSystemProducts(api, false, autoImportRepoKeys, opts)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -385,7 +389,7 @@ func main() {
 			fmt.Printf("Zypper restore failed: %v\n", err)
 		}
 
-		if err := connect.Rollback(opts); err == nil {
+		if err := connect.Rollback(api.GetConnection(), opts); err == nil {
 			QuietOut.Println("Rollback successful.")
 		} else {
 			fmt.Printf("Rollback failed: %v\n", err)
@@ -394,8 +398,8 @@ func main() {
 	}
 }
 
-func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]connect.Product, error) {
-	systemProducts, err := connect.SystemProducts()
+func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]registration.Product, error) {
+	systemProducts, err := connect.SystemProducts(api, opts)
 	if err != nil {
 		return systemProducts, err
 	}
@@ -414,11 +418,11 @@ func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *conne
 	if releasePackageMissing && rollbackOnFailure {
 		// some release packages are missing and can't be installed
 		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
-		if err := connect.Rollback(opts); err != nil {
+		if err := connect.Rollback(api.GetConnection(), opts); err != nil {
 			return systemProducts, err
 		}
 		// re-read the list of products
-		systemProducts, err := connect.SystemProducts()
+		systemProducts, err := connect.SystemProducts(api, opts)
 		if err != nil {
 			return systemProducts, err
 		}
@@ -427,7 +431,7 @@ func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *conne
 	return systemProducts, nil
 }
 
-func printProducts(products []connect.Product) {
+func printProducts(products []registration.Product) {
 	VerboseOut.Println("Installed products:")
 	for _, p := range products {
 		VerboseOut.Printf("  %-25s %s\n", p.ToTriplet(), p.Summary)
@@ -517,7 +521,7 @@ func compareEditions(left, right string) int {
 	return 0
 }
 
-func cleanupProductRepos(p connect.Product, force, autoImportRepoKeys bool) error {
+func cleanupProductRepos(p registration.Product, force, autoImportRepoKeys bool) error {
 	productPackages, err := zypper.FindProductPackages(p.Name, autoImportRepoKeys)
 	if err != nil {
 		return err
@@ -584,7 +588,7 @@ func isSUSEService(service zypper.ZypperService, baseURL string) bool {
 // adds/removes services to match target state
 // disables obsolete repos
 // returns base product version string
-func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys, insecure bool) (string, error) {
+func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseURL string, forceDisableRepos, autoImportRepoKeys, insecure bool) (string, error) {
 	var baseProductVersion string
 
 	systemServices, _ := zypper.InstalledServices()
@@ -593,15 +597,16 @@ func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisable
 	for _, p := range migration {
 		msg := "Upgrading product " + p.FriendlyName
 		QuietOut.Println(msg)
-		service, err := connect.UpgradeProduct(p)
+		conn := connect.NewWrappedAPI(opts)
+		meta, _, err := registration.Upgrade(conn.GetConnection(), p.Identifier, p.Version, p.Arch)
 		if err != nil {
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, err)
 		}
 
-		if service.ObsoletedName != "" {
-			msg := "Removing service " + service.ObsoletedName
+		if meta.ObsoletedName != "" {
+			msg := "Removing service " + meta.ObsoletedName
 			VerboseOut.Println(msg)
-			err = connect.MigrationRemoveService(service.ObsoletedName)
+			err = connect.MigrationRemoveService(meta.ObsoletedName)
 			if err != nil {
 				return baseProductVersion, err
 			}
@@ -611,9 +616,9 @@ func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisable
 			return baseProductVersion, err
 		}
 
-		msg = "Adding service " + service.Name
+		msg = "Adding service " + meta.Name
 		VerboseOut.Println(msg)
-		err = connect.MigrationAddService(service.URL, service.Name, insecure)
+		err = connect.MigrationAddService(meta.URL, meta.Name, insecure)
 		if err != nil {
 			return baseProductVersion, err
 		}
@@ -626,7 +631,7 @@ func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisable
 			return baseProductVersion, fmt.Errorf("%s: %v", msg, ErrInterrupted)
 		}
 		// mark OLD service as migrated to skip it from cleanup step below
-		migratedServices.Add(service.ObsoletedName)
+		migratedServices.Add(meta.ObsoletedName)
 	}
 	// remove SUSE services which don't have migration available (bsc#1161891)
 	for _, s := range systemServices {
@@ -643,7 +648,7 @@ func migrateSystem(migration connect.MigrationPath, baseURL string, forceDisable
 }
 
 // containsProduct returns true if given slice of products contains one with given name.
-func containsProduct(products []connect.Product, name string) bool {
+func containsProduct(products []registration.Product, name string) bool {
 	for _, p := range products {
 		if p.Name == name {
 			return true
@@ -670,7 +675,7 @@ func isFatalZypperError(code int) bool {
 
 // returns fs_inconsistent flag
 // TODO: have you ever wondered "is this too much?". Fear no more: *this* is too much. WTF with so many arguments.
-func applyMigration(migration connect.MigrationPath, baseURL string, systemProducts []connect.Product,
+func applyMigration(opts *connect.Options, migration connect.MigrationPath, baseURL string, systemProducts []registration.Product,
 	quiet, verbose, nonInteractive, insecure, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
@@ -699,7 +704,7 @@ func applyMigration(migration connect.MigrationPath, baseURL string, systemProdu
 		}
 	}
 
-	baseProductVersion, err := migrateSystem(migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys, insecure)
+	baseProductVersion, err := migrateSystem(opts, migration, baseURL, nonInteractive || forceDisableRepos, autoImportRepoKeys, insecure)
 	if err != nil {
 		return fsInconsistent, err
 	}
@@ -795,15 +800,15 @@ func zypperDupArgs() []string {
 	return args
 }
 
-func fetchAllMigrations(installed []connect.Product, target string) ([]connect.MigrationPath, error) {
+func fetchAllMigrations(conn connection.Connection, opts *connect.Options, installed []registration.Product, target string) ([]connect.MigrationPath, error) {
 	// offline migrations to given product
 	if target != "" {
-		newProduct, err := connect.SplitTriplet(target)
+		newProduct, err := registration.FromTriplet(target)
 		if err != nil {
 			return []connect.MigrationPath{}, err
 		}
-		return connect.OfflineProductMigrations(installed, newProduct)
+		return connect.OfflineProductMigrations(conn, installed, newProduct)
 	}
 	// online migrations
-	return connect.ProductMigrations(installed)
+	return connect.ProductMigrations(conn, installed)
 }

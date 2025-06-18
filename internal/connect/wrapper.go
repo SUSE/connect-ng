@@ -63,7 +63,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 	}
 
 	return &Wrapper{
-		Connection: connection.New(connectionOpts, creds),
+		Connection: connection.New(connectionOpts, &creds),
 		Registered: registered,
 	}
 }
@@ -81,7 +81,7 @@ func (w Wrapper) KeepAlive() error {
 	if code != registration.Registered {
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
-	return ToAPIError(err)
+	return err
 }
 
 func (w Wrapper) Register(regcode string) error {
@@ -93,7 +93,7 @@ func (w Wrapper) Register(regcode string) error {
 
 	// TODO: do something with the code
 	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, registration.NoExtraData)
-	return ToAPIError(err)
+	return err
 }
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
