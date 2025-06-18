@@ -17,6 +17,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -52,7 +53,7 @@ func (p *singleStringFlag) Set(value string) error {
 func main() {
 	// SUSEConnect only works on Linux.
 	if err := util.EnsureLinux(); err != nil {
-		exitOnError(err, nil)
+		exitOnError(err, nil, nil)
 	}
 
 	var (
@@ -135,7 +136,9 @@ func main() {
 	// at the default configuration. If that default configuration is not there,
 	// then it will simply default to scc.suse.com with no proxy in between.
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
-	exitOnError(err, nil)
+	exitOnError(err, nil, nil)
+
+	api := connect.NewWrappedAPI(opts)
 
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
@@ -219,7 +222,7 @@ func main() {
 	// in the transactional-update toolkit.
 	if deRegister || cleanup {
 		if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
-			exitOnError(err, opts)
+			exitOnError(err, api, opts)
 		}
 	}
 
@@ -228,58 +231,58 @@ func main() {
 
 	if status || statusText {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with this command"), opts)
+			exitOnError(errors.New("cannot use the json option with this command"), api, opts)
 		}
 		if status {
 			err = connect.PrintProductStatuses(opts, connect.StatusJSON)
 		} else {
 			err = connect.PrintProductStatuses(opts, connect.StatusText)
 		}
-		exitOnError(err, opts)
+		exitOnError(err, api, opts)
 	} else if keepAlive {
 		if isSumaManaged() {
 			os.Exit(0)
 		}
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), opts)
+			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), api, opts)
 		}
 		api := connect.NewWrappedAPI(opts)
 		err = api.KeepAlive()
-		exitOnError(err, opts)
+		exitOnError(err, api, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
-		output, err := connect.RenderExtensionTree(opts, jsonFlag)
-		exitOnError(err, opts)
+		output, err := connect.RenderExtensionTree(api, jsonFlag)
+		exitOnError(err, api, opts)
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister(opts)
+		err := connect.Deregister(api, opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
 			str, _ := json.Marshal(&out)
 			fmt.Println(string(str))
 			os.Exit(1)
 		} else {
-			exitOnError(err, opts)
+			exitOnError(err, api, opts)
 		}
 	} else if cleanup {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), opts)
+			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), api, opts)
 		}
 		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
-		exitOnError(err, opts)
+		exitOnError(err, api, opts)
 	} else if rollback {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), opts)
+			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), api, opts)
 		}
-		err := connect.Rollback(opts)
-		exitOnError(err, opts)
+		err := connect.Rollback(api.GetConnection(), opts)
+		exitOnError(err, api, opts)
 	} else if info {
 		sysInfo, err := connect.FetchSystemInformation()
-		exitOnError(err, opts)
+		exitOnError(err, api, opts)
 
 		out, err := json.Marshal(sysInfo)
-		exitOnError(err, opts)
+		exitOnError(err, api, opts)
 
 		fmt.Print(string(out))
 	} else {
@@ -301,10 +304,10 @@ func main() {
 
 			// We need a read-write filesystem to install release packages.
 			if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
-				exitOnError(err, opts)
+				exitOnError(err, api, opts)
 			}
 
-			err := connect.Register(opts)
+			err := connect.Register(api, opts)
 			if err != nil {
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -312,7 +315,7 @@ func main() {
 					fmt.Println(string(str))
 					os.Exit(1)
 				} else {
-					exitOnError(err, opts)
+					exitOnError(err, api, opts)
 				}
 			}
 
@@ -322,8 +325,7 @@ func main() {
 			// TODO(mssola): to be removed once we sort out the token callback
 			// for the `internal/connect` library.
 			if connect.CFG.IsScc() && len(labels) > 0 {
-				wrapper := connect.NewWrappedAPI(opts)
-				_, err := wrapper.AssignLabels(strings.Split(labels, ","))
+				_, err := api.AssignLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
 				}
@@ -338,7 +340,7 @@ func main() {
 	}
 }
 
-func exitOnError(err error, opts *connect.Options) {
+func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 	if err == nil {
 		return
 	}
@@ -351,7 +353,7 @@ func exitOnError(err error, opts *connect.Options) {
 		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
-		if connect.IsOutdatedRegProxy(opts) {
+		if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Print("Error: Cannot parse response from server\n")
@@ -359,19 +361,28 @@ func exitOnError(err error, opts *connect.Options) {
 		}
 		os.Exit(66)
 	}
-	if ae, ok := err.(connect.APIError); ok {
-		if ae.Code == http.StatusUnauthorized && connect.IsRegistered() {
+
+	handleAPIError := func(code int, err error) {
+		if code == http.StatusUnauthorized && api.IsRegistered() {
 			fmt.Print("Error: Invalid system credentials, probably because the ")
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
 			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
-		} else if connect.IsOutdatedRegProxy(opts) {
+		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)
 		} else {
-			fmt.Println(ae)
+			fmt.Println(err)
 		}
 		os.Exit(67)
 	}
+	if ae, ok := err.(connect.APIError); ok {
+		handleAPIError(ae.Code, err)
+	}
+
+	if ae, ok := err.(*connection.ApiError); ok {
+		handleAPIError(ae.Code, err)
+	}
+
 	switch err {
 	case connect.ErrSystemNotRegistered:
 		fmt.Print("Deregistration failed. Check if the system has been ")

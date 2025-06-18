@@ -21,7 +21,6 @@ var (
 	extensionListTemplate string
 
 	// test method overwrites
-	localIsRegistered = IsRegistered
 	localBaseProduct  = zypper.BaseProduct
 	localRootWritable = util.IsRootFSWritable
 )
@@ -59,9 +58,11 @@ func productToExtension(as []*registration.Activation, p *registration.Product) 
 	}
 }
 
-func RenderExtensionTree(opts *Options, outputJson bool) (string, error) {
+func RenderExtensionTree(api WrappedAPI, outputJson bool) (string, error) {
+	conn := api.GetConnection()
+
 	// The system is registered remotely
-	if !localIsRegistered() {
+	if !api.IsRegistered() {
 		return "", ErrListExtensionsUnregistered
 	}
 
@@ -70,14 +71,12 @@ func RenderExtensionTree(opts *Options, outputJson bool) (string, error) {
 		return "", err
 	}
 
-	wrapper := NewWrappedAPI(opts)
-	as, err := registration.FetchActivations(wrapper.GetConnection())
+	as, err := registration.FetchActivations(conn)
 	if err != nil {
 		return "", err
 	}
 
-	wrapper = NewWrappedAPI(opts)
-	product, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
+	product, err := registration.FetchProductInfo(conn, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return "", err
 	}

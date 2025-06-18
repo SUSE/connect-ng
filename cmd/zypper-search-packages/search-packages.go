@@ -343,8 +343,10 @@ func searchInRepos(patterns []string, matchExact, caseSensitive bool) []searchRe
 
 func searchInModules(opts *connect.Options, patterns []string, matchExact, caseSensitive bool) []searchResult {
 	ret := make([]searchResult, 0)
+	api := connect.NewWrappedAPI(opts)
+
 	for _, query := range patterns {
-		found, err := connect.SearchPackage(opts, query)
+		found, err := connect.SearchPackage(api.GetConnection(), opts, query)
 		if err != nil {
 			fmt.Printf("Could not search for the package: %v", err)
 		}
