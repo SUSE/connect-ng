@@ -3,8 +3,6 @@ package connect
 import (
 	"errors"
 	"fmt"
-
-	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
 // export errors that package main needs
@@ -23,26 +21,6 @@ type APIError struct {
 
 func (ae APIError) Error() string {
 	return fmt.Sprintf("Error: Registration server returned '%s' (%d)", ae.Message, ae.Code)
-}
-
-// This method converts connection.ApiError into connect.APIError to not have to deal
-// with the same error classes with different namespaces.
-func ToAPIError(in error) error {
-	if in == nil {
-		return nil
-	}
-
-	if err, ok := in.(*connection.ApiError); ok {
-		return APIError{
-			Message: err.Error(),
-			Code:    err.Code,
-		}
-	}
-
-	return APIError{
-		Message: in.Error(),
-		Code:    -1,
-	}
 }
 
 // JSONError is returned on failed JSON decoding

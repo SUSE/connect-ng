@@ -48,9 +48,9 @@ var (
 
 // Register announces the system, activates the
 // product on SCC and adds the service to the system
-func Register(opts *Options) error {
+func Register(api WrappedAPI, opts *Options) error {
+	conn := api.GetConnection()
 	out := &RegisterOut{}
-	api := NewWrappedAPI(opts)
 
 	if opts.OutputKind != JSON {
 		printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
@@ -71,7 +71,7 @@ func Register(opts *Options) error {
 		installReleasePkg = false
 	}
 
-	if service, err := registerProduct(opts, product, installReleasePkg); err == nil {
+	if service, err := registerProduct(conn, opts, product, installReleasePkg); err == nil {
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
 				Name:       product.Name,
@@ -90,15 +90,12 @@ func Register(opts *Options) error {
 	}
 
 	if product.IsBase {
-		// TODO(mssola): credentials should be a pointer of sorts, so it can be
-		// re-used instead of having to re-reload them every time we need it.
-		api = NewWrappedAPI(opts)
-		p, err := registration.FetchProductInfo(api.GetConnection(), product.Identifier, product.Version, product.Arch)
+		p, err := registration.FetchProductInfo(conn, product.Identifier, product.Version, product.Arch)
 		if err != nil {
 			return err
 		}
 		// BUG: `out` is then re-written afterwards.
-		if err := registerProductTree(opts, p, out); err != nil {
+		if err := registerProductTree(conn, opts, p, out); err != nil {
 			return err
 		}
 	}
@@ -120,10 +117,10 @@ func Register(opts *Options) error {
 
 // registerProduct activates the product, adds the service and installs the
 // release package
-func registerProduct(opts *Options, product registration.Product, installReleasePkg bool) (registration.Service, error) {
+func registerProduct(conn connection.Connection, opts *Options, product registration.Product, installReleasePkg bool) (registration.Service, error) {
 	opts.Print(fmt.Sprintf("\nActivating %s %s %s ...\n", product.Identifier, product.Version, product.Arch))
 
-	service, err := ActivateProduct(product, opts)
+	service, err := ActivateProduct(conn, opts.Token, product)
 	if err != nil {
 		return registration.Service{}, err
 	}
@@ -148,10 +145,10 @@ func registerProduct(opts *Options, product registration.Product, installRelease
 
 // registerProductTree traverses (depth-first search) the product
 // tree and registers the recommended and available products
-func registerProductTree(opts *Options, product *registration.Product, out *RegisterOut) error {
+func registerProductTree(conn connection.Connection, opts *Options, product *registration.Product, out *RegisterOut) error {
 	for _, extension := range product.Extensions {
 		if extension.Recommended && extension.Available {
-			if service, err := registerProduct(opts, extension, true); err == nil {
+			if service, err := registerProduct(conn, opts, extension, true); err == nil {
 				out.Products = append(out.Products, ProductService{
 					Product: ProductOut{
 						Name:       product.Name,
@@ -168,7 +165,7 @@ func registerProductTree(opts *Options, product *registration.Product, out *Regi
 			} else {
 				return err
 			}
-			if err := registerProductTree(opts, &extension, out); err != nil {
+			if err := registerProductTree(conn, opts, &extension, out); err != nil {
 				return err
 			}
 		}
@@ -177,14 +174,16 @@ func registerProductTree(opts *Options, product *registration.Product, out *Regi
 }
 
 // Deregister the current system.
-func Deregister(opts *Options) error {
+func Deregister(api WrappedAPI, opts *Options) error {
+	conn := api.GetConnection()
+
 	if util.FileExists("/usr/sbin/registercloudguest") && opts.Product.IsEmpty() {
 		return fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +
 			"De-registration via SUSEConnect is disabled by registercloudguest." +
 			"Use `registercloudguest --clean` instead.")
 	}
 
-	if !IsRegistered() {
+	if !api.IsRegistered() {
 		return ErrSystemNotRegistered
 	}
 
@@ -193,15 +192,14 @@ func Deregister(opts *Options) error {
 
 	printInformation(fmt.Sprintf("Deregistering system to %s", opts.ServerName()), opts)
 	if !opts.Product.IsEmpty() {
-		return deregisterProduct(opts.Product, opts, out)
+		return deregisterProduct(conn, opts.Product, opts, out)
 	}
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
 	}
 
-	api := NewWrappedAPI(opts)
-	baseMeta, tree, err := registration.Upgrade(api.GetConnection(), base.Identifier, base.Version, base.Arch)
+	baseMeta, tree, err := registration.Upgrade(conn, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -225,7 +223,7 @@ func Deregister(opts *Options) error {
 
 	// reverse loop over dependencies
 	for i := len(dependencies) - 1; i >= 0; i-- {
-		if err := deregisterProduct(dependencies[i], opts, out); err != nil {
+		if err := deregisterProduct(conn, dependencies[i], opts, out); err != nil {
 			return err
 		}
 	}
@@ -269,7 +267,7 @@ func Deregister(opts *Options) error {
 	return nil
 }
 
-func deregisterProduct(product registration.Product, opts *Options, out *RegisterOut) error {
+func deregisterProduct(conn connection.Connection, product registration.Product, opts *Options, out *RegisterOut) error {
 	base, err := zypper.BaseProduct()
 	if err != nil {
 		return err
@@ -279,8 +277,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 	}
 
 	opts.Print(fmt.Sprintf("\nDeactivating %s %s %s ...\n", product.Identifier, product.Version, product.Arch))
-	wrapper := NewWrappedAPI(opts)
-	metadata, _, err := registration.Deactivate(wrapper.GetConnection(), product.Identifier, product.Version, product.Arch)
+	metadata, _, err := registration.Deactivate(conn, product.Identifier, product.Version, product.Arch)
 	if err != nil {
 		return err
 	}
@@ -311,7 +308,7 @@ func deregisterProduct(product registration.Product, opts *Options, out *Registe
 			},
 		})
 	}
-	return zypper.RemoveReleasePackage(product.Name)
+	return zypper.RemoveReleasePackage(product.Identifier)
 }
 
 // SMT provides one service for all products, removing it would remove all
@@ -327,14 +324,8 @@ func removeOrRefreshService(serviceName string, opts *Options) error {
 	return zypper.RemoveService(serviceName)
 }
 
-// IsRegistered returns true if there is a valid credentials file
-func IsRegistered() bool {
-	_, err := cred.ReadCredentials(cred.SystemCredentialsPath(CFG.FsRoot))
-	return err == nil
-}
-
 // Returns true if the current system is targeting an old registration proxy.
-func IsOutdatedRegProxy(opts *Options) bool {
+func IsOutdatedRegProxy(conn connection.Connection, opts *Options) bool {
 	// This is not a registration proxy, bail out.
 	if opts.IsScc() {
 		return false
@@ -344,9 +335,6 @@ func IsOutdatedRegProxy(opts *Options) bool {
 	// If the endpoint exists it will return 422 since we are omitting required
 	// parameters. Then we know we are not dealing with an outdated registration
 	// proxy.
-	api := NewWrappedAPI(opts)
-	conn := api.GetConnection()
-
 	req, err := conn.BuildRequest("GET", "/connect/repositories/installer", nil)
 	if err != nil {
 		return true
@@ -393,7 +381,7 @@ func readInstanceData(instanceDataFile string) ([]byte, error) {
 
 // SearchPackage returns all the packages which are available in the extensions
 // tree for the given base product.
-func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, error) {
+func SearchPackage(conn connection.Connection, opts *Options, query string) ([]search.SearchPackageResult, error) {
 	// The base product from which the search will occur is the system's base
 	// product.
 	var err error
@@ -402,16 +390,14 @@ func SearchPackage(opts *Options, query string) ([]search.SearchPackageResult, e
 		return []search.SearchPackageResult{}, err
 	}
 
-	api := NewWrappedAPI(opts)
-	return search.Package(api.GetConnection(), query, base.ToTriplet())
+	return search.Package(conn, query, base.ToTriplet())
 }
 
 // ActivatedProducts returns list of products activated in SCC/SMT
-func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
+func ActivatedProducts(conn connection.Connection) ([]*registration.Product, error) {
 	var products []*registration.Product
 
-	wrapper := NewWrappedAPI(opts)
-	activations, err := registration.FetchActivations(wrapper.GetConnection())
+	activations, err := registration.FetchActivations(conn)
 	if err != nil {
 		return products, err
 	}
@@ -423,9 +409,8 @@ func ActivatedProducts(opts *Options) ([]*registration.Product, error) {
 
 // ActivateProduct activates given product in SMT/SCC
 // returns Service to be added to zypper
-func ActivateProduct(product registration.Product, opts *Options) (registration.Service, error) {
-	wrapper := NewWrappedAPI(opts)
-	meta, pr, err := registration.Activate(wrapper.GetConnection(), product.Identifier, product.Version, product.Arch, opts.Token)
+func ActivateProduct(conn connection.Connection, regcode string, product registration.Product) (registration.Service, error) {
+	meta, pr, err := registration.Activate(conn, product.Identifier, product.Version, product.Arch, regcode)
 	if err != nil {
 		return registration.Service{}, err
 	}
@@ -440,11 +425,8 @@ func ActivateProduct(product registration.Product, opts *Options) (registration.
 }
 
 // Returns the zypper repositories for the installer updates endpoint.
-func InstallerUpdates(opts *Options, product registration.Product) ([]zypper.Repository, error) {
+func InstallerUpdates(conn connection.Connection, product registration.Product) ([]zypper.Repository, error) {
 	repos := make([]zypper.Repository, 0)
-
-	api := NewWrappedAPI(opts)
-	conn := api.GetConnection()
 
 	req, err := conn.BuildRequest("GET", "/connect/repositories/installer", nil)
 	if err != nil {
@@ -464,11 +446,8 @@ func InstallerUpdates(opts *Options, product registration.Product) ([]zypper.Rep
 
 // SyncProducts syncronizes the products from the current system with the SCC
 // server.
-func SyncProducts(opts *Options, products []registration.Product) ([]registration.Product, error) {
+func SyncProducts(conn connection.Connection, products []registration.Product) ([]registration.Product, error) {
 	remoteProducts := make([]registration.Product, 0)
-
-	api := NewWrappedAPI(opts)
-	conn := api.GetConnection()
 
 	creds := conn.GetCredentials()
 	login, password, credErr := creds.Login()
@@ -498,17 +477,17 @@ func SyncProducts(opts *Options, products []registration.Product) ([]registratio
 }
 
 // Call `updateMigrations` for online migrations.
-func ProductMigrations(opts *Options, installed []registration.Product) ([]MigrationPath, error) {
+func ProductMigrations(conn connection.Connection, installed []registration.Product) ([]MigrationPath, error) {
 	var payload struct {
 		InstalledProducts []registration.Product `json:"installed_products"`
 	}
 	payload.InstalledProducts = installed
 
-	return updateMigrations(opts, "/connect/systems/products/migrations", payload)
+	return updateMigrations(conn, "/connect/systems/products/migrations", payload)
 }
 
 // Call `updateMigrations` for offline migrations.
-func OfflineProductMigrations(opts *Options, installed []registration.Product, target registration.Product) ([]MigrationPath, error) {
+func OfflineProductMigrations(conn connection.Connection, installed []registration.Product, target registration.Product) ([]MigrationPath, error) {
 	var payload struct {
 		InstalledProducts []registration.Product `json:"installed_products"`
 		TargetBaseProduct registration.Product   `json:"target_base_product"`
@@ -516,16 +495,13 @@ func OfflineProductMigrations(opts *Options, installed []registration.Product, t
 	payload.InstalledProducts = installed
 	payload.TargetBaseProduct = target
 
-	return updateMigrations(opts, "/connect/systems/products/offline_migrations", payload)
+	return updateMigrations(conn, "/connect/systems/products/offline_migrations", payload)
 }
 
 // Post on a product migrations endpoint and get back the list of MigrationPath
 // related to this operation.
-func updateMigrations(opts *Options, url string, payload any) ([]MigrationPath, error) {
+func updateMigrations(conn connection.Connection, url string, payload any) ([]MigrationPath, error) {
 	migrations := make([]MigrationPath, 0)
-
-	api := NewWrappedAPI(opts)
-	conn := api.GetConnection()
 
 	creds := conn.GetCredentials()
 	login, password, credErr := creds.Login()
