@@ -18,6 +18,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -147,6 +148,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	api := connect.NewWrappedAPI(opts)
+
 	// pass root to connect config
 	if fsRoot != "" {
 		opts.FsRoot = fsRoot
@@ -222,7 +225,7 @@ func main() {
 	}
 	util.SetSystemEcho(echo)
 
-	systemProducts, err := checkSystemProducts(true, autoImportRepoKeys, opts)
+	systemProducts, err := checkSystemProducts(api, true, autoImportRepoKeys, opts)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -242,7 +245,7 @@ func main() {
 		installedIDs.Add(prod.ToTriplet())
 	}
 
-	allMigrations, err := fetchAllMigrations(opts, systemProducts, toProduct)
+	allMigrations, err := fetchAllMigrations(api.GetConnection(), opts, systemProducts, toProduct)
 	if err != nil {
 		fmt.Printf("Can't get available migrations from server: %v\n", err)
 		os.Exit(1)
@@ -368,7 +371,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(false, autoImportRepoKeys, opts)
+		_, err := checkSystemProducts(api, false, autoImportRepoKeys, opts)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -386,7 +389,7 @@ func main() {
 			fmt.Printf("Zypper restore failed: %v\n", err)
 		}
 
-		if err := connect.Rollback(opts); err == nil {
+		if err := connect.Rollback(api.GetConnection(), opts); err == nil {
 			QuietOut.Println("Rollback successful.")
 		} else {
 			fmt.Printf("Rollback failed: %v\n", err)
@@ -395,8 +398,8 @@ func main() {
 	}
 }
 
-func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]registration.Product, error) {
-	systemProducts, err := connect.SystemProducts(opts)
+func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]registration.Product, error) {
+	systemProducts, err := connect.SystemProducts(api, opts)
 	if err != nil {
 		return systemProducts, err
 	}
@@ -415,11 +418,11 @@ func checkSystemProducts(rollbackOnFailure, autoImportRepoKeys bool, opts *conne
 	if releasePackageMissing && rollbackOnFailure {
 		// some release packages are missing and can't be installed
 		QuietOut.Println("Calling SUSEConnect rollback to make sure SCC is synchronized with the system state.")
-		if err := connect.Rollback(opts); err != nil {
+		if err := connect.Rollback(api.GetConnection(), opts); err != nil {
 			return systemProducts, err
 		}
 		// re-read the list of products
-		systemProducts, err := connect.SystemProducts(opts)
+		systemProducts, err := connect.SystemProducts(api, opts)
 		if err != nil {
 			return systemProducts, err
 		}
@@ -797,15 +800,15 @@ func zypperDupArgs() []string {
 	return args
 }
 
-func fetchAllMigrations(opts *connect.Options, installed []registration.Product, target string) ([]connect.MigrationPath, error) {
+func fetchAllMigrations(conn connection.Connection, opts *connect.Options, installed []registration.Product, target string) ([]connect.MigrationPath, error) {
 	// offline migrations to given product
 	if target != "" {
 		newProduct, err := registration.FromTriplet(target)
 		if err != nil {
 			return []connect.MigrationPath{}, err
 		}
-		return connect.OfflineProductMigrations(opts, installed, newProduct)
+		return connect.OfflineProductMigrations(conn, installed, newProduct)
 	}
 	// online migrations
-	return connect.ProductMigrations(opts, installed)
+	return connect.ProductMigrations(conn, installed)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -12,7 +13,7 @@ import (
 type MigrationPath []registration.Product
 
 // Rollback restores system state to before failed migration
-func Rollback(opts *Options) error {
+func Rollback(conn connection.Connection, opts *Options) error {
 	util.Info.Print("Starting to sync system product activations to the server. This can take some time...")
 
 	base, err := zypper.BaseProduct()
@@ -20,10 +21,8 @@ func Rollback(opts *Options) error {
 		return err
 	}
 
-	wrapper := NewWrappedAPI(opts)
-
 	// First rollback the base_product
-	meta, _, err := registration.Upgrade(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
+	meta, _, err := registration.Upgrade(conn, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -41,8 +40,7 @@ func Rollback(opts *Options) error {
 		installedIDs.Add(prod.Identifier)
 	}
 
-	wrapper = NewWrappedAPI(opts)
-	tree, err := registration.FetchProductInfo(wrapper.GetConnection(), base.Identifier, base.Version, base.Arch)
+	tree, err := registration.FetchProductInfo(conn, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return err
 	}
@@ -57,8 +55,7 @@ func Rollback(opts *Options) error {
 
 	// Rollback all extensions
 	for _, e := range extensions {
-		wrapper = NewWrappedAPI(opts)
-		meta, _, err := registration.Upgrade(wrapper.GetConnection(), e.Identifier, e.Version, e.Arch)
+		meta, _, err := registration.Upgrade(conn, e.Identifier, e.Version, e.Arch)
 		if err != nil {
 			return err
 		}
@@ -69,7 +66,7 @@ func Rollback(opts *Options) error {
 
 	// Synchronize installed products with SCC activations (removes obsolete
 	// activations)
-	if _, err := SyncProducts(opts, installed); err != nil {
+	if _, err := SyncProducts(conn, installed); err != nil {
 		return err
 	}
 
