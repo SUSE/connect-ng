@@ -35,7 +35,7 @@ func (api *ValidationAPI) FetchCredentials() {
 		return
 	}
 
-	conn := connection.New(connection.DefaultOptions("connect-integration-tests", "0.0.0", "us"), creds)
+	conn := connection.New(connection.DefaultOptions("connect-integration-tests", "0.0.0", "us"), &creds)
 	api.conn = conn
 
 }
