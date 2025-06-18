@@ -286,7 +286,7 @@ func deregisterProduct(conn connection.Connection, product registration.Product,
 		return nil
 	}
 
-	if err := localRemoveOrRefreshService(metadata.Name, opts); err != nil {
+	if err := localRemoveOrRefreshService(product.Identifier, opts); err != nil {
 		return err
 	}
 
@@ -308,7 +308,7 @@ func deregisterProduct(conn connection.Connection, product registration.Product,
 			},
 		})
 	}
-	return zypper.RemoveReleasePackage(product.Name)
+	return zypper.RemoveReleasePackage(product.Identifier)
 }
 
 // SMT provides one service for all products, removing it would remove all
