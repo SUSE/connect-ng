@@ -37,7 +37,7 @@ func Rollback(conn connection.Connection, opts *Options) error {
 	}
 	installedIDs := NewStringSet()
 	for _, prod := range installed {
-		installedIDs.Add(prod.Name)
+		installedIDs.Add(prod.Identifier)
 	}
 
 	tree, err := registration.FetchProductInfo(conn, base.Identifier, base.Version, base.Arch)
@@ -48,7 +48,7 @@ func Rollback(conn connection.Connection, opts *Options) error {
 	// Get all installed products in right order
 	extensions := make([]registration.Product, 0)
 	for _, e := range tree.ToExtensionsList() {
-		if installedIDs.Contains(e.Name) {
+		if installedIDs.Contains(e.Identifier) {
 			extensions = append(extensions, e)
 		}
 	}
