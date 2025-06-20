@@ -38,34 +38,28 @@ type OfflinePayload struct {
 	Information      map[string]any   `json:"information"`
 }
 
-// Reads an offline registration certificate from a reader object
-// when the data is base64 encoded decodeData should be set true
+// Reads and offline registration certificate from the given reader object.
+// Set `decodeData` to true if the data is expected to be base64-encoded.
 //
 // An error indicates the certificate was probably malformed
 func OfflineCertificateFrom(reader io.Reader, decodeData bool) (*OfflineCertificate, error) {
 	certificate := &OfflineCertificate{}
 
-	raw, readErr := io.ReadAll(reader)
-
-	if readErr != nil {
-		return nil, fmt.Errorf("read certificate: %s", readErr)
+	raw, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("read certificate error: %s", err)
 	}
 
 	if decodeData {
-		decoded, decodeErr := decodeBase64(raw)
-
-		if decodeErr != nil {
-			return nil, decodeErr
-		}
-		if err := json.Unmarshal(decoded, certificate); err != nil {
-			return nil, fmt.Errorf("json error: %s", err)
-		}
-	} else {
-		if err := json.Unmarshal(raw, certificate); err != nil {
-			return nil, fmt.Errorf("json error: %s", err)
+		raw, err = decodeBase64(raw)
+		if err != nil {
+			return nil, fmt.Errorf("decode certificate error: %s", err)
 		}
 	}
 
+	if err = json.Unmarshal(raw, certificate); err != nil {
+		return nil, fmt.Errorf("json error: %s", err)
+	}
 	return certificate, nil
 }
 
