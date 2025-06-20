@@ -28,7 +28,7 @@ func main() {
 	}
 
 	reader := bufio.NewReader(hdl)
-	cert, readErr := registration.OfflineCertificateFrom(reader)
+	cert, readErr := registration.OfflineCertificateFrom(reader, true)
 
 	if readErr != nil {
 		fmt.Printf("validation error: %s\n", readErr)

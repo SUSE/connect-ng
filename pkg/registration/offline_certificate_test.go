@@ -14,7 +14,24 @@ func TestOfflineCertificateFromSuccess(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
+
+	assert.NoError(err)
+
+	assert.Equal("1", cert.Version)
+	assert.Equal("RSA", cert.Cipher)
+	assert.Equal("SHA256", cert.Hash)
+}
+
+func TestOfflineCertificateFromBytesSuccess(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	decodedCert, err := decodeBase64(rawCert)
+	assert.NoError(err)
+	reader := bytes.NewReader(decodedCert)
+
+	cert, err := OfflineCertificateFrom(reader, false)
 
 	assert.NoError(err)
 
@@ -29,7 +46,7 @@ func TestOfflineCertificateFromMalformedCertificate(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/malformed.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
 
 	assert.ErrorContains(err, "base64: illegal base64 data")
 	assert.Nil(cert)
@@ -41,7 +58,23 @@ func TestOfflineCertificateIsValidTrue(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
+	assert.NoError(err)
+
+	valid, err := cert.IsValid()
+	assert.NoError(err)
+	assert.True(valid)
+}
+
+func TestOfflineCertificateFromBytesIsValidTrue(t *testing.T) {
+	assert := assert.New(t)
+
+	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
+	decodedCert, err := decodeBase64(rawCert)
+	assert.NoError(err)
+	reader := bytes.NewReader(decodedCert)
+
+	cert, err := OfflineCertificateFrom(reader, false)
 	assert.NoError(err)
 
 	valid, err := cert.IsValid()
@@ -55,7 +88,7 @@ func TestOfflineCertificateIsValidFalse(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/invalid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
 	assert.NoError(err)
 
 	valid, err := cert.IsValid()
@@ -69,7 +102,7 @@ func TestOfflineCertificateIsValidMalformedSignature(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/malformed-signature.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
 	assert.NoError(err)
 
 	valid, err := cert.IsValid()
@@ -83,7 +116,7 @@ func TestOfflineCertificateExtractPayloadSuccess(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
 	assert.NoError(err)
 
 	payload, extractErr := cert.ExtractPayload()
@@ -100,7 +133,7 @@ func TestOfflineCertificateExtractPayloadInvalidJSON(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/invalid-json-payload.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, err := OfflineCertificateFrom(reader)
+	cert, err := OfflineCertificateFrom(reader, true)
 	assert.NoError(err)
 
 	payload, extractErr := cert.ExtractPayload()
@@ -115,7 +148,7 @@ func TestOfflineCertificateRegcodeMatches(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, readErr := OfflineCertificateFrom(reader)
+	cert, readErr := OfflineCertificateFrom(reader, true)
 	assert.NoError(readErr)
 
 	matches, matchErr := cert.RegcodeMatches("some-scc-regcode")
@@ -133,7 +166,7 @@ func TestOfflineCertificateUUIDMatches(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, readErr := OfflineCertificateFrom(reader)
+	cert, readErr := OfflineCertificateFrom(reader, true)
 	assert.NoError(readErr)
 
 	matches, matchErr := cert.UUIDMatches("3a4d46b4-0b06-488f-8d20-a931d398d357")
@@ -151,7 +184,7 @@ func TestOfflineCertificateProductClassIncluded(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, readErr := OfflineCertificateFrom(reader)
+	cert, readErr := OfflineCertificateFrom(reader, true)
 	assert.NoError(readErr)
 
 	shouldBeIncluded, matchErr := cert.ProductClassIncluded("RANCHER-X86")
@@ -170,7 +203,7 @@ func TestOfflineCertificateExpireDate(t *testing.T) {
 	rawCert := fixture(t, "pkg/registration/offline_certificate/valid.cert")
 	reader := bytes.NewReader(rawCert)
 
-	cert, readErr := OfflineCertificateFrom(reader)
+	cert, readErr := OfflineCertificateFrom(reader, true)
 	assert.NoError(readErr)
 
 	expectedExpirationDate := time.Date(2026, time.January, 27, 11, 53, 51, 223000000, time.UTC)

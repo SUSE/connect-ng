@@ -101,7 +101,7 @@ func RegisterWithOfflineRequest(conn connection.Connection, regcode string, offl
 	}
 	reader := bytes.NewReader(response)
 
-	certificate, parseErr := OfflineCertificateFrom(reader)
+	certificate, parseErr := OfflineCertificateFrom(reader, true)
 	if parseErr != nil {
 		return nil, parseErr
 	}
