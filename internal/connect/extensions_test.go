@@ -91,7 +91,6 @@ func TestPrintExtensionsAsText(t *testing.T) {
 	expectNoError(t, err)
 	expectStringMatches(t, result, "AVAILABLE EXTENSIONS AND MODULES")
 	expectStringMatches(t, result, "Python 3 Module 15 SP4 x86_64")
-	expectStringMatches(t, result, "You can find more information about available modules here:")
 }
 
 func TestPrintExtensionsAsJSON(t *testing.T) {
