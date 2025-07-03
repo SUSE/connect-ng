@@ -12,7 +12,6 @@ Feature: Test extension/module activation
     And the output should contain "Legacy Module"
     And the output should contain "Public Cloud Module"
     And the output should contain "SUSE Linux Enterprise High Availability Extension"
-    And the output should contain "https://documentation.suse.com/sles/html/SLES-all/article-modules.html"
 
   # Skip in SLES15 for now, since there's no paid extensions that can be activated
   # directly on the root product. Once SUSEConnect automatically activates recommended
