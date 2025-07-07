@@ -55,6 +55,8 @@ Requires:       ca-certificates-mozilla
 Requires:       ca-certificates
 %endif
 
+Requires:       gzip
+Requires:       tar
 Requires:       coreutils
 Requires:       zypper
 Requires:       util-linux
