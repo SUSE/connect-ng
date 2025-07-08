@@ -43,7 +43,6 @@ var (
 	localAddService             = zypper.AddService
 	localInstallReleasePackage  = zypper.InstallReleasePackage
 	localRemoveOrRefreshService = removeOrRefreshService
-	localMakeSysInfoBody        = makeSysInfoBody
 )
 
 // Register announces the system, activates the
