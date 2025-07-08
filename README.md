@@ -24,9 +24,9 @@ make build
 This will create a `out/suseconnect` binary.
 
 ### Build in container
+If you don't have a go compiler installed, you can run the build in a container: 
 ```
-cd connect-ng
-podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.16 make build
+docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.21-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make build"
 ```
 This will create a `out/suseconnect` binary on the host.
 
