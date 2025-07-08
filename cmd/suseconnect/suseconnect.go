@@ -236,9 +236,6 @@ func main() {
 		}
 	}
 
-	// TODO(mssola): to be removed by the end of RR4.
-	connect.CFG = opts
-
 	if status || statusText {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with this command"), api, opts)
@@ -331,10 +328,7 @@ func main() {
 
 			// After successful registration we try to set labels if we are
 			// targetting SCC.
-			//
-			// TODO(mssola): to be removed once we sort out the token callback
-			// for the `internal/connect` library.
-			if connect.CFG.IsScc() && len(labels) > 0 {
+			if opts.IsScc() && len(labels) > 0 {
 				_, err := api.AssignLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
@@ -376,7 +370,7 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		if code == http.StatusUnauthorized && api.IsRegistered() {
 			fmt.Print("Error: Invalid system credentials, probably because the ")
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
-			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
+			fmt.Print("Check ", opts.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
 		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)

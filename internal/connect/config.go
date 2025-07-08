@@ -13,9 +13,6 @@ import (
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
-// TODO(mssola): to be removed by the end of RR4.
-var CFG *Options
-
 const (
 	DefaultConfigPath                 = "/etc/SUSEConnect"
 	defaultBaseURL                    = "https://scc.suse.com"
