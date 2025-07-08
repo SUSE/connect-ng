@@ -264,9 +264,6 @@ func loadConfig(clientParams string) *connect.Options {
 	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	_ = json.Unmarshal([]byte(clientParams), opts)
 
-	// TODO(mssola): to be removed by the end of RR4.
-	connect.CFG = opts
-
 	return opts
 }
 
@@ -365,8 +362,6 @@ func errorToJSON(err error) string {
 //export getstatus
 func getstatus(format *C.char) *C.char {
 	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
-	// TODO(mssola): to be removed by the end of RR4.
-	connect.CFG = opts
 
 	gFormat := C.GoString(format)
 	var f connect.StatusFormat
