@@ -138,8 +138,6 @@ func main() {
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	exitOnError(err, nil, nil)
 
-	api := connect.NewWrappedAPI(opts)
-
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			fmt.Printf("SUSEConnect error: URL \"%s\" not valid: %s\n", baseURL, err)
@@ -212,6 +210,8 @@ func main() {
 	if jsonFlag {
 		opts.OutputKind = connect.JSON
 	}
+
+	api := connect.NewWrappedAPI(opts)
 
 	// Reading the configuration/flags is done, now let's check if the
 	// filesystem can handle operations from SUSEConnect for specific actions
