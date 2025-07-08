@@ -138,6 +138,15 @@ func main() {
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	exitOnError(err, nil, nil)
 
+	// Parsing the given URL. This URL can be given both as an explicit command
+	// line flag, or via an environment variable. If the environment variable is
+	// provided then it takes precedence.
+	//
+	// NOTE: this comes in handy when running feature tests for different
+	// staging servers with different scenarios/requirements.
+	if envURL := os.Getenv("SCC_SERVER_URL"); envURL != "" {
+		baseURL = envURL
+	}
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			fmt.Printf("SUSEConnect error: URL \"%s\" not valid: %s\n", baseURL, err)
@@ -146,6 +155,7 @@ func main() {
 		opts.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
+
 	if fsRoot != "" {
 		if fsRoot[0] != '/' {
 			fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
