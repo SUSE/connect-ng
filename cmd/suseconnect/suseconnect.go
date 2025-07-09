@@ -138,8 +138,15 @@ func main() {
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	exitOnError(err, nil, nil)
 
-	api := connect.NewWrappedAPI(opts)
-
+	// Parsing the given URL. This URL can be given both as an explicit command
+	// line flag, or via an environment variable. If the environment variable is
+	// provided then it takes precedence.
+	//
+	// NOTE: this comes in handy when running feature tests for different
+	// staging servers with different scenarios/requirements.
+	if envURL := os.Getenv("SCC_SERVER_URL"); envURL != "" {
+		baseURL = envURL
+	}
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			fmt.Printf("SUSEConnect error: URL \"%s\" not valid: %s\n", baseURL, err)
@@ -148,6 +155,7 @@ func main() {
 		opts.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
+
 	if fsRoot != "" {
 		if fsRoot[0] != '/' {
 			fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
@@ -213,6 +221,8 @@ func main() {
 		opts.OutputKind = connect.JSON
 	}
 
+	api := connect.NewWrappedAPI(opts)
+
 	// Reading the configuration/flags is done, now let's check if the
 	// filesystem can handle operations from SUSEConnect for specific actions
 	// which require filesystem to be read write (aka writing outside of /etc)
@@ -225,9 +235,6 @@ func main() {
 			exitOnError(err, api, opts)
 		}
 	}
-
-	// TODO(mssola): to be removed by the end of RR4.
-	connect.CFG = opts
 
 	if status || statusText {
 		if jsonFlag {
@@ -321,10 +328,7 @@ func main() {
 
 			// After successful registration we try to set labels if we are
 			// targetting SCC.
-			//
-			// TODO(mssola): to be removed once we sort out the token callback
-			// for the `internal/connect` library.
-			if connect.CFG.IsScc() && len(labels) > 0 {
+			if opts.IsScc() && len(labels) > 0 {
 				_, err := api.AssignLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
@@ -366,7 +370,7 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		if code == http.StatusUnauthorized && api.IsRegistered() {
 			fmt.Print("Error: Invalid system credentials, probably because the ")
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
-			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
+			fmt.Print("Check ", opts.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
 		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)

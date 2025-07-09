@@ -168,15 +168,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO(mssola): to be removed by the end of RR4.
-	connect.CFG = opts
-
 	if selfUpdate {
 		// reset root (if set) as the update stack can be outside of
 		// the to be updated system
 		opts.FsRoot = ""
-		// TODO(mssola): to be removed by the end of RR4.
-		connect.CFG = opts
 		echo := util.SetSystemEcho(true)
 		if pending, err := zypper.PatchCheck(true, quiet, verbose, nonInteractive, false); err != nil {
 			fmt.Printf("patch pre-check failed: %v\n", err)
@@ -211,8 +206,6 @@ func main() {
 		// restore root if needed
 		if fsRoot != "" {
 			opts.FsRoot = fsRoot
-			// TODO(mssola): to be removed by the end of RR4.
-			connect.CFG = opts
 		}
 	}
 	QuietOut.Print("\n")

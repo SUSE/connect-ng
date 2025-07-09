@@ -2,6 +2,9 @@ package connect
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
@@ -37,6 +40,36 @@ type Wrapper struct {
 	Registered bool
 }
 
+// Returns true if proxy setup is enabled at the system level. This is specific
+// to SUSE.
+func proxyEnabled() bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv("PROXY_ENABLED")))
+
+	// NOTE: if the value is not set, we return true so Go figures this out.
+	return value == "" || value == "y" || value == "yes" || value == "t" || value == "true"
+}
+
+// Returns the proxy setup if needed.
+func proxyWithAuth(req *http.Request) (*url.URL, error) {
+	// Check for the special "PROXY_ENABLED" environment variable which might be
+	// set in a SUSE system. If it is set to a falsey value, then we skip proxy
+	// detection regardless of other environment variables.
+	if !proxyEnabled() {
+		return nil, nil
+	}
+
+	// A nil proxyURL implies that the proxy setup has been explicitly disabled.
+	proxyURL, err := http.ProxyFromEnvironment(req)
+	if proxyURL == nil || err != nil {
+		return proxyURL, err
+	}
+	// Add or replace proxy credentials if configured
+	if c, err := credentials.ReadCurlrcCredentials(); err == nil {
+		proxyURL.User = url.UserPassword(c.Username, c.Password)
+	}
+	return proxyURL, nil
+}
+
 // Returns a new Wrapper object by taking the given Options into account. Note
 // that it will also make an attempt to read any available credentials, and set
 // Wrapper.Registered accordingly.
@@ -48,6 +81,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 		Version:          GetShortenedVersion(),
 		PreferedLanguage: opts.Language,
 		Timeout:          connection.DefaultTimeout,
+		Proxy:            proxyWithAuth,
 	}
 
 	credentialsPath := credentials.SystemCredentialsPath(opts.FsRoot)

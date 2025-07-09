@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
@@ -43,7 +41,6 @@ var (
 	localAddService             = zypper.AddService
 	localInstallReleasePackage  = zypper.InstallReleasePackage
 	localRemoveOrRefreshService = removeOrRefreshService
-	localMakeSysInfoBody        = makeSysInfoBody
 )
 
 // Register announces the system, activates the
@@ -364,19 +361,6 @@ func printInformation(msg string, opts *Options) {
 	if opts.Email != "" {
 		opts.Print("Using E-Mail: " + opts.Email)
 	}
-}
-
-func readInstanceData(instanceDataFile string) ([]byte, error) {
-	if instanceDataFile == "" {
-		return nil, nil
-	}
-	path := filepath.Join(CFG.FsRoot, instanceDataFile)
-	util.Debug.Print("Reading file from: ", path)
-	instanceData, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return instanceData, nil
 }
 
 // SearchPackage returns all the packages which are available in the extensions
