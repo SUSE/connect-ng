@@ -10,7 +10,10 @@ To run feature tests locally the easiest way is:
 
 ```
 
-If you do not want to run a full rpm build process per feature test run:
+This will create a new container, build an RPM inside of it and run feature
+tests with the newly installed RPM. This is what the CI ends up doing.
+
+If you do not want to run a full RPM build process you can do the following:
 
 ```
  # Make sure your .env is populated!
@@ -25,5 +28,15 @@ If you do not want to run a full rpm build process per feature test run:
  > go test -v features/suseconnect/*
 ```
 
-With the above it is possible to rebuild the binary and try the feature tests on the new binary quickly.
-**Note:** Be aware that installing `suseonnect` via `rpm` will shadow the existing executable!
+With the above it is possible to rebuild the binary and try the feature tests on
+the new binary quickly.
+
+### Words of warning
+
+Be aware that installing `suseconnect` via `rpm` will shadow the existing
+executable.
+
+Also, feature tests modify the existing filesystem by adding/removing certain
+configuration files. Hence, make sure to run this into a containerized scenario
+if you don't want unexpected surprises. That's why `make feature-tests` runs in
+a container, and why the above example does it too.
