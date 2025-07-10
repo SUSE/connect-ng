@@ -13,7 +13,7 @@ import (
 type Runner struct {
 	t           *testing.T
 	commandline []string
-	cmd         *exec.Cmd
+	Cmd         *exec.Cmd
 	stdout      *bytes.Buffer
 	stderr      *bytes.Buffer
 }
@@ -42,7 +42,7 @@ func NewRunner(t *testing.T, commandline string, args ...any) *Runner {
 	return &Runner{
 		t:           t,
 		commandline: parts,
-		cmd:         cmd,
+		Cmd:         cmd,
 		stdout:      stdout,
 		stderr:      stderr,
 	}
@@ -54,7 +54,7 @@ func (runner *Runner) Run() {
 	env := NewEnv(runner.t)
 	assert := assert.New(runner.t)
 
-	if err := runner.cmd.Run(); err != nil {
+	if err := runner.Cmd.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
 			commandline := env.RedactRegcodes(strings.Join(runner.commandline, " "))
 			assert.FailNow(fmt.Sprintf("Can not spawn commandline `%s`:", commandline), env.RedactRegcodes(err.Error()))
@@ -79,12 +79,12 @@ func (runner *Runner) Stderr() string {
 
 func (runner *Runner) ExitCode() int {
 	runner.assertCmdHasRun()
-	return runner.cmd.ProcessState.ExitCode()
+	return runner.Cmd.ProcessState.ExitCode()
 }
 
 func (runner *Runner) assertCmdHasRun() {
 	assert := assert.New(runner.t)
-	if runner.cmd.ProcessState.ExitCode() < 0 {
+	if runner.Cmd.ProcessState.ExitCode() < 0 {
 		assert.FailNow("Try to access process results before running the command.")
 	}
 }
