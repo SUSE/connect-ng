@@ -47,3 +47,12 @@ func FriendlyNameToServiceName(friendlyName string) string {
 func FriendlyNameToCredentialsName(friendlyName string) string {
 	return FriendlyNameToServiceName(friendlyName)
 }
+
+func TryCurlrcCleanup() {
+	home := os.Getenv("HOME")
+	if home == "" {
+		panic("empty HOME")
+	}
+
+	_ = os.Remove(filepath.Join(home, ".curlrc"))
+}
