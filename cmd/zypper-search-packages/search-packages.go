@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 var (
@@ -74,6 +75,12 @@ func (sr searchResult) MarshalXML(e *xml.Encoder, start xml.StartElement) error 
 }
 
 func main() {
+	// Ensure Zypper is installed.
+	if err := util.EnsureZypper(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	var (
 		matchExact    bool
 		caseSensitive bool
@@ -150,7 +157,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	results := searchInModules(flag.Args(), matchExact, caseSensitive)
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	results := searchInModules(opts, flag.Args(), matchExact, caseSensitive)
 	if !noLocalRepos {
 		repoResults := searchInRepos(flag.Args(), matchExact, caseSensitive)
 		results = append(results, repoResults...)
@@ -328,10 +341,12 @@ func searchInRepos(patterns []string, matchExact, caseSensitive bool) []searchRe
 	return ret
 }
 
-func searchInModules(patterns []string, matchExact, caseSensitive bool) []searchResult {
+func searchInModules(opts *connect.Options, patterns []string, matchExact, caseSensitive bool) []searchResult {
 	ret := make([]searchResult, 0)
+	api := connect.NewWrappedAPI(opts)
+
 	for _, query := range patterns {
-		found, err := connect.SearchPackage(query, connect.Product{})
+		found, err := connect.SearchPackage(api.GetConnection(), opts, query)
 		if err != nil {
 			fmt.Printf("Could not search for the package: %v", err)
 		}
@@ -345,9 +360,9 @@ func searchInModules(patterns []string, matchExact, caseSensitive bool) []search
 					Version:     pkg.Version,
 					Release:     pkg.Release,
 					Arch:        pkg.Arch,
-					ProdName:    fmt.Sprintf("%s (%s)", p.Name, p.Ident), // TODO: anything better? do we need raw p.Name?
-					ProdIdent:   p.Ident,
-					ProdEdition: p.Edition,
+					ProdName:    fmt.Sprintf("%s (%s)", p.Name, p.Identifier), // TODO: anything better? do we need raw p.Name?
+					ProdIdent:   p.Identifier,
+					ProdEdition: p.Edition(),
 					ProdArch:    p.Arch,
 					ProdFree:    p.Free,
 				}

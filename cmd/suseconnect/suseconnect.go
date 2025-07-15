@@ -7,21 +7,27 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/SUSE/connect-ng/internal/connect"
-	"github.com/SUSE/connect-ng/internal/util"
-	"github.com/SUSE/connect-ng/internal/zypper"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strings"
 	"syscall"
+
+	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
 	//go:embed connectUsage.txt
 	connectUsageText string
+)
+
+const (
+	outdatedRegProxy = "Your Registration Proxy server doesn't support this function."
 )
 
 // singleStringFlag cannot be set more than once.
@@ -45,15 +51,9 @@ func (p *singleStringFlag) Set(value string) error {
 }
 
 func main() {
-	// Disallow the usage of SUSEConnect outside of Linux. The `runtime.GOOS`
-	// constant is provided by the standard library and is filled on a platform
-	// basis through an internal `goos` package. You can check the value being
-	// filled specifically for Linux here:
-	// https://cs.opensource.google/go/go/+/master:src/internal/goos/zgoos_linux.go
-	//
-	// NOTE: Android is considered a different platform than "Linux".
-	if runtime.GOOS != "linux" {
-		exitOnError(fmt.Errorf("platform '%v' is not supported. Use Linux instead", runtime.GOOS))
+	// SUSEConnect only works on Linux.
+	if err := util.EnsureLinux(); err != nil {
+		exitOnError(err, nil, nil)
 	}
 
 	var (
@@ -73,6 +73,7 @@ func main() {
 		product               singleStringFlag
 		instanceDataFile      string
 		listExtensions        bool
+		autoImportRepoKeys    bool
 		autoAgreeWithLicenses bool
 		email                 string
 		version               bool
@@ -99,7 +100,7 @@ func main() {
 	flag.BoolVar(&listExtensions, "l", false, "")
 	flag.BoolVar(&rollback, "rollback", false, "")
 	flag.BoolVar(&version, "version", false, "")
-	flag.BoolVar(&connect.CFG.AutoImportRepoKeys, "gpg-auto-import-keys", false, "")
+	flag.BoolVar(&autoImportRepoKeys, "gpg-auto-import-keys", false, "")
 	flag.BoolVar(&autoAgreeWithLicenses, "auto-agree-with-licenses", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
 	flag.StringVar(&fsRoot, "root", "", "")
@@ -130,63 +131,97 @@ func main() {
 	}
 	util.Debug.Println("cmd line:", os.Args)
 	util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
-	connect.CFG.Load()
+
+	// Fetch the options to be passed to the internal/connect library by reading
+	// at the default configuration. If that default configuration is not there,
+	// then it will simply default to scc.suse.com with no proxy in between.
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	exitOnError(err, nil, nil)
+
+	// Parsing the given URL. This URL can be given both as an explicit command
+	// line flag, or via an environment variable. If the environment variable is
+	// provided then it takes precedence.
+	//
+	// NOTE: this comes in handy when running feature tests for different
+	// staging servers with different scenarios/requirements.
+	if envURL := os.Getenv("SCC_SERVER_URL"); envURL != "" {
+		baseURL = envURL
+	}
 	if baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
-			fmt.Printf("URL \"%s\" not valid: %s\n", baseURL, err)
+			fmt.Printf("SUSEConnect error: URL \"%s\" not valid: %s\n", baseURL, err)
 			os.Exit(1)
 		}
-		connect.CFG.ChangeBaseURL(baseURL)
+		opts.ChangeBaseURL(baseURL)
 		writeConfig = true
 	}
+
 	if fsRoot != "" {
 		if fsRoot[0] != '/' {
-			fmt.Println("The path specified in the --root option must be absolute.")
+			fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
 			os.Exit(1)
 		}
-		connect.CFG.FsRoot = fsRoot
+		opts.FsRoot = fsRoot
 		zypper.SetFilesystemRoot(fsRoot)
 	}
 	if namespace != "" {
-		connect.CFG.Namespace = namespace
+		opts.Namespace = namespace
 		writeConfig = true
 	}
-	parseRegistrationToken(token)
+	if token != "" {
+		opts.Token = token
+		processedToken, processTokenErr := processToken(token)
+		if processTokenErr != nil {
+			fmt.Printf("SUSEConnect error: %v", processTokenErr)
+			os.Exit(1)
+		}
+		opts.Token = processedToken
+	}
 	if product.isSet {
-		if p, err := connect.SplitTriplet(product.value); err != nil {
+		if p, err := registration.FromTriplet(product.value); err != nil {
 			fmt.Print("Please provide the product identifier in this format: ")
 			fmt.Print("<internal name>/<version>/<architecture>. You can find ")
 			fmt.Print("these values by calling: 'SUSEConnect --list-extensions'\n")
 			os.Exit(1)
 		} else {
-			connect.CFG.Product = p
+			opts.Product = p
 		}
 	}
 	if instanceDataFile != "" {
-		connect.CFG.InstanceDataFile = instanceDataFile
+		opts.InstanceDataFile = instanceDataFile
 	}
 	if email != "" {
-		connect.CFG.Email = email
+		opts.Email = email
 	}
 	if lang, ok := os.LookupEnv("LANG"); ok {
 		if lang != "" {
-			connect.CFG.Language = lang
+			opts.Language = lang
 		}
 	}
 	if _, ok := os.LookupEnv("SKIP_SERVICE_INSTALL"); ok {
-		connect.CFG.SkipServiceInstall = true
+		opts.SkipServiceInstall = true
+	}
+	if autoImportRepoKeys {
+		opts.AutoImportRepoKeys = true
 	}
 	if autoAgreeWithLicenses {
-		connect.CFG.AutoAgreeEULA = true
+		opts.AutoAgreeEULA = true
 	} else {
 		// check for "SUSEConnect --auto-agree-with-licenses=false ..."
 		// which should take precedence over setting in /etc/SUSEConnect
 		flag.Visit(func(f *flag.Flag) {
 			if f.Name == "auto-agree-with-licenses" {
-				connect.CFG.AutoAgreeEULA = false
+				opts.AutoAgreeEULA = false
 			}
 		})
 	}
+
+	// Set the JSON output specifier early on so all later usages can access this information
+	if jsonFlag {
+		opts.OutputKind = connect.JSON
+	}
+
+	api := connect.NewWrappedAPI(opts)
 
 	// Reading the configuration/flags is done, now let's check if the
 	// filesystem can handle operations from SUSEConnect for specific actions
@@ -196,96 +231,90 @@ func main() {
 	// Rollback *must* be allowed because is used as a synchonization mechanism
 	// in the transactional-update toolkit.
 	if deRegister || cleanup {
-		if err := util.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
-			exitOnError(err)
+		if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
+			exitOnError(err, api, opts)
 		}
 	}
 
-	if status {
+	if status || statusText {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status' command"))
+			exitOnError(errors.New("cannot use the json option with this command"), api, opts)
 		}
-		output, err := connect.GetProductStatuses("json")
-		exitOnError(err)
-		fmt.Println(output)
+		if status {
+			err = connect.PrintProductStatuses(opts, connect.StatusJSON)
+		} else {
+			err = connect.PrintProductStatuses(opts, connect.StatusText)
+		}
+		exitOnError(err, api, opts)
 	} else if keepAlive {
 		if isSumaManaged() {
 			os.Exit(0)
 		}
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"))
+			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), api, opts)
 		}
-		err := connect.SendKeepAlivePing()
-		exitOnError(err)
-	} else if statusText {
-		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'status-text' command"))
-		}
-		output, err := connect.GetProductStatuses("text")
-		exitOnError(err)
-		fmt.Print(output)
+		api := connect.NewWrappedAPI(opts)
+		err = api.KeepAlive()
+		exitOnError(err, api, opts)
+		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
-		output, err := connect.RenderExtensionTree(jsonFlag)
-		exitOnError(err)
+		output, err := connect.RenderExtensionTree(api, jsonFlag)
+		exitOnError(err, api, opts)
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
-		err := connect.Deregister(jsonFlag)
+		err := connect.Deregister(api, opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
 			str, _ := json.Marshal(&out)
 			fmt.Println(string(str))
 			os.Exit(1)
 		} else {
-			exitOnError(err)
+			exitOnError(err, api, opts)
 		}
 	} else if cleanup {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"))
+			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), api, opts)
 		}
-		err := connect.Cleanup()
-		exitOnError(err)
+		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
+		exitOnError(err, api, opts)
 	} else if rollback {
 		if jsonFlag {
-			exitOnError(errors.New("cannot use the json option with the 'rollback' command"))
+			exitOnError(errors.New("cannot use the json option with the 'rollback' command"), api, opts)
 		}
-		err := connect.Rollback()
-		exitOnError(err)
+		err := connect.Rollback(api.GetConnection(), opts)
+		exitOnError(err, api, opts)
 	} else if info {
 		sysInfo, err := connect.FetchSystemInformation()
-		exitOnError(err)
+		exitOnError(err, api, opts)
 
 		out, err := json.Marshal(sysInfo)
-		exitOnError(err)
+		exitOnError(err, api, opts)
 
 		fmt.Print(string(out))
 	} else {
-		if instanceDataFile != "" && connect.CFG.IsScc() {
+		if instanceDataFile != "" && opts.IsScc() {
 			fmt.Print("Please use --instance-data only in combination ")
 			fmt.Print("with --url pointing to your RMT or SMT server\n")
 			os.Exit(1)
-		} else if connect.CFG.IsScc() && token == "" && product.value == "" {
+		} else if opts.IsScc() && token == "" && product.value == "" {
 			flag.Usage()
 			os.Exit(1)
 		} else if isSumaManaged() {
 			fmt.Println("This system is managed by SUSE Manager / Uyuni, do not use SUSEconnect.")
 			os.Exit(1)
 		} else {
+			// NOTE: if the base system/extensions have EULAs we need to make
+			// sure that they are accepted before proceeding on the registering.
+			// But this has been disabled for now due to bsc#1218878,
+			// bsc#1218649.
 
-			// If the base system/extensions have EULAs, we need to make sure
-			// that they are accepted before proceeding on the registering. If
-			// they don't have EULA's, then this is a no-op.
-
-			// disabling the license dialog feature for now due to bsc#1218878, bsc#1218649
-			// err := connect.AcceptEULA()
-			// exitOnError(err)
-
-			// we need a read-write filesystem to install release packages
-			if err := util.ReadOnlyFilesystem(connect.CFG.FsRoot); err != nil {
-				exitOnError(err)
+			// We need a read-write filesystem to install release packages.
+			if err := util.ReadOnlyFilesystem(opts.FsRoot); err != nil {
+				exitOnError(err, api, opts)
 			}
 
-			err := connect.Register(jsonFlag)
+			err := connect.Register(api, opts)
 			if err != nil {
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -293,14 +322,14 @@ func main() {
 					fmt.Println(string(str))
 					os.Exit(1)
 				} else {
-					exitOnError(err)
+					exitOnError(err, api, opts)
 				}
 			}
 
 			// After successful registration we try to set labels if we are
 			// targetting SCC.
-			if connect.CFG.IsScc() && len(labels) > 0 {
-				err := connect.AssignAndCreateLabels(strings.Split(labels, ","))
+			if opts.IsScc() && len(labels) > 0 {
+				_, err := api.AssignLabels(strings.Split(labels, ","))
 				if err != nil && !jsonFlag {
 					fmt.Printf("Problem setting labels for this system: %s\n", err)
 				}
@@ -308,34 +337,14 @@ func main() {
 		}
 	}
 	if writeConfig {
-		if err := connect.CFG.Save(); err != nil {
-			fmt.Printf("Problem writing configuration: %s\n", err)
+		if err := opts.SaveAsConfiguration(); err != nil {
+			fmt.Printf("SUSEConnect error: cannot save configuration: %s\n", err)
 			os.Exit(1)
 		}
 	}
 }
 
-func parseRegistrationToken(token string) {
-	if token != "" {
-		connect.CFG.Token = token
-		processedToken, processTokenErr := processToken(token)
-		if processTokenErr != nil {
-			fmt.Printf("Error Processing token with error %+v", processTokenErr)
-			os.Exit(1)
-		}
-		connect.CFG.Token = processedToken
-	}
-}
-
-func maybeBrokenSMTError() error {
-	if !connect.CFG.IsScc() && !connect.UpToDate() {
-		return fmt.Errorf("Your Registration Proxy server doesn't support this function. " +
-			"Please update it and try again.")
-	}
-	return nil
-}
-
-func exitOnError(err error) {
+func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 	if err == nil {
 		return
 	}
@@ -348,27 +357,36 @@ func exitOnError(err error) {
 		os.Exit(64)
 	}
 	if je, ok := err.(connect.JSONError); ok {
-		if err := maybeBrokenSMTError(); err != nil {
-			fmt.Println(err)
+		if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
 			fmt.Print("Error: Cannot parse response from server\n")
 			fmt.Println(je)
 		}
 		os.Exit(66)
 	}
-	if ae, ok := err.(connect.APIError); ok {
-		if ae.Code == http.StatusUnauthorized && connect.IsRegistered() {
+
+	handleAPIError := func(code int, err error) {
+		if code == http.StatusUnauthorized && api.IsRegistered() {
 			fmt.Print("Error: Invalid system credentials, probably because the ")
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
-			fmt.Print("Check ", connect.CFG.BaseURL, " whether your system appears there. ")
+			fmt.Print("Check ", opts.BaseURL, " whether your system appears there. ")
 			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
-		} else if err := maybeBrokenSMTError(); err != nil {
-			fmt.Println(err)
+		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
+			fmt.Println(outdatedRegProxy)
 		} else {
-			fmt.Println(ae)
+			fmt.Println(err)
 		}
 		os.Exit(67)
 	}
+	if ae, ok := err.(connect.APIError); ok {
+		handleAPIError(ae.Code, err)
+	}
+
+	if ae, ok := err.(*connection.ApiError); ok {
+		handleAPIError(ae.Code, err)
+	}
+
 	switch err {
 	case connect.ErrSystemNotRegistered:
 		fmt.Print("Deregistration failed. Check if the system has been ")
@@ -399,7 +417,7 @@ func validateURL(s string) error {
 		return err
 	}
 	if u.Scheme == "" || u.Host == "" {
-		return fmt.Errorf("Missing scheme or host")
+		return fmt.Errorf("missing scheme or host")
 	}
 	return nil
 }
@@ -439,7 +457,7 @@ func readTokenFromReader(reader io.Reader) (string, error) {
 	}
 	token := strings.TrimSpace(tokenBytes)
 	if token == "" {
-		return "", fmt.Errorf("error: token cannot be empty after reading")
+		return "", fmt.Errorf("token cannot be empty after reading")
 	}
 	return token, nil
 }
