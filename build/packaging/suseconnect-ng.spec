@@ -56,6 +56,7 @@ Requires:       ca-certificates
 %endif
 
 Requires:       coreutils
+Requires:       pciutils
 Requires:       zypper
 Requires:       util-linux
 Recommends:     systemd

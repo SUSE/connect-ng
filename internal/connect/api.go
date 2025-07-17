@@ -271,6 +271,7 @@ var mandatoryCollectors = []collectors.Collector{
 	collectors.CloudProvider{},
 	collectors.Architecture{},
 	collectors.ContainerRuntime{},
+	collectors.PCI{},
 
 	// Optional collectors
 	collectors.Uname{},
