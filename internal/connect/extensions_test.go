@@ -60,7 +60,10 @@ func mockRootWritable(isWritable bool) {
 func expectStringMatches(t *testing.T, input string, match string) {
 	if !strings.Contains(input, match) {
 		message := "Expect input to match '%s' but did not!\n The input was: %s"
-		t.Errorf(fmt.Sprintf(message, match, input))
+		// go1.24 introduces printf analyzer tool that throws
+		// "non-constant format string in call to (*testing.common).Errorf"
+		// More here: https://tip.golang.org/doc/go1.24#vet
+		t.Errorf("%s", fmt.Sprintf(message, match, input))
 	}
 }
 
