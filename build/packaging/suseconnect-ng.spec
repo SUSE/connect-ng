@@ -33,7 +33,7 @@ Source2:        vendor.tar.xz
 %if 0%{?suse_version} > 1600
 BuildRequires:  golang(API)
 %else
-BuildRequires:  go1.21-openssl
+BuildRequires:  go1.24-openssl
 %endif
 
 BuildRequires:  ruby-devel

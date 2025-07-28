@@ -28,7 +28,7 @@ jobs:
   feature-tests:
     runs-on: ubuntu-latest
     container:
-      image: registry.suse.com/bci/golang:1.21-openssl
+      image: registry.suse.com/bci/golang:1.24-openssl
       options: --user root --privileged
 
     steps:

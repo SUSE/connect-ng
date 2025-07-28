@@ -8,7 +8,7 @@ GOFLAGS       = -v -mod=vendor
 BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
 
-CONTAINER     = registry.suse.com/bci/golang:1.21-openssl
+CONTAINER     = registry.suse.com/bci/golang:1.24-openssl
 CRM           = docker run --rm -it --privileged
 ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
