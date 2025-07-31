@@ -19,8 +19,8 @@ import (
 // when unit testing
 type WrappedAPI interface {
 	KeepAlive() error
-	Register(regcode string) error
-	RegisterOrKeepAlive(regcode string) error
+	Register(regcode, instanceDataFile string) error
+	RegisterOrKeepAlive(regcode, instanceDataFile string) error
 	IsRegistered() bool
 	AssignLabels(labels []string) ([]labels.Label, error)
 
@@ -118,25 +118,38 @@ func (w Wrapper) KeepAlive() error {
 	return err
 }
 
-func (w Wrapper) Register(regcode string) error {
+func (w Wrapper) Register(regcode, instanceDataFile string) error {
 	hwinfo, err := FetchSystemInformation()
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
 	hostname := collectors.FromResult(hwinfo, "hostname", "")
 
-	// TODO: do something with the code
-	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, registration.NoExtraData)
+	// If an instance-data file was provided, try to read it and attach it as
+	// "extra" data. This will be used inside of the `registration.Register`
+	// code.
+	extraData := registration.NoExtraData
+	if instanceDataFile != "" {
+		data, err := os.ReadFile(instanceDataFile)
+		if err != nil {
+			return err
+		}
+		extraData["instance_data"] = string(data)
+	}
+
+	// NOTE: we are not interested in the code. Hence, we don't save it
+	// anywhere.
+	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
 	return err
 }
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
 // whether the current system is registered or not.
-func (w Wrapper) RegisterOrKeepAlive(regcode string) error {
+func (w Wrapper) RegisterOrKeepAlive(regcode, instanceDataFile string) error {
 	if w.Registered {
 		return w.KeepAlive()
 	}
-	return w.Register(regcode)
+	return w.Register(regcode, instanceDataFile)
 }
 
 func (w Wrapper) IsRegistered() bool {
