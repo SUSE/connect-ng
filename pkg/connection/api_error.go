@@ -30,7 +30,11 @@ func ErrorFromResponse(resp *http.Response) *ApiError {
 
 	ae := &ApiError{Code: resp.StatusCode}
 	if err := json.NewDecoder(resp.Body).Decode(ae); err != nil {
-		return nil
+		// In some servers the response is actually not a JSON message, but
+		// rather some NGinx default page. In that case, just set the HTML
+		// status string as the message.
+		ae.Message = resp.Status
+		ae.LocalizedMessage = resp.Status
 	}
 	return ae
 }
