@@ -27,9 +27,6 @@ type OfflineRequest struct {
 	Login    string `json:"login,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	UUID      string `json:"uuid"`
-	ServerURL string `json:"server_url,omitempty"`
-
 	SystemInformation SystemInformation `json:"system_information,omitempty"`
 }
 
@@ -46,11 +43,6 @@ func (req *OfflineRequest) SetCredentials(creds connection.Credentials) error {
 	return nil
 }
 
-// Set optional server URL
-func (req *OfflineRequest) SetServerURL(serverUrl string) {
-	req.ServerURL = serverUrl
-}
-
 // Marshal and encode the offline request into its base64 representation.
 func (req *OfflineRequest) Base64Encoded() (io.Reader, error) {
 	data, jsonErr := json.Marshal(req)
@@ -65,15 +57,14 @@ func (req *OfflineRequest) Base64Encoded() (io.Reader, error) {
 }
 
 // Builds an offline registration request with it respective required attributes.
-// See [OfflineRequest.SetCredentials] and [OfflineRequest.SetServerURL] for optional attributes.
-func BuildOfflineRequest(identifier, version, arch string, uuid string, systemInformation SystemInformation) *OfflineRequest {
+// See [OfflineRequest.SetCredentials] for optional attributes.
+func BuildOfflineRequest(identifier, version, arch string, systemInformation SystemInformation) *OfflineRequest {
 	return &OfflineRequest{
 		Product: OfflineRequestProductTriplet{
 			Identifier: identifier,
 			Version:    version,
 			Arch:       arch,
 		},
-		UUID:              uuid,
 		SystemInformation: systemInformation,
 	}
 }
