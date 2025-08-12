@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -18,8 +19,8 @@ func main() {
 		opts.URL = url
 	}
 
-	if len(os.Args) != 6 {
-		fmt.Println("./offline-register-api IDENTIFIER VERSION ARCH REGCODE UUID")
+	if len(os.Args) < 4 || len(os.Args) > 6 {
+		fmt.Println("./offline-register-api IDENTIFIER VERSION ARCH REGCODE <SYSTEMINFORMATION>")
 		os.Exit(1)
 	}
 
@@ -27,16 +28,27 @@ func main() {
 	version := os.Args[2]
 	arch := os.Args[3]
 	regcode := os.Args[4]
-	uuid := os.Args[5]
 
-	information := map[string]any{
-		"cpus":    8,
-		"sockets": 2,
-		"vcpus":   16,
+	information := registration.NoSystemInformation
+
+	if len(os.Args) == 6 {
+		file := os.Args[5]
+
+		data, readErr := os.ReadFile(file)
+		if readErr != nil {
+			fmt.Fprintf(os.Stderr, "Error reading system information file: %v\n", readErr)
+			os.Exit(1)
+		}
+
+		parseErr := json.Unmarshal(data, &information)
+		if parseErr != nil {
+			fmt.Fprintf(os.Stderr, "Error unmarshalling system information JSON: %v\n", parseErr)
+			os.Exit(1)
+		}
 	}
 
 	conn := connection.New(opts, connection.NoCredentials{})
-	request := registration.BuildOfflineRequest(identifier, version, arch, uuid, information)
+	request := registration.BuildOfflineRequest(identifier, version, arch, information)
 
 	blob, encodeErr := request.Base64Encoded()
 	if encodeErr != nil {

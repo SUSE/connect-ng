@@ -11,22 +11,19 @@ import (
 
 func TestBuildOfflineRequest(t *testing.T) {
 	assert := assert.New(t)
-	uuid := "0f2fb933-00b8-483f-b63a-47d481c12947"
 
-	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", uuid, NoSystemInformation)
+	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
 
 	assert.Equal("rancher", request.Product.Identifier)
-	assert.Equal(uuid, request.UUID)
 }
 
 func TestOfflineRequestSetCredentials(t *testing.T) {
 	assert := assert.New(t)
 
-	uuid := "0f2fb933-00b8-483f-b63a-47d481c12947"
 	creds := &mockCredentials{}
 	creds.On("Login").Return("login", "password", nil)
 
-	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", uuid, NoSystemInformation)
+	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
 	request.SetCredentials(creds)
 
 	assert.Equal("login", request.Login)
@@ -35,22 +32,10 @@ func TestOfflineRequestSetCredentials(t *testing.T) {
 	creds.AssertExpectations(t)
 }
 
-func TestOfflineRequestSetServerURL(t *testing.T) {
-	assert := assert.New(t)
-
-	uuid := "0f2fb933-00b8-483f-b63a-47d481c12947"
-	expected := "http://server-url.com"
-
-	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", uuid, NoSystemInformation)
-	request.SetServerURL(expected)
-	assert.Equal(expected, request.ServerURL)
-}
-
 func TestBuildBase64Encoded(t *testing.T) {
 	assert := assert.New(t)
 
-	uuid := "0f2fb933-00b8-483f-b63a-47d481c12947"
-	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", uuid, NoSystemInformation)
+	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
 
 	encoded, encodeErr := request.Base64Encoded()
 	assert.NoError(encodeErr)
@@ -62,7 +47,6 @@ func TestBuildBase64Encoded(t *testing.T) {
 	assert.NoError(unmarshalErr)
 
 	assert.NotNil(result)
-	assert.Equal(uuid, result["uuid"])
 
 	productMap, ok := result["product"].(map[string]any)
 	assert.True(ok)
@@ -73,10 +57,9 @@ func TestBuildBase64Encoded(t *testing.T) {
 func TestRegisterWithOfflineRequest(t *testing.T) {
 	assert := assert.New(t)
 
-	uuid := "0f2fb933-00b8-483f-b63a-47d481c12947"
 	regcode := "some-scc-regcode"
 
-	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", uuid, NoSystemInformation)
+	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
 	conn, _ := mockConnectionWithCredentials()
 
 	body := fixture(t, "pkg/registration/offline_request_request.base64")
