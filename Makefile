@@ -78,7 +78,7 @@ ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
 
 check-format:
-	@gofmt -l internal/* cmd/*
+	@test -z $(shell gofmt -l internal/* cmd/* pkg/* | tee /dev/stderr)
 
 build-rpm:
 	$(CRM) $(MOUNT) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm'
