@@ -14,6 +14,8 @@ var usedCollectors = []collectors.Collector{
 	collectors.CloudProvider{},
 	collectors.Architecture{},
 	collectors.ContainerRuntime{},
+	collectors.PCI{},
+	collectors.LSMOD{},
 
 	// Optional collectors
 	collectors.Uname{},
