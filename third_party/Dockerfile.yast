@@ -9,7 +9,6 @@ WORKDIR /yast-registration
 
 RUN git clone --depth 1 https://github.com/yast/yast-registration.git /yast-registration
 
-COPY out/libsuseconnect.so /usr/lib64
+COPY out/libsuseconnect /usr/lib64/libsuseconnect.so
 COPY third_party/yast/lib /usr/lib64/ruby/vendor_ruby/3.3.0
 CMD ["rake", "test:unit"]
-
