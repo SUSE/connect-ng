@@ -6,7 +6,7 @@ import (
 )
 
 func createTestUptimeLogFileWithContent(content string) (string, error) {
-tempFile, err := os.CreateTemp("", "testUptimeLog")
+	tempFile, err := os.CreateTemp("", "testUptimeLog")
 	if err != nil {
 		return "", err
 	}
