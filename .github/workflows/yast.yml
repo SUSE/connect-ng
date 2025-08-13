@@ -1,0 +1,14 @@
+name: YaST integration tests
+on: [pull_request]
+
+jobs:
+  yast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        run: go mod vendor
+
+      - name: Run test-yast
+        run: make test-yast
