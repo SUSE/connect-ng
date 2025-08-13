@@ -118,6 +118,11 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+	// when info set nothing sent to SCC,
+	// in that case we don't want to update
+	// contents of the data checksum files
+	util.UpdateLargeDataIDs = !info
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)

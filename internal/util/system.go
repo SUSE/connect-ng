@@ -31,6 +31,7 @@ const (
 )
 
 var systemEcho bool
+var UpdateLargeDataIDs bool // set if -i/--info was used
 
 // SetSystemEcho toggles piping of executed command's outputs to stdout/stderr
 // returns true if it was enabled before, false otherwise
