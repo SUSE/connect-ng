@@ -16,7 +16,7 @@ Please visit https://scc.suse.com to see and manage your subscriptions.
 SUSEConnect-ng communicates with SCC over this [REST API](https://github.com/SUSE/connect/blob/master/doc/SCC-API-%28Implemented%29.md).
 
 ### Build
-Requires Go >= 1.21
+Requires Go >= 1.24
 
 ```
 make build
@@ -26,7 +26,7 @@ This will create a `out/suseconnect` binary.
 ### Build in container
 If you don't have a go compiler installed, you can run the build in a container: 
 ```
-docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.21-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make build"
+docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make build"
 ```
 This will create a `out/suseconnect` binary on the host.
 
