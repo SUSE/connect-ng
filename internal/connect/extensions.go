@@ -10,6 +10,7 @@ import (
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
 var (
@@ -20,15 +21,12 @@ var (
 	extensionListTemplate string
 
 	// test method overwrites
-	localIsRegistered      = IsRegistered
-	localBaseProduct       = zypper.BaseProduct
-	localShowProduct       = showProduct
-	localSystemActivations = systemActivations
-	localRootWritable      = util.IsRootFSWritable
+	localBaseProduct  = zypper.BaseProduct
+	localRootWritable = util.IsRootFSWritable
 )
 
 type extension struct {
-	Name         string       `json:"identifier"`
+	Identifier   string       `json:"identifier"`
 	Version      string       `json:"version"`
 	Arch         string       `json:"arch"`
 	FriendlyName string       `json:"name"`
@@ -38,32 +36,33 @@ type extension struct {
 	Extensions   []*extension `json:"extensions"`
 }
 
-func extensionTree(as map[string]Activation, p Product) *extension {
+func extensionTree(as []*registration.Activation, p *registration.Product) *extension {
 	current := productToExtension(as, p)
 
 	for _, extProduct := range p.Extensions {
-		current.Extensions = append(current.Extensions, extensionTree(as, extProduct))
+		current.Extensions = append(current.Extensions, extensionTree(as, &extProduct))
 	}
 	return current
 }
 
-func productToExtension(as map[string]Activation, p Product) *extension {
-	_, activated := as[p.ToTriplet()]
+func productToExtension(as []*registration.Activation, p *registration.Product) *extension {
 	return &extension{
-		Name:         p.Name,
+		Identifier:   p.Identifier,
 		Version:      p.Version,
 		Arch:         p.Arch,
 		FriendlyName: p.FriendlyName,
-		Activated:    activated,
+		Activated:    registration.ProductInActivations(p, as),
 		Available:    p.Available,
 		Free:         p.Free,
 		Extensions:   []*extension{},
 	}
 }
 
-func RenderExtensionTree(outputJson bool) (string, error) {
+func RenderExtensionTree(api WrappedAPI, outputJson bool) (string, error) {
+	conn := api.GetConnection()
+
 	// The system is registered remotely
-	if !localIsRegistered() {
+	if !api.IsRegistered() {
 		return "", ErrListExtensionsUnregistered
 	}
 
@@ -72,12 +71,12 @@ func RenderExtensionTree(outputJson bool) (string, error) {
 		return "", err
 	}
 
-	as, err := localSystemActivations()
+	as, err := registration.FetchActivations(conn)
 	if err != nil {
 		return "", err
 	}
 
-	product, err := localShowProduct(zypperProductToProduct(base))
+	product, err := registration.FetchProductInfo(conn, base.Identifier, base.Version, base.Arch)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +124,7 @@ func renderTextExtension(indent int, exts []*extension, command string) ([]strin
 
 	for _, ext := range exts {
 		output := bytes.Buffer{}
-		code := fmt.Sprintf("%s/%s/%s", ext.Name, ext.Version, ext.Arch)
+		code := fmt.Sprintf("%s/%s/%s", ext.Identifier, ext.Version, ext.Arch)
 
 		args := struct {
 			extension

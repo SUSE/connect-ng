@@ -78,7 +78,7 @@ ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
 
 check-format:
-	@gofmt -l internal/* cmd/*
+	@test -z $(shell gofmt -l internal/* cmd/* pkg/* | tee /dev/stderr)
 
 build-rpm:
 	$(CRM) $(MOUNT) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm'
@@ -86,7 +86,7 @@ build-rpm:
 feature-tests:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm && build/ci/configure && build/ci/run-feature-tests'
 
-test-yast: build-so
+test-yast: build
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
 
 clean:

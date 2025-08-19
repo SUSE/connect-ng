@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -100,7 +101,7 @@ func TestProductTraverseExtensionsSkipBranch(t *testing.T) {
 func TestFetchProductInfo(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := mockConnectionWithCredentials()
+	conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	payload := fixture(t, "pkg/registration/product_tree.json")
@@ -110,4 +111,29 @@ func TestFetchProductInfo(t *testing.T) {
 	assert.NoError(err)
 
 	assert.Equal("SUSE Linux Enterprise Server 15 SP5 x86_64", product.FriendlyName)
+}
+
+func TestFindExtension(t *testing.T) {
+	assert := assert.New(t)
+
+	productJson := fixture(t, "pkg/registration/product_tree.json")
+	product := Product{}
+
+	assert.NoError(json.Unmarshal(productJson, &product))
+
+	found := []string{
+		// Direct extension from the product
+		"sle-module-basesystem/15.5/x86_64",
+
+		// Extension for one of the extensions from the product
+		"sle-module-desktop-applications/15.5/x86_64",
+	}
+
+	for _, triplet := range found {
+		_, err := product.FindExtension(triplet)
+		assert.NoError(err)
+	}
+
+	_, err := product.FindExtension("sle-module-fakesystem/15.5/x86_64")
+	assert.Equal("extension not found", err.Error())
 }

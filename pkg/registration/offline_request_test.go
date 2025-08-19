@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,7 +21,7 @@ func TestBuildOfflineRequest(t *testing.T) {
 func TestOfflineRequestSetCredentials(t *testing.T) {
 	assert := assert.New(t)
 
-	creds := &mockCredentials{}
+	creds := &connection.MockCredentials{}
 	creds.On("Login").Return("login", "password", nil)
 
 	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
@@ -60,7 +61,7 @@ func TestRegisterWithOfflineRequest(t *testing.T) {
 	regcode := "some-scc-regcode"
 
 	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	body := fixture(t, "pkg/registration/offline_request_request.base64")
 	response := fixture(t, "pkg/registration/offline_request_response.base64")

@@ -39,21 +39,21 @@ func exitOnError(err error) {
 }
 
 func displayUptimeVersion() {
-        var (
-                version bool
-        )
+	var (
+		version bool
+	)
 
-        flag.Usage = func() {
-                fmt.Print(uptimeTrackerUsageText)
-        }
+	flag.Usage = func() {
+		fmt.Print(uptimeTrackerUsageText)
+	}
 
-        flag.BoolVar(&version, "version", false, "")
+	flag.BoolVar(&version, "version", false, "")
 
-        flag.Parse()
-        if version {
-                fmt.Println(getShortenedVersion())
-                os.Exit(0)
-        }
+	flag.Parse()
+	if version {
+		fmt.Println(getShortenedVersion())
+		os.Exit(0)
+	}
 }
 
 func readUptimeLogFile(uptimeLogsFilePath string) (map[string]string, error) {

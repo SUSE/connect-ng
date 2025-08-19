@@ -16,9 +16,9 @@ type ApiError struct {
 
 func (ae *ApiError) Error() string {
 	if ae.LocalizedMessage != "" {
-		return fmt.Sprintf("API error: %v (code: %v)", ae.LocalizedMessage, ae.Code)
+		return fmt.Sprintf("Error: Registration server returned '%v' (%d)", ae.LocalizedMessage, ae.Code)
 	}
-	return fmt.Sprintf("API error: %v (code: %v)", ae.Message, ae.Code)
+	return fmt.Sprintf("Error: Registration server returned '%v' (%d)", ae.Message, ae.Code)
 }
 
 // Returns a new ApiError from the given response if it contained an API error
@@ -30,7 +30,11 @@ func ErrorFromResponse(resp *http.Response) *ApiError {
 
 	ae := &ApiError{Code: resp.StatusCode}
 	if err := json.NewDecoder(resp.Body).Decode(ae); err != nil {
-		return nil
+		// In some servers the response is actually not a JSON message, but
+		// rather some NGinx default page. In that case, just set the HTML
+		// status string as the message.
+		ae.Message = resp.Status
+		ae.LocalizedMessage = resp.Status
 	}
 	return ae
 }
