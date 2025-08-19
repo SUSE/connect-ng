@@ -93,4 +93,13 @@ func main() {
 	fmt.Printf("Certificate validity: %v\n", valid)
 	fmt.Printf("Expires at: %v\n", expires)
 	fmt.Printf("RegcodeMatches: %v\n", matches)
+
+	if os.Getenv("DEBUG") == "1" {
+		fmt.Printf("Encoded payload: %v\n", certificate.EncodedPayload)
+
+		// NOTE: ExtractPayload is called by previous calls like
+		// `ExpiresAt`. Hence, the OfflinePayload has already been filled by
+		// this point.
+		fmt.Printf("Payload: %#v\n", certificate.OfflinePayload)
+	}
 }
