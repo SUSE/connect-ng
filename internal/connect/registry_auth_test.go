@@ -55,7 +55,7 @@ func mockWriteFile(t *testing.T, matcherfile string) {
 func mockMkDirAll(t *testing.T) {
 	mkDirAll = func(_ string, perm os.FileMode) error {
 		if perm != 0755 {
-			t.Log(fmt.Sprintf("mkdir: %s is unlikely the right directory permission. Are you sure?", perm))
+			t.Logf("mkdir: %s is unlikely the right directory permission. Are you sure?", perm)
 		}
 		return nil
 	}
@@ -128,7 +128,7 @@ func TestRegistryAuthRemoveReadFailed(t *testing.T) {
 	}
 
 	writeFile = func(_ string, _ []byte, _ os.FileMode) error {
-		fmt.Errorf("Expected writeFile to never be called")
+		t.Errorf("Expected writeFile to never be called")
 		return nil
 	}
 
