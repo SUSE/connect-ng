@@ -1,0 +1,62 @@
+{
+  "version": "1",
+  "subscription": {
+    "installuuid": "a4b6c3d1-2e4f-4a7b-9c8d-5e6f7a8b9c0d",
+    "clusteruuid": "0bcf9fc5-e66a-4b36-bf6b-6a9d6a4c393e",
+    "product": "cpe:/a:suse:rancher:2.12.1",
+    "version": "2.12.1",
+    "git": "2b5a6c8f9d3e4a7b1c2d3e4f5a6b7c8d9e0f1a2b",
+    "arch": "x86_64",
+    "server_url": "https://rancher.example.com"
+  },
+  "feature_flags": [
+    "continuous-delivery",
+    "fleet",
+    "multi-cluster-management",
+    "harvester",
+    "rke2"
+  ],
+  "managedSystems": [
+    {
+      "arch": "x86_64",
+      "cpu": 16,
+      "memory": 32768,
+      "count": 5
+    },
+    {
+      "arch": "x86_64",
+      "cpu": 8,
+      "memory": 16384,
+      "count": 12
+    },
+    {
+      "arch": "aarch64",
+      "cpu": 4,
+      "memory": 8192,
+      "count": 3
+    }
+  ],
+  "managedClusters": [
+    {
+      "nodes": 3,
+      "upstream": true,
+      "count": 1
+    },
+    {
+      "nodes": 5,
+      "upstream": false,
+      "count": 2
+    },
+    {
+      "nodes": 10,
+      "upstream": false,
+      "count": 1
+    },
+    {
+      "nodes": 1,
+      "upstream": false,
+      "count": 1
+    }
+  ],
+  "timestamp": "2025-01-15T10:30:45.123Z"
+}
