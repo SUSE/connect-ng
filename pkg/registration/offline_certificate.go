@@ -36,6 +36,8 @@ type OfflinePayload struct {
 	HashedRegcode    string           `json:"hashed_regcode"`
 	HashedUUID       string           `json:"hashed_uuid"`
 	Information      map[string]any   `json:"information"`
+	SystemID         int              `json:"system_id"`
+	ProductName      string           `json:"product_name"`
 }
 
 // Reads and offline registration certificate from the given reader object.
