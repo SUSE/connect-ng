@@ -90,6 +90,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("certificate blob:\n===\n%s\n===\n", certificate.EncodedPayload)
+	fmt.Printf("Payload: %#v\n", certificate.OfflinePayload)
 	fmt.Printf("Certificate validity: %v\n", valid)
 	fmt.Printf("Expires at: %v\n", expires)
 	fmt.Printf("RegcodeMatches: %v\n", matches)
