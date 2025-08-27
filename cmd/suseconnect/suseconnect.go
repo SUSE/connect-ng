@@ -118,6 +118,7 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
@@ -285,7 +286,7 @@ func main() {
 		err := connect.Rollback(api.GetConnection(), opts)
 		exitOnError(err, api, opts)
 	} else if info {
-		sysInfo, err := connect.FetchSystemInformation()
+		sysInfo, err := connect.FetchSystemInformation(info)
 		exitOnError(err, api, opts)
 
 		out, err := json.Marshal(sysInfo)
