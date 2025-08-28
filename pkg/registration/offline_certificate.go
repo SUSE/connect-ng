@@ -19,6 +19,8 @@ type OfflineCertificate struct {
 	Hash             string `json:"hash"`
 	EncodedPayload   string `json:"payload"`
 	EncodedSignature string `json:"signature"`
+	SystemID         int    `json:"system_id"`
+	ProductName      string `json:"product_name"`
 
 	*OfflinePayload
 }
