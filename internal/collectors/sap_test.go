@@ -153,6 +153,27 @@ func TestSAPRunWithMultipleWorkloads(t *testing.T) {
 	assert.Equal(expected, res, "Result mismatch when there are workloads")
 }
 
+func TestSAPRunWithDuplicatedWorkloads(t *testing.T) {
+	assert := assert.New(t)
+	sap := SAP{}
+	expected := Result{"sap": []map[string]interface{}{
+		{
+			"system_id":      "DEV",
+			"instance_types": []string{"ASCS", "J"},
+		},
+	}}
+
+	mockUtilFileExists(true)
+	mockLocalOsReaddir(map[string][]string{
+		"/usr/sap":     []string{"DEV", ".config"},
+		"/usr/sap/DEV": []string{"ASCS01", "ASCS01", "J01"}, // NOTE: duplicated!
+	})
+
+	res, err := sap.run(ARCHITECTURE_X86_64)
+	assert.NoError(err)
+	assert.Equal(expected, res, "Result mismatch when there are workloads")
+}
+
 func TestSAPRunWithNoWorkloadDetected(t *testing.T) {
 	assert := assert.New(t)
 	sap := SAP{}

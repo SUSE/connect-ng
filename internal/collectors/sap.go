@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"slices"
 
 	"github.com/SUSE/connect-ng/internal/util"
 )
@@ -26,10 +27,13 @@ func getMatchedSubdirectories(absolutePath string, matcher *regexp.Regexp) ([]st
 	}
 	match := []string{}
 	for _, subDirectory := range subDirectories {
+
 		// filter for nil values from FindStringSubmatch
 		matches := matcher.FindStringSubmatch(subDirectory.Name())
 		if len(matches) >= 2 {
-			match = append(match, matches[1])
+			if !slices.Contains(match, matches[1]) {
+				match = append(match, matches[1])
+			}
 		}
 	}
 	return match, nil
