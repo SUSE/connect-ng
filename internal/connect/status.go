@@ -4,9 +4,18 @@ import (
 	"bytes"
 	_ "embed" //golint
 	"encoding/json"
+	"fmt"
 	"text/template"
 
 	"github.com/SUSE/connect-ng/internal/zypper"
+	"github.com/SUSE/connect-ng/pkg/registration"
+)
+
+type StatusFormat int
+
+const (
+	StatusJSON StatusFormat = iota
+	StatusText
 )
 
 const (
@@ -35,60 +44,77 @@ type Status struct {
 	Type       string `json:"type,omitempty"`
 }
 
+func PrintProductStatuses(opts *Options, format StatusFormat) error {
+	output, err := GetProductStatuses(opts, format)
+	if err != nil {
+		return err
+	}
+	fmt.Println(output)
+	return nil
+}
+
 // GetProductStatuses returns statuses of installed products
-func GetProductStatuses(format string) (string, error) {
-	statuses, err := getStatuses()
+func GetProductStatuses(opts *Options, format StatusFormat) (string, error) {
+	statuses, err := getStatuses(opts)
 	if err != nil {
 		return "", err
 	}
-	if format == "json" {
+
+	switch format {
+	case StatusJSON:
 		jsn, err := json.Marshal(statuses)
 		if err != nil {
 			return "", err
 		}
 		return string(jsn), nil
+	case StatusText:
+		text, err := getStatusText(statuses)
+		if err != nil {
+			return "", err
+		}
+		return text, nil
 	}
-
-	text, err := getStatusText(statuses)
-	if err != nil {
-		return "", err
-	}
-	return text, nil
+	// Never happens. Hooray for Go's enums and branch exhaustion!
+	return "", nil
 }
 
-func getStatuses() ([]Status, error) {
+func getStatuses(opts *Options) ([]Status, error) {
 	installed, err := zypper.InstalledProducts()
 	if err != nil {
 		return nil, err
 	}
 
-	activations := make(map[string]Activation) // default empty map
-	if IsRegistered() {
-		activations, err = systemActivations()
+	api := NewWrappedAPI(opts)
+
+	activations := make(map[string]*registration.Activation) // default empty map
+	if api.IsRegistered() {
+		rawActivations, err := registration.FetchActivations(api.GetConnection())
 		if err != nil {
 			return nil, err
 		}
+		for _, activation := range rawActivations {
+			activations[activation.ToTriplet()] = activation
+		}
 	}
-	installedProducts := zypperProductListToProductList(installed)
-	statuses := buildStatuses(installedProducts, activations)
+	statuses := buildStatuses(installed, activations)
 	return statuses, nil
 }
 
-func buildStatuses(products []Product, activations map[string]Activation) []Status {
+func buildStatuses(products []registration.Product, activations map[string]*registration.Activation) []Status {
 	var statuses []Status
 	for _, product := range products {
 		status := Status{
 			Summary:    product.Summary,
-			Identifier: product.Name,
+			Identifier: product.Identifier,
 			Version:    product.Version,
 			Arch:       product.Arch,
 			Status:     notRegistered,
 		}
 		if activation, ok := activations[product.ToTriplet()]; ok {
 			status.Status = registered
-			if activation.RegCode != "" {
+			if activation.RegistrationCode != "" {
 				status.Name = activation.Name
-				status.RegCode = activation.RegCode
+				status.RegCode = activation.RegistrationCode
 				layout := "2006-01-02 15:04:05 MST"
 				status.StartsAt = activation.StartsAt.Format(layout)
 				status.ExpiresAt = activation.ExpiresAt.Format(layout)
@@ -118,9 +144,8 @@ func getStatusText(statuses []Status) (string, error) {
 // Products from zypper have priority over products from
 // activations as they have summary field which is missing
 // in the latter.
-func SystemProducts() ([]Product, error) {
-	installed, err := zypper.InstalledProducts()
-	products := zypperProductListToProductList(installed)
+func SystemProducts(api WrappedAPI, opts *Options) ([]registration.Product, error) {
+	products, err := zypper.InstalledProducts()
 	if err != nil {
 		return products, err
 	}
@@ -128,16 +153,17 @@ func SystemProducts() ([]Product, error) {
 	for _, prod := range products {
 		installedIDs.Add(prod.ToTriplet())
 	}
-	if !IsRegistered() {
+	if !api.IsRegistered() {
 		return products, nil
 	}
-	activations, err := systemActivations()
+
+	activations, err := registration.FetchActivations(api.GetConnection())
 	if err != nil {
 		return products, err
 	}
 	for _, a := range activations {
-		if !installedIDs.Contains(a.Service.Product.ToTriplet()) {
-			products = append(products, a.Service.Product)
+		if !installedIDs.Contains(a.Product.ToTriplet()) {
+			products = append(products, *a.Product)
 		}
 	}
 

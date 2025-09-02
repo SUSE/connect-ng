@@ -18,7 +18,7 @@
 %global project github.com/SUSE/connect-ng
 
 Name:           suseconnect-ng
-Version:        1.13.0
+Version:        1.20.0
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later

@@ -21,6 +21,8 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/registration"
+	"github.com/SUSE/connect-ng/pkg/search"
 )
 
 // log level
@@ -63,37 +65,39 @@ func free_string(str *C.char) {
 
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	login, password, err := connect.AnnounceSystem(C.GoString(distroTarget), "", false)
+	if err := connect.Register(api, opts); err != nil {
+		return C.CString(errorToJSON(err))
+	}
+
+	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(opts.FsRoot))
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
-	var res struct {
-		Credentials []string `json:"credentials"`
-	}
-	res.Credentials = []string{login, password, ""}
-	jsn, _ := json.Marshal(&res)
+	jsn, _ := json.Marshal(&creds)
 	return C.CString(string(jsn))
 }
 
 //export update_system
 func update_system(clientParams, distroTarget *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	if err := connect.UpdateSystem(C.GoString(distroTarget), "", false, false); err != nil {
+	api := connect.NewWrappedAPI(opts)
+	if err := api.KeepAlive(); err != nil {
 		return C.CString(errorToJSON(err))
 	}
-
 	return C.CString("{}")
 }
 
 //export deactivate_system
 func deactivate_system(clientParams *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	err := connect.DeregisterSystem()
+	err := connect.Deregister(api, opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -137,14 +141,16 @@ func curlrc_credentials() *C.char {
 
 //export show_product
 func show_product(clientParams, product *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	var productQuery connect.Product
+	var productQuery registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	productData, err := connect.ShowProduct(productQuery)
+
+	wrapper := connect.NewWrappedAPI(opts)
+	productData, err := registration.FetchProductInfo(wrapper.GetConnection(), productQuery.Identifier, productQuery.Version, productQuery.Arch)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -157,14 +163,15 @@ func show_product(clientParams, product *C.char) *C.char {
 
 //export activate_product
 func activate_product(clientParams, product, email *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.ActivateProduct(p, C.GoString(email))
+	service, err := connect.ActivateProduct(api.GetConnection(), opts.Token, p)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -177,9 +184,10 @@ func activate_product(clientParams, product, email *C.char) *C.char {
 
 //export activated_products
 func activated_products(clientParams *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	products, err := connect.ActivatedProducts()
+	products, err := connect.ActivatedProducts(api.GetConnection())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -192,16 +200,25 @@ func activated_products(clientParams *C.char) *C.char {
 
 //export deactivate_product
 func deactivate_product(clientParams, product *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.DeactivateProduct(p)
+
+	metadata, pr, err := registration.Deactivate(api.GetConnection(), p.Identifier, p.Version, p.Arch)
 	if err != nil {
 		return C.CString(errorToJSON(err))
+	}
+	service := &registration.Service{
+		ID:            metadata.ID,
+		URL:           metadata.URL,
+		Name:          metadata.Name,
+		ObsoletedName: metadata.ObsoletedName,
+		Product:       *pr,
 	}
 	jsn, err := json.Marshal(service)
 	if err != nil {
@@ -212,10 +229,8 @@ func deactivate_product(clientParams, product *C.char) *C.char {
 
 //export get_config
 func get_config(path *C.char) *C.char {
-	c := connect.NewConfig()
-	c.Path = C.GoString(path)
-	c.Load()
-	jsn, err := json.Marshal(c)
+	opts, _ := connect.ReadFromConfiguration(C.GoString(path))
+	jsn, err := json.Marshal(opts)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -224,15 +239,16 @@ func get_config(path *C.char) *C.char {
 
 //export write_config
 func write_config(clientParams *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
-	err := connect.CFG.Save()
+	opts := loadConfig(C.GoString(clientParams))
+
+	err := opts.SaveAsConfiguration()
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
 	return C.CString("{}")
 }
 
-func loadConfig(clientParams string) {
+func loadConfig(clientParams string) *connect.Options {
 	// unmarshal extra config fields only for local use
 	var extConfig struct {
 		Debug string `json:"debug"`
@@ -242,8 +258,13 @@ func loadConfig(clientParams string) {
 	if v, _ := strconv.ParseBool(extConfig.Debug); v {
 		util.Debug.SetOutput(callbackWriter{llDebug})
 	}
-	connect.CFG.Load()
-	connect.CFG.MergeJSON(clientParams)
+
+	// Read the options from the default configuration path and merge the
+	// provided clientParams into as well.
+	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	_ = json.Unmarshal([]byte(clientParams), opts)
+
+	return opts
 }
 
 func certToPEM(cert *x509.Certificate) string {
@@ -340,9 +361,16 @@ func errorToJSON(err error) string {
 
 //export getstatus
 func getstatus(format *C.char) *C.char {
-	connect.CFG.Load()
+	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+
 	gFormat := C.GoString(format)
-	output, err := connect.GetProductStatuses(gFormat)
+	var f connect.StatusFormat
+	if gFormat == "text" {
+		f = connect.StatusText
+	} else {
+		f = connect.StatusJSON
+	}
+	output, err := connect.GetProductStatuses(opts, f)
 	if err != nil {
 		return C.CString(err.Error())
 	}
@@ -351,32 +379,29 @@ func getstatus(format *C.char) *C.char {
 
 //export update_certificates
 func update_certificates() *C.char {
-	err := connect.UpdateCertificates()
-	if err != nil {
-		return C.CString(errorToJSON(err))
-	}
+	// NOTE: this is no longer relevant, but we keep it for
+	// backwards-compatibility.
 	return C.CString("{}")
 }
 
 //export reload_certificates
 func reload_certificates() *C.char {
-	err := connect.ReloadCertPool()
-	if err != nil {
-		return C.CString(errorToJSON(err))
-	}
+	// NOTE: this is no longer relevant, but we keep it for
+	// backwards-compatibility.
 	return C.CString("{}")
 }
 
 //export list_installer_updates
 func list_installer_updates(clientParams, product *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	var productQuery connect.Product
+	var productQuery registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	repos, err := connect.InstallerUpdates(productQuery)
+	repos, err := connect.InstallerUpdates(api.GetConnection(), productQuery)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -389,14 +414,15 @@ func list_installer_updates(clientParams, product *C.char) *C.char {
 
 //export system_migrations
 func system_migrations(clientParams, products *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	installed := make([]connect.Product, 0)
+	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	migrations, err := connect.ProductMigrations(installed)
+	migrations, err := connect.ProductMigrations(api.GetConnection(), installed)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -409,18 +435,19 @@ func system_migrations(clientParams, products *C.char) *C.char {
 
 //export offline_system_migrations
 func offline_system_migrations(clientParams, products, targetBaseProduct *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	installed := make([]connect.Product, 0)
+	installed := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &installed)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	var target connect.Product
+	var target registration.Product
 	if err := json.Unmarshal([]byte(C.GoString(targetBaseProduct)), &target); err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	migrations, err := connect.OfflineProductMigrations(installed, target)
+	migrations, err := connect.OfflineProductMigrations(api.GetConnection(), installed, target)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -433,14 +460,23 @@ func offline_system_migrations(clientParams, products, targetBaseProduct *C.char
 
 //export upgrade_product
 func upgrade_product(clientParams, product *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
 
-	var prod connect.Product
+	var prod registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &prod)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	service, err := connect.UpgradeProduct(prod)
+
+	conn := connect.NewWrappedAPI(opts)
+	meta, pr, err := registration.Upgrade(conn.GetConnection(), prod.Identifier, prod.Version, prod.Arch)
+	service := &registration.Service{
+		ID:            meta.ID,
+		URL:           meta.URL,
+		Name:          meta.Name,
+		ObsoletedName: meta.ObsoletedName,
+		Product:       *pr,
+	}
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -453,14 +489,15 @@ func upgrade_product(clientParams, product *C.char) *C.char {
 
 //export synchronize
 func synchronize(clientParams, products *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	prods := make([]connect.Product, 0)
+	prods := make([]registration.Product, 0)
 	err := json.Unmarshal([]byte(C.GoString(products)), &prods)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	activated, err := connect.SyncProducts(prods)
+	activated, err := connect.SyncProducts(api.GetConnection(), prods)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -473,18 +510,14 @@ func synchronize(clientParams, products *C.char) *C.char {
 
 //export system_activations
 func system_activations(clientParams *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	// converting from map to list as expected by Ruby clients
-	actList := make([]connect.Activation, 0)
-	actMap, err := connect.SystemActivations()
+	activations, err := registration.FetchActivations(api.GetConnection())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
-	for _, a := range actMap {
-		actList = append(actList, a)
-	}
-	jsn, err := json.Marshal(actList)
+	jsn, err := json.Marshal(activations)
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}
@@ -493,14 +526,16 @@ func system_activations(clientParams *C.char) *C.char {
 
 //export search_package
 func search_package(clientParams, product, query *C.char) *C.char {
-	loadConfig(C.GoString(clientParams))
+	opts := loadConfig(C.GoString(clientParams))
+	api := connect.NewWrappedAPI(opts)
 
-	var p connect.Product
+	var p registration.Product
 	err := json.Unmarshal([]byte(C.GoString(product)), &p)
 	if err != nil {
 		return C.CString(errorToJSON(connect.JSONError{Err: err}))
 	}
-	results, err := connect.SearchPackage(C.GoString(query), p)
+
+	results, err := search.Package(api.GetConnection(), C.GoString(query), p.ToTriplet())
 	if err != nil {
 		return C.CString(errorToJSON(err))
 	}

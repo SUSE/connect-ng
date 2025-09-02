@@ -2,45 +2,117 @@ package registration
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
-// Product as defined from SCC'S API.
+// Product as defined from SCC's API.
 type Product struct {
+	// NOTE: what in SCC's API is called "identifier", it is the "name" in
+	// zypper's nomenclature, but that's different from SCC's "name". Hence,
+	// internally we will be consistent with SCC's API and name this attribute
+	// "identifier", regardless of the naming in zypper.
+	Identifier string `xml:"name,attr" json:"identifier"`
 	Name       string `json:"name"`
-	Identifier string `json:"identifier"`
-	Version    string `json:"version"`
-	Arch       string `json:"arch"`
-	Summary    string `json:"summary,omitempty"`
-	IsBase     bool   `json:"isbase"`
+
+	Version string `xml:"version,attr" json:"version"`
+	Arch    string `xml:"arch,attr" json:"arch"`
+	Release string `xml:"release,attr" json:"-"`
+	Summary string `xml:"summary,attr" json:"summary,omitempty"`
+	IsBase  bool   `xml:"isbase,attr" json:"isbase"`
 
 	FriendlyName string `json:"friendly_name,omitempty"`
-	ReleaseType  string `json:"release_type,omitempty"`
+	ReleaseType  string `xml:"registerrelease,attr" json:"release_type,omitempty"`
 	Available    bool   `json:"available"`
 	Free         bool   `json:"free"`
 	Recommended  bool   `json:"recommended"`
 
-	// optional extension products
+	// Optional extension products
 	Extensions []Product `json:"extensions,omitempty"`
 
-	Description  string       `json:"description,omitempty"`
+	Description  string       `xml:"description" json:"description,omitempty"`
 	EULAURL      string       `json:"eula_url,omitempty"`
 	FormerName   string       `json:"former_identifier,omitempty"`
 	ProductType  string       `json:"product_type,omitempty"`
+	ProductLine  string       `xml:"productline,attr"`
 	ShortName    string       `json:"shortname,omitempty"`
 	ReleaseStage string       `json:"release_stage,omitempty"`
 	Repositories []Repository `json:"repositories,omitempty"`
 }
 
+// Implement the `Unmarshaler` interface from encoding/json to account for some
+// discrepancies between implementations from the /connect product's type.
+func (p *Product) UnmarshalJSON(data []byte) error {
+	// Only SMT/RMT send the "available" field in their JSON responses.
+	// SCC does not, and the default Unmarshal() sets Available to the
+	// boolean zero-value which is false. This sets it to true instead.
+	type product Product
+	prod := product{
+		Available: true,
+	}
+	if err := json.Unmarshal(data, &prod); err != nil {
+		return err
+	}
+
+	// Migration paths contain is-base information as "base" attribute while we
+	// default to "isbase" for YaST integration. The rest of the SCC API uses
+	// `product_type="base"` instead.
+	mProd := struct {
+		Base bool `json:"base"`
+	}{}
+	if err := json.Unmarshal(data, &mProd); err != nil {
+		return err
+	}
+	prod.IsBase = prod.IsBase || mProd.Base || prod.ProductType == "base"
+
+	*p = Product(prod)
+	return nil
+}
+
+// Builds a new Product object by parsing the given string considering to be a
+// product "triplet" (i.e. a string with the format "<name>/<version>/<arch>").
+func FromTriplet(triplet string) (Product, error) {
+	parts := strings.Split(triplet, "/")
+	if len(parts) != 3 {
+		return Product{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
+	}
+	return Product{Identifier: parts[0], Version: parts[1], Arch: parts[2]}, nil
+}
+
+// ToTriplet returns <name>/<version>/<arch> string for this product.
+func (p Product) ToTriplet() string {
+	return p.Identifier + "/" + p.Version + "/" + p.Arch
+}
+
+// Returns true if the product is empty, false otherwise.
+func (p Product) IsEmpty() bool {
+	return p.Identifier == "" || p.Version == "" || p.Arch == ""
+}
+
+// Returns VERSION[-RELEASE] for the current product.
+func (p Product) Edition() string {
+	if p.Release == "" {
+		return p.Version
+	}
+	return p.Version + "-" + p.Release
+}
+
+// Returns a map which transforms the current product to something that can be
+// used as a query for an HTTP request.
+func (p Product) ToQuery() map[string]string {
+	return map[string]string{
+		"identifier":   p.Identifier,
+		"version":      p.Version,
+		"arch":         p.Arch,
+		"release_type": p.ReleaseType,
+	}
+}
+
 // TraverseFunc is called for each extension of the given product.
 // If true is returned, traversal is continued.
 type TraverseFunc func(product Product) (bool, error)
-
-// Returns the products triplet identifier.
-func (p *Product) ToTriplet() string {
-	return p.Identifier + "/" + p.Version + "/" + p.Arch
-}
 
 // TraverseExtensions traverse through the products extensions and theirs extensions.
 // When TraverseFunc returns false, the full product and its extensions are skipped.
@@ -59,6 +131,32 @@ func (pro *Product) TraverseExtensions(fn TraverseFunc) error {
 		}
 	}
 	return nil
+}
+
+// Returns the extension for this product which matches the given triplet
+// identifier.
+func (p Product) FindExtension(triplet string) (Product, error) {
+	for _, e := range p.Extensions {
+		if e.ToTriplet() == triplet {
+			return e, nil
+		}
+		if len(e.Extensions) > 0 {
+			if child, err := e.FindExtension(triplet); err == nil {
+				return child, nil
+			}
+		}
+	}
+	return Product{}, fmt.Errorf("extension not found")
+}
+
+// Transforms the current product into a list of extensions.
+func (p Product) ToExtensionsList() []Product {
+	res := make([]Product, 0)
+	for _, e := range p.Extensions {
+		res = append(res, e)
+		res = append(res, e.ToExtensionsList()...)
+	}
+	return res
 }
 
 type productShowRequest struct {
@@ -101,4 +199,17 @@ func FetchProductInfo(conn connection.Connection, identifier, version, arch stri
 	}
 
 	return &product, nil
+}
+
+// Returns true if the given `product` can be found in the list of
+// `activations`.
+func ProductInActivations(product *Product, activations []*Activation) bool {
+	triplet := product.ToTriplet()
+
+	for _, activation := range activations {
+		if triplet == activation.Product.ToTriplet() {
+			return true
+		}
+	}
+	return false
 }

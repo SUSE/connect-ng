@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -11,7 +12,7 @@ import (
 func TestActivateProductSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	payload := fixture(t, "pkg/registration/activate_success.json")
@@ -27,7 +28,7 @@ func TestActivateProductSuccess(t *testing.T) {
 func TestActivateProductInvalidRegcode(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("No valid subscription found"))
@@ -39,7 +40,7 @@ func TestActivateProductInvalidRegcode(t *testing.T) {
 func TestDeactivateProductSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	payload := fixture(t, "pkg/registration/deactivate_success.json")
@@ -55,7 +56,7 @@ func TestDeactivateProductSuccess(t *testing.T) {
 func TestDeactivateProductInvalidProduct(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := mockConnectionWithCredentials()
+	conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Product is a base product and cannot be deactivated"))
