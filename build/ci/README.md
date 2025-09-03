@@ -40,7 +40,7 @@ BETA_NOT_ACTIVATED_REGCODE=
 We use the official SUSE Golang container, providing all we need to run the tests:
 
 ```
-export IMAGE="registry.suse.com/bci/golang:1.21-openssl"
+export IMAGE="registry.suse.com/bci/golang:1.24-openssl"
 # Run the required container:
 $ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE
 
