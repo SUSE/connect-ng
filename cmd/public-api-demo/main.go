@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -31,12 +32,12 @@ func waitForUser(message string) {
 	}
 }
 
-func runDemo(identifier, version, arch, regcode string) error {
+func runDemo(identifier, version, arch, infoPath, regcode string) error {
 	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
 	isProxy := false
 	creds := &SccCredentials{}
 
-	if url := os.Getenv("REGISTRATION_HOST_URL"); url != "" {
+	if url := os.Getenv("SCC_HOST"); url != "" {
 		opts.URL = url
 		isProxy = true
 	}
@@ -65,6 +66,24 @@ func runDemo(identifier, version, arch, regcode string) error {
 		opts.Certificate = cert
 	}
 
+	systemInformation := registration.SystemInformation{
+		"uname": "public api demo",
+	}
+
+	if infoPath != "" {
+		data, readErr := os.ReadFile(infoPath)
+		if readErr != nil {
+			fmt.Fprintf(os.Stderr, "Error reading system information file: %v\n", readErr)
+			os.Exit(1)
+		}
+
+		parseErr := json.Unmarshal(data, &systemInformation)
+		if parseErr != nil {
+			fmt.Fprintf(os.Stderr, "Error unmarshalling system information JSON: %v\n", parseErr)
+			os.Exit(1)
+		}
+	}
+
 	bold("1) Setup connection and perform an request\n")
 	conn := connection.New(opts, &SccCredentials{})
 
@@ -86,7 +105,7 @@ func runDemo(identifier, version, arch, regcode string) error {
 	}
 
 	bold("2) Registering a client to SCC with a registration code\n")
-	id, regErr := registration.Register(conn, regcode, hostname, registration.NoSystemInformation, registration.NoExtraData)
+	id, regErr := registration.Register(conn, regcode, hostname, systemInformation, registration.NoExtraData)
 	if regErr != nil {
 		return regErr
 	}
@@ -101,13 +120,12 @@ func runDemo(identifier, version, arch, regcode string) error {
 	waitForUser("Registration complete")
 
 	bold("4) System status // Ping\n")
-	systemInformation := registration.SystemInformation{
-		"uname": "public api demo - ping",
-	}
 
 	extraData := registration.ExtraData{
 		"instance_data": "<document>{}</document>",
 	}
+
+	systemInformation["uname"] = "public api demo - ping"
 
 	status, statusErr := registration.Status(conn, hostname, systemInformation, extraData)
 	if statusErr != nil {
@@ -214,8 +232,8 @@ func runDemo(identifier, version, arch, regcode string) error {
 func main() {
 	fmt.Println("public-api-demo: A connect client library demo")
 
-	if len(os.Args) != 4 {
-		fmt.Println("./public-api-demo IDENTIFIER VERSION ARCH")
+	if len(os.Args) < 4 || len(os.Args) > 5 {
+		fmt.Println("./public-api-demo IDENTIFIER VERSION ARCH <system_information>")
 		return
 	}
 
@@ -223,7 +241,12 @@ func main() {
 	// code working
 	regcode := os.Getenv("REGCODE")
 
-	err := runDemo(os.Args[1], os.Args[2], os.Args[3], regcode)
+	systemInformationPath := ""
+	if len(os.Args) == 5 {
+		systemInformationPath = os.Args[4]
+	}
+
+	err := runDemo(os.Args[1], os.Args[2], os.Args[3], systemInformationPath, regcode)
 
 	if err != nil {
 		fmt.Printf("%s\n", err)
