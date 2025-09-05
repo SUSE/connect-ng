@@ -105,7 +105,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // Submit a keepalive request to the server pointed by the configured
 // connection.
 func (w Wrapper) KeepAlive() error {
-	hwinfo, err := FetchSystemInformation()
+	hwinfo, err := FetchSystemInformation(false)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -119,7 +119,7 @@ func (w Wrapper) KeepAlive() error {
 }
 
 func (w Wrapper) Register(regcode, instanceDataFile string) error {
-	hwinfo, err := FetchSystemInformation()
+	hwinfo, err := FetchSystemInformation(true)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
