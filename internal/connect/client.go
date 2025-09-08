@@ -53,7 +53,7 @@ func Register(api WrappedAPI, opts *Options) error {
 		printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
 	}
 
-	if err := api.RegisterOrKeepAlive(opts.Token, opts.InstanceDataFile); err != nil {
+	if err := api.RegisterOrKeepAlive(opts.Token, opts.InstanceDataFile, opts.EnableSystemUptimeTracking); err != nil {
 		return err
 	}
 

@@ -86,7 +86,7 @@ func update_system(clientParams, distroTarget *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 
 	api := connect.NewWrappedAPI(opts)
-	if err := api.KeepAlive(); err != nil {
+	if err := api.KeepAlive(opts.EnableSystemUptimeTracking); err != nil {
 		return C.CString(errorToJSON(err))
 	}
 	return C.CString("{}")

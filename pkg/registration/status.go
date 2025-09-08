@@ -1,6 +1,8 @@
 package registration
 
-import "github.com/SUSE/connect-ng/pkg/connection"
+import (
+	"github.com/SUSE/connect-ng/pkg/connection"
+)
 
 // Enum being used to report on the different status scenarios for a given
 // connection.

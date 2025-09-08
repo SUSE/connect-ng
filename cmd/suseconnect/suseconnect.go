@@ -254,7 +254,7 @@ func main() {
 			exitOnError(errors.New("cannot use the json option with the 'keepalive' command"), api, opts)
 		}
 		api := connect.NewWrappedAPI(opts)
-		err = api.KeepAlive()
+		err = api.KeepAlive(opts.EnableSystemUptimeTracking)
 		exitOnError(err, api, opts)
 		util.Info.Print(util.Bold(util.GreenText("\nSuccessfully updated system")))
 	} else if listExtensions {
