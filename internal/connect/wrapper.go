@@ -18,9 +18,9 @@ import (
 // Wrap everything into an interface so we can mock this calls later on
 // when unit testing
 type WrappedAPI interface {
-	KeepAlive() error
+	KeepAlive(uptimeTracking bool) error
 	Register(regcode, instanceDataFile string) error
-	RegisterOrKeepAlive(regcode, instanceDataFile string) error
+	RegisterOrKeepAlive(regcode, instanceDataFile string, uptimeTracking bool) error
 	IsRegistered() bool
 	AssignLabels(labels []string) ([]labels.Label, error)
 
@@ -104,14 +104,25 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 
 // Submit a keepalive request to the server pointed by the configured
 // connection.
-func (w Wrapper) KeepAlive() error {
+func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 	hwinfo, err := FetchSystemInformation()
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
 	hostname := collectors.FromResult(hwinfo, "hostname", "")
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo, registration.NoExtraData)
+	// If the uptime tracking log is requested via the configuration, attach it
+	// now.
+	extraData := registration.NoExtraData
+	if uptimeTracking {
+		data, err := readUptimeLogFile(UptimeLogFilePath)
+		if err != nil {
+			return err
+		}
+		extraData["online_at"] = data
+	}
+
+	code, err := registration.Status(w.Connection, hostname, hwinfo, extraData)
 	if code != registration.Registered {
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
@@ -145,9 +156,9 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
 // whether the current system is registered or not.
-func (w Wrapper) RegisterOrKeepAlive(regcode, instanceDataFile string) error {
+func (w Wrapper) RegisterOrKeepAlive(regcode, instanceDataFile string, uptimeTracking bool) error {
 	if w.Registered {
-		return w.KeepAlive()
+		return w.KeepAlive(uptimeTracking)
 	}
 	return w.Register(regcode, instanceDataFile)
 }
