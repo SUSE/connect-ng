@@ -29,7 +29,7 @@ func main() {
 	arch := os.Args[3]
 	regcode := os.Args[4]
 
-	information := registration.NoSystemInformation
+	information := registration.SystemInformation{}
 
 	if len(os.Args) == 6 {
 		file := os.Args[5]

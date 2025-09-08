@@ -128,7 +128,7 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 	// If an instance-data file was provided, try to read it and attach it as
 	// "extra" data. This will be used inside of the `registration.Register`
 	// code.
-	extraData := registration.NoExtraData
+	extraData := registration.ExtraData{}
 	if instanceDataFile != "" {
 		data, err := os.ReadFile(instanceDataFile)
 		if err != nil {
