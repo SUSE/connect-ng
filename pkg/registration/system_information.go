@@ -30,10 +30,11 @@ type ExtraData = map[string]any
 var NoExtraData = map[string]any{}
 
 type requestWithInformation struct {
-	SystemInformation any      `json:"hwinfo"`
-	InstanceData      string   `json:"instance_data,omitempty"`
-	Namespace         string   `json:"namespace,omitempty"`
-	OnlineAt          []string `json:"online_at,omitempty"`
+	SystemInformation any            `json:"hwinfo"`
+	InstanceData      string         `json:"instance_data,omitempty"`
+	Namespace         string         `json:"namespace,omitempty"`
+	OnlineAt          []string       `json:"online_at,omitempty"`
+	DataProfiles      map[string]any `json:"data_profiles,omitempty"`
 }
 
 func enrichWithSystemInformation(payload *requestWithInformation, info SystemInformation) {
@@ -51,6 +52,8 @@ func enrichWithExtraData(payload *requestWithInformation, extraData ExtraData) e
 			payload.Namespace, converted = value.(string)
 		case "online_at":
 			payload.OnlineAt, converted = value.([]string)
+		case "data_profiles":
+			payload.DataProfiles, converted = value.(map[string]any)
 		}
 
 		if !converted {
