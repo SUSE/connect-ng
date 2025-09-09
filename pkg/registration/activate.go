@@ -85,7 +85,7 @@ func doActivateCall(conn connection.Connection, verb, identifier, version, arch,
 
 	connection.AddSystemAuth(request, login, password)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return nil, &Product{}, doErr
 	}

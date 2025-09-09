@@ -13,7 +13,7 @@ import (
 func TestAssignLabelSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	labels := []Label{
 		Label{Name: "label1", Description: "label1 description"},

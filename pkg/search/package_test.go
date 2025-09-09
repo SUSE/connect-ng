@@ -32,7 +32,7 @@ func fixture(t *testing.T, path string) []byte {
 func TestPackageSearch(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 	response := fixture(t, "pkg/search/search_sles.json")
 
 	conn.On("Do", mock.Anything).Return(response, nil)
@@ -49,7 +49,7 @@ func TestPackageSearch(t *testing.T) {
 func TestUnsupportedServer(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	conn.On("Do", mock.Anything).Return([]byte{}, &connection.ApiError{
 		Code:             http.StatusNotFound,
@@ -64,7 +64,7 @@ func TestUnsupportedServer(t *testing.T) {
 func TestUnknownError(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("whatever"))
 
