@@ -118,6 +118,7 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
@@ -263,6 +264,9 @@ func main() {
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
+		// Need to clear ProfileCache on deregister
+		// even if dereg does not succeed.
+		util.DeleteProfileCache()
 		err := connect.Deregister(api, opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -276,6 +280,9 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), api, opts)
 		}
+		// Need to clear ProfileCache on cleanup
+		// even if cleanup does not succeed.
+		util.DeleteProfileCache()
 		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
 		exitOnError(err, api, opts)
 	} else if rollback {
@@ -285,7 +292,7 @@ func main() {
 		err := connect.Rollback(api.GetConnection(), opts)
 		exitOnError(err, api, opts)
 	} else if info {
-		sysInfo, err := connect.FetchSystemInformation()
+		sysInfo, err := connect.FetchSystemInformation("")
 		exitOnError(err, api, opts)
 
 		out, err := json.Marshal(sysInfo)
@@ -316,6 +323,8 @@ func main() {
 
 			err := connect.Register(api, opts)
 			if err != nil {
+				// clear profile cache on registration errors
+				util.DeleteProfileCache()
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
 					str, _ := json.Marshal(&out)
@@ -345,6 +354,7 @@ func main() {
 }
 
 func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
+	util.Debug.Println("exitOnError err: ", err)
 	if err == nil {
 		return
 	}

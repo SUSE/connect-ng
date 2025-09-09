@@ -105,7 +105,8 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // Submit a keepalive request to the server pointed by the configured
 // connection.
 func (w Wrapper) KeepAlive(uptimeTracking bool) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -122,15 +123,27 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 		extraData["online_at"] = data
 	}
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo, extraData)
-	if code != registration.Registered {
+	profileData, err := FetchSystemProfiles(arch, false)
+	util.Debug.Print("hwinfo: ", hwinfo)
+	util.Debug.Printf("extraData: %+v", extraData)
+	util.Debug.Printf("profileData: %+v", profileData)
+	if err != nil {
+		return fmt.Errorf("could not fetch system's profiles: %v", err)
+	}
+
+	code, err := registration.Status(w.Connection, hostname, hwinfo, profileData, extraData)
+	if code == registration.ClearCache {
+		util.DeleteProfileCache()
+	} else if code != registration.Registered {
+		util.DeleteProfileCache()
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
 	return err
 }
 
 func (w Wrapper) Register(regcode, instanceDataFile string) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -148,9 +161,21 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 		extraData["instance_data"] = string(data)
 	}
 
+	// Provide profile data for registration
+	// make sure ProfileCache empty for registration
+	util.DeleteProfileCache()
+	profileData, err := FetchSystemProfiles(arch, false)
+	extraData["data_profiles"] = profileData
+
 	// NOTE: we are not interested in the code. Hence, we don't save it
 	// anywhere.
+	util.Debug.Print("hwinfo: ", hwinfo)
+	util.Debug.Printf("extraData: %+v", extraData)
 	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
+	// If registraion failed, delete profile cache
+	if err != nil {
+		util.DeleteProfileCache()
+	}
 	return err
 }
 

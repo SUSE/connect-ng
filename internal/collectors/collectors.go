@@ -24,7 +24,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 )
 
-type Result = map[string]interface{}
+type Result = util.Result
 
 const (
 	ARCHITECTURE_X86_64 = "x86_64"
