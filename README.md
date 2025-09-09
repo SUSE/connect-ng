@@ -34,7 +34,7 @@ This will create a `out/suseconnect` binary on the host.
 
 You can run all unit tests by running `make test`. If you then want to run unit
 tests for a specific package, you can simply run it as you would do for any Go
-project, for example: `go test ./internal/collectors/`.
+project, for example: `go test ./pkg/collectors/`.
 
 For feature tests you first need to create an `.env` file in the root directory
 of the project with the following contents:

@@ -43,7 +43,7 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 
 	connection.AddRegcodeAuth(request, regcode)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return 0, doErr
 	}
@@ -72,7 +72,7 @@ func Deregister(conn connection.Connection) error {
 
 	connection.AddSystemAuth(request, login, password)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	if doErr != nil {
 		return doErr
 	}

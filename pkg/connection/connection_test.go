@@ -75,7 +75,7 @@ func TestConnectionDoGet(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	result, doErr := conn.Do(request)
+	_, result, doErr := conn.Do(request)
 	assert.NoError(doErr)
 	assert.Equal(expected, result)
 }
@@ -99,7 +99,7 @@ func TestConnectionDoError(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	assert.ErrorContains(doErr, "error test message")
 }
 
@@ -124,7 +124,7 @@ func TestConnectionDoErrorTranslation(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	assert.ErrorContains(doErr, expected)
 }
 
@@ -153,7 +153,7 @@ func TestConnectionUpdateToken(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	assert.NoError(doErr)
 
 	creds.AssertExpectations(t)
@@ -182,7 +182,7 @@ func TestCustomCertificateSuccess(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	result, doErr := conn.Do(request)
+	_, result, doErr := conn.Do(request)
 	assert.NoError(doErr)
 	assert.Equal(expected, result)
 }
@@ -215,7 +215,7 @@ func TestCustomCertificateUnknownCertificate(t *testing.T) {
 	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
 	assert.NoError(buildErr)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	// The same behavior applies when no certificate was provided on client side
 	assert.ErrorContains(doErr, "certificate signed by unknown authority")
 }

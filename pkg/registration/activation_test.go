@@ -11,7 +11,7 @@ import (
 func TestFetchProductActivations(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	payload := fixture(t, "pkg/registration/activations.json")
@@ -36,7 +36,7 @@ func TestFetchProductActivations(t *testing.T) {
 func TestFetchProductActivationsEmpty(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	conn.On("Do", mock.Anything).Return([]byte("[]"), nil).Run(checkAuthBySystemCredentials(t, login, password))

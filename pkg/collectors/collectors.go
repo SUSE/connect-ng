@@ -22,9 +22,10 @@ import (
 	"maps"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/profiles"
 )
 
-type Result = map[string]interface{}
+type Result = profiles.Result
 
 const (
 	ARCHITECTURE_X86_64 = "x86_64"

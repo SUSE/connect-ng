@@ -7,11 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/collectors"
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/labels"
+	"github.com/SUSE/connect-ng/pkg/profiles"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -105,7 +106,8 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // Submit a keepalive request to the server pointed by the configured
 // connection.
 func (w Wrapper) KeepAlive(uptimeTracking bool) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -122,15 +124,28 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 		extraData["online_at"] = data
 	}
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo, extraData)
-	if code != registration.Registered {
-		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+	profileData, err := FetchSystemProfiles(arch, true)
+	if err != nil {
+		profiles.DeleteProfileCache()
+		return fmt.Errorf("could not fetch system's profiles: %v", err)
 	}
+
+	code, err := registration.Status(w.Connection, hostname, hwinfo, profileData, extraData)
+	if code == registration.ClearCache {
+		profiles.DeleteProfileCache()
+	} else if code == registration.Unregistered {
+		profiles.DeleteProfileCache()
+		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+	} else if err != nil {
+		profiles.DeleteProfileCache()
+	}
+
 	return err
 }
 
 func (w Wrapper) Register(regcode, instanceDataFile string) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -148,9 +163,18 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 		extraData["instance_data"] = string(data)
 	}
 
+	// Clear profile data before registration
+	profiles.DeleteProfileCache()
+	profileData, err := FetchSystemProfiles(arch, true)
+	extraData["data_profiles"] = profileData
+
 	// NOTE: we are not interested in the code. Hence, we don't save it
 	// anywhere.
 	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
+
+	if err != nil {
+		profiles.DeleteProfileCache()
+	}
 	return err
 }
 
