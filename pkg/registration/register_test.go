@@ -12,7 +12,7 @@ import (
 func TestRegisterSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	response := fixture(t, "pkg/registration/announce_success.json")
@@ -20,7 +20,7 @@ func TestRegisterSuccess(t *testing.T) {
 	conn.On("Do", mock.Anything).Return(response, nil).Run(checkAuthByRegcode(t, "regcode"))
 	creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
 
-	_, err := Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
+	_, _, err := Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
 	assert.NoError(err)
 
 	conn.AssertExpectations(t)
@@ -29,12 +29,12 @@ func TestRegisterSuccess(t *testing.T) {
 func TestRegisterFailed(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Invalid registration token supplied"))
 
-	_, err := Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
+	_, _, err := Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
 	assert.ErrorContains(err, "Invalid registration token")
 
 	conn.AssertExpectations(t)
@@ -56,11 +56,11 @@ func TestRegsiterWithSystemInformation(t *testing.T) {
 	response := fixture(t, "pkg/registration/announce_success.json")
 	body := fixture(t, "pkg/registration/register_with_system_information.json")
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 	conn.On("Do", mock.Anything).Return(response, nil).Run(matchBody(t, string(body)))
 	creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
 
-	_, err := Register(conn, "regcode", "hostname", systemInformation, NoExtraData)
+	_, _, err := Register(conn, "regcode", "hostname", systemInformation, NoExtraData)
 	assert.NoError(err)
 
 	conn.AssertExpectations(t)
@@ -82,11 +82,11 @@ func TestRegisterWithEnrichedAttributes(t *testing.T) {
 	response := fixture(t, "pkg/registration/announce_success.json")
 	body := fixture(t, "pkg/registration/register_with_extra_data.json")
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 	conn.On("Do", mock.Anything).Return(response, nil).Run(matchBody(t, string(body)))
 	creds.On("SetLogin", "SCC_login", "sample-password").Return(nil)
 
-	_, err := Register(conn, "regcode", "hostname", NoSystemInformation, extraData)
+	_, _, err := Register(conn, "regcode", "hostname", NoSystemInformation, extraData)
 	assert.NoError(err)
 
 	conn.AssertExpectations(t)
@@ -95,7 +95,7 @@ func TestRegisterWithEnrichedAttributes(t *testing.T) {
 func TestDeRegisterSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, nil)
@@ -110,7 +110,7 @@ func TestDeRegisterSuccess(t *testing.T) {
 func TestDeRegisterInvalid(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 404 Not found / announce failed
 	conn.On("Do", mock.Anything).Return([]byte{}, errors.New("Not found"))

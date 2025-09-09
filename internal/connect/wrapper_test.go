@@ -13,7 +13,7 @@ import (
 func TestAssignLabelsWithSpacesAndNewlines(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 	wrapper := Wrapper{
 		Connection: conn,
 		Registered: true,

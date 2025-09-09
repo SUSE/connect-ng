@@ -32,7 +32,7 @@ func Package(conn connection.Connection, query, base string) ([]SearchPackageRes
 		return packages.Data, err
 	}
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		if ae, ok := doErr.(*connection.ApiError); ok && ae.Code == http.StatusNotFound && ae.Message == "" {
 			return packages.Data, fmt.Errorf("SUSE::Connect::UnsupportedOperation: " +

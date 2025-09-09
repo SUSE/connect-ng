@@ -24,9 +24,9 @@ type Connection interface {
 	// Builds a http.Request and setup up headers. The body can provided as io.Reader
 	BuildRequestRaw(verb string, path string, body io.Reader) (*http.Request, error)
 
-	// Performs an HTTP request to the remote API. Returns the response body or
-	// an error object.
-	Do(*http.Request) ([]byte, error)
+	// Performs an HTTP request to the remote API. Returns the status code and
+	// the response body, or an error object.
+	Do(*http.Request) (int, []byte, error)
 
 	// Returns the credentials object to be used for authenticated requests.
 	GetCredentials() Credentials
@@ -77,35 +77,39 @@ func (conn ApiConnection) BuildRequestRaw(verb string, path string, body io.Read
 	return request, nil
 }
 
-func (conn ApiConnection) Do(request *http.Request) ([]byte, error) {
+func (conn ApiConnection) Do(request *http.Request) (int, []byte, error) {
 	token, tokenErr := conn.Credentials.Token()
 	if tokenErr != nil {
-		return []byte{}, tokenErr
+		return 0, []byte{}, tokenErr
 	}
 	request.Header.Set("System-Token", token)
 
 	response, doErr := conn.setupHTTPClient().Do(request)
 	if doErr != nil {
-		return nil, doErr
+		return 0, nil, doErr
 	}
 	defer response.Body.Close()
 
 	// Update the credentials from the new system token.
 	token = response.Header.Get("System-Token")
 	if err := conn.Credentials.UpdateToken(token); err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
 	// Check if there was an error from the given API response.
 	if apiError := ErrorFromResponse(response); apiError != nil {
-		return nil, apiError
+		return response.StatusCode, nil, apiError
 	}
 
 	data, readErr := io.ReadAll(response.Body)
 	if readErr != nil {
-		return nil, readErr
+		return response.StatusCode, nil, readErr
 	}
-	return data, nil
+	profileAction := response.Header.Get("X-System-Profiles-Action")
+	if profileAction == "clear-cache" {
+		response.StatusCode = 205
+	}
+	return response.StatusCode, data, nil
 }
 
 func (conn ApiConnection) GetCredentials() Credentials {

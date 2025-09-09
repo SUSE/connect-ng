@@ -12,6 +12,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/labels"
+	"github.com/SUSE/connect-ng/pkg/profiles"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -70,6 +71,22 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 	return proxyURL, nil
 }
 
+// Helper for checking for and handling ClearCache actions
+func ClearProfileCache(code registration.StatusCode, err error) error {
+	if code == registration.ClearCache {
+		profiles.IncFailedProfileUpdate()
+		profiles.DeleteProfileCache("*-profile-id")
+	} else if code == registration.Unregistered {
+		profiles.DeleteProfileCache("*-profile-id")
+		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+	} else if err != nil {
+		profiles.DeleteProfileCache("*-profile-id")
+	} else {
+		profiles.ResetFailedProfileUpdate()
+	}
+	return err
+}
+
 // Returns a new Wrapper object by taking the given Options into account. Note
 // that it will also make an attempt to read any available credentials, and set
 // Wrapper.Registered accordingly.
@@ -105,7 +122,8 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // Submit a keepalive request to the server pointed by the configured
 // connection.
 func (w Wrapper) KeepAlive(uptimeTracking bool) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -122,15 +140,19 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 		extraData["online_at"] = data
 	}
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo, extraData)
-	if code != registration.Registered {
-		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+	profileData, err := FetchSystemProfiles(arch, true)
+	if err != nil {
+		profiles.DeleteProfileCache("*-profile-id")
+		return fmt.Errorf("could not fetch system's profiles: %v", err)
 	}
-	return err
+
+	code, err := registration.Status(w.Connection, hostname, hwinfo, profileData, extraData)
+	return ClearProfileCache(code, err)
 }
 
 func (w Wrapper) Register(regcode, instanceDataFile string) error {
-	hwinfo, err := FetchSystemInformation()
+	arch, _ := collectors.DetectArchitecture()
+	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -148,10 +170,13 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 		extraData["instance_data"] = string(data)
 	}
 
-	// NOTE: we are not interested in the code. Hence, we don't save it
-	// anywhere.
-	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
-	return err
+	// Clear profile data before registration
+	profiles.DeleteProfileCache("*-profile-id")
+	profileData, err := FetchSystemProfiles(arch, true)
+	extraData["data_profiles"] = profileData
+
+	code, _, err := registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
+	return ClearProfileCache(code, err)
 }
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on

@@ -12,7 +12,7 @@ import (
 func TestListLabels(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	response := testutil.Fixture(t, "pkg/labels/list_labels_success.json")

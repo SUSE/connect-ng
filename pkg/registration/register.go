@@ -2,7 +2,9 @@ package registration
 
 import (
 	"encoding/json"
+	"net/http"
 
+	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
@@ -22,7 +24,7 @@ type announceResponse struct {
 // hostname of the system plus extra system information that is to be bundled when registering
 // a system.
 // Additionally extraData can be supplied when extra information such as instance data or online at data is required
-func Register(conn connection.Connection, regcode, hostname string, systemInformation SystemInformation, extraData ExtraData) (int, error) {
+func Register(conn connection.Connection, regcode, hostname string, systemInformation SystemInformation, extraData ExtraData) (StatusCode, int, error) {
 	reg := announceResponse{}
 	payload := announceRequest{
 		Hostname: hostname,
@@ -31,30 +33,34 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 	enrichWithSystemInformation(&payload.requestWithInformation, systemInformation)
 	enrichErr := enrichWithExtraData(&payload.requestWithInformation, extraData)
 	if enrichErr != nil {
-		return 0, enrichErr
+		return 0, 0, enrichErr
 	}
 
 	creds := conn.GetCredentials()
 
 	request, buildErr := conn.BuildRequest("POST", "/connect/subscriptions/systems", payload)
 	if buildErr != nil {
-		return 0, buildErr
+		return 0, 0, buildErr
 	}
 
 	connection.AddRegcodeAuth(request, regcode)
 
-	response, doErr := conn.Do(request)
+	code, response, doErr := conn.Do(request)
 	if doErr != nil {
-		return 0, doErr
+		return 0, 0, doErr
 	}
 
 	if err := json.Unmarshal(response, &reg); err != nil {
-		return 0, err
+		return 0, 0, err
 	}
+	util.Debug.Println("registration.Register  response: ", reg)
 
 	credErr := creds.SetLogin(reg.Login, reg.Password)
+	if code == http.StatusResetContent {
+		return ClearCache, reg.Id, credErr
+	}
+	return 0, reg.Id, credErr
 
-	return reg.Id, credErr
 }
 
 // De-register the system pointed by the given authorized connection.
@@ -72,7 +78,7 @@ func Deregister(conn connection.Connection) error {
 
 	connection.AddSystemAuth(request, login, password)
 
-	_, doErr := conn.Do(request)
+	_, _, doErr := conn.Do(request)
 	if doErr != nil {
 		return doErr
 	}

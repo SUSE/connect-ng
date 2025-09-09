@@ -12,7 +12,7 @@ type MockConnection struct {
 	real Connection
 }
 
-func NewMockConnectionWithCredentials() (*MockConnection, *MockCredentials) {
+func NewMockConnectionWithCredentials() (int, *MockConnection, *MockCredentials) {
 	creds := NewMockCredentials()
 	conn := NewMockConnection(creds, "testing")
 
@@ -23,7 +23,7 @@ func NewMockConnectionWithCredentials() (*MockConnection, *MockCredentials) {
 
 	conn.On("GetCredentials").Return(creds)
 
-	return conn, creds
+	return 0, conn, creds
 }
 
 func NewMockConnection(creds Credentials, hostname string) *MockConnection {
@@ -47,10 +47,10 @@ func (m *MockConnection) BuildRequestRaw(verb, path string, body io.Reader) (*ht
 	return request, err
 }
 
-func (m *MockConnection) Do(request *http.Request) ([]byte, error) {
+func (m *MockConnection) Do(request *http.Request) (int, []byte, error) {
 	args := m.Called(request)
 
-	return args.Get(0).([]byte), args.Error(1)
+	return 0, args.Get(0).([]byte), args.Error(1)
 }
 
 func (m *MockConnection) GetCredentials() Credentials {

@@ -14,7 +14,7 @@ import (
 func TestUnassignLabelSuccess(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	response := testutil.Fixture(t, "pkg/labels/unassign_label_success.json")
@@ -31,7 +31,7 @@ func TestUnassignLabelSuccess(t *testing.T) {
 func TestUnassignLabelUnknownId(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	// 204 No Content
 	response := testutil.Fixture(t, "pkg/labels/unassign_label_failed.json")

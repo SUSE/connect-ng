@@ -101,7 +101,7 @@ func TestProductTraverseExtensionsSkipBranch(t *testing.T) {
 func TestFetchProductInfo(t *testing.T) {
 	assert := assert.New(t)
 
-	conn, creds := connection.NewMockConnectionWithCredentials()
+	_, conn, creds := connection.NewMockConnectionWithCredentials()
 	login, password, _ := creds.Login()
 
 	payload := fixture(t, "pkg/registration/product_tree.json")

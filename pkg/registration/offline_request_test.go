@@ -61,7 +61,7 @@ func TestRegisterWithOfflineRequest(t *testing.T) {
 	regcode := "some-scc-regcode"
 
 	request := BuildOfflineRequest("rancher", "2.9.4", "x86_64", NoSystemInformation)
-	conn, _ := connection.NewMockConnectionWithCredentials()
+	_, conn, _ := connection.NewMockConnectionWithCredentials()
 
 	body := fixture(t, "pkg/registration/offline_request_request.base64")
 	response := fixture(t, "pkg/registration/offline_request_response.base64")
