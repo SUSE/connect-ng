@@ -118,6 +118,7 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
@@ -263,6 +264,9 @@ func main() {
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
+		// Need to clear ProfileCache on deregister
+		// even if dereg does not succeed.
+		util.DeleteProfileCache()
 		err := connect.Deregister(api, opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -276,6 +280,9 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), api, opts)
 		}
+		// Need to clear ProfileCache on cleanup
+		// even if cleanup does not succeed.
+		util.DeleteProfileCache()
 		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
 		exitOnError(err, api, opts)
 	} else if rollback {
@@ -285,7 +292,7 @@ func main() {
 		err := connect.Rollback(api.GetConnection(), opts)
 		exitOnError(err, api, opts)
 	} else if info {
-		sysInfo, err := connect.FetchSystemInformation()
+		sysInfo, err := connect.FetchSystemInformation("")
 		exitOnError(err, api, opts)
 
 		out, err := json.Marshal(sysInfo)
@@ -348,6 +355,10 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 	if err == nil {
 		return
 	}
+	// If we take an error exit, delete the profile cache
+	// the worst thing that happens is we will send profile
+	// data when we don't need to, but that is OK.
+	util.DeleteProfileCache()
 	if ze, ok := err.(zypper.ZypperError); ok {
 		fmt.Println(ze)
 		os.Exit(ze.ExitCode)
