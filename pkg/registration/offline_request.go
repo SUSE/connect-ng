@@ -86,7 +86,7 @@ func RegisterWithOfflineRequest(conn connection.Connection, regcode string, offl
 	// the API is not parsing the request blob as compressed JSON
 	request.Header.Set("Content-Type", "text/plain")
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return nil, doErr
 	}
