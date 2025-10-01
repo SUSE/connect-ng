@@ -337,7 +337,7 @@ func IsOutdatedRegProxy(conn connection.Connection, opts *Options) bool {
 		return true
 	}
 
-	_, err = conn.Do(req)
+	_, _, err = conn.Do(req)
 	if err == nil {
 		return true
 	}
@@ -418,7 +418,7 @@ func InstallerUpdates(conn connection.Connection, product registration.Product) 
 	}
 	req = connection.AddQuery(req, product.ToQuery())
 
-	resp, err := conn.Do(req)
+	_, resp, err := conn.Do(req)
 	if err != nil {
 		return repos, err
 	}
@@ -451,7 +451,7 @@ func SyncProducts(conn connection.Connection, products []registration.Product) (
 
 	connection.AddSystemAuth(request, login, password)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return remoteProducts, doErr
 	}
@@ -500,7 +500,7 @@ func updateMigrations(conn connection.Connection, url string, payload any) ([]Mi
 
 	connection.AddSystemAuth(request, login, password)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return migrations, doErr
 	}

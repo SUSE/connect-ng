@@ -52,7 +52,7 @@ func FetchActivations(conn connection.Connection) ([]*Activation, error) {
 
 	connection.AddSystemAuth(request, login, password)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return []*Activation{}, doErr
 	}

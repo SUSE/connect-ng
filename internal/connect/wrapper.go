@@ -1,6 +1,8 @@
 package connect
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -102,6 +104,33 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 	}
 }
 
+// TODO: NOTE: just for testing purposes. It's a quick and dirty implementation
+// of a packages list collection. No caching, no fancy business :-)
+func FetchSystemProfiles() (registration.DataProfiles, error) {
+	output, err := util.Execute([]string{"rpm", "-qa"}, nil)
+	if err != nil {
+		return registration.DataProfiles{}, err
+	}
+
+	hash := sha256.Sum256(output)
+	checksum := hex.EncodeToString(hash[:])
+
+	data := ""
+	if os.Getenv("CONNECT_PROFILE_FULL") == "1" {
+		data = string(output)
+	}
+
+	packages := map[string]string{
+		"checksum": checksum,
+		"data":     data,
+	}
+	result := registration.DataProfiles{
+		"packages": packages,
+	}
+
+	return result, nil
+}
+
 // Submit a keepalive request to the server pointed by the configured
 // connection.
 func (w Wrapper) KeepAlive(uptimeTracking bool) error {
@@ -122,8 +151,15 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 		extraData["online_at"] = data
 	}
 
-	code, err := registration.Status(w.Connection, hostname, hwinfo, extraData)
-	if code != registration.Registered {
+	profiles, err := FetchSystemProfiles()
+	if err != nil {
+		return fmt.Errorf("could not fetch system's profiles: %v", err)
+	}
+
+	code, err := registration.Status(w.Connection, hostname, hwinfo, profiles, extraData)
+	if code == registration.ClearCache {
+		fmt.Printf("CACHE SHOULD BE CLEARED!\n")
+	} else if code != registration.Registered {
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	}
 	return err
