@@ -77,7 +77,7 @@ func runDemo(identifier, version, arch, regcode string) error {
 
 		connection.AddRegcodeAuth(request, regcode)
 
-		payload, err := conn.Do(request)
+		_, payload, err := conn.Do(request)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,9 @@ func runDemo(identifier, version, arch, regcode string) error {
 		"instance_data": "<document>{}</document>",
 	}
 
-	status, statusErr := registration.Status(conn, hostname, systemInformation, extraData)
+	profiles := registration.DataProfiles{}
+
+	status, statusErr := registration.Status(conn, hostname, systemInformation, profiles, extraData)
 	if statusErr != nil {
 		return statusErr
 	}

@@ -29,11 +29,16 @@ type ExtraData = map[string]any
 //	registration.Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
 var NoExtraData = map[string]any{}
 
+// DataProfiles encapsulates any data which is expected to be big and so it
+// needs special encoding and treatment.
+type DataProfiles = map[string]any
+
 type requestWithInformation struct {
-	SystemInformation any      `json:"hwinfo"`
-	InstanceData      string   `json:"instance_data,omitempty"`
-	Namespace         string   `json:"namespace,omitempty"`
-	OnlineAt          []string `json:"online_at,omitempty"`
+	SystemInformation any          `json:"hwinfo"`
+	InstanceData      string       `json:"instance_data,omitempty"`
+	Namespace         string       `json:"namespace,omitempty"`
+	OnlineAt          []string     `json:"online_at,omitempty"`
+	Profiles          DataProfiles `json:"data_profiles"`
 }
 
 func enrichWithSystemInformation(payload *requestWithInformation, info SystemInformation) {
