@@ -27,7 +27,7 @@ func UnassignLabel(conn connection.Connection, labelId int) ([]Label, error) {
 
 	connection.AddSystemAuth(request, login, password)
 
-	response, doErr := conn.Do(request)
+	_, response, doErr := conn.Do(request)
 	if doErr != nil {
 		return []Label{}, doErr
 	}
