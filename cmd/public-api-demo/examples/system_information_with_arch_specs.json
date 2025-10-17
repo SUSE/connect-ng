@@ -1,0 +1,15 @@
+{
+  "arch": "x86_64",
+  "container_runtime": "docker",
+  "cpus": 8,
+  "hostname": "example",
+  "mem_total": 13854,
+  "sockets": 1,
+  "uuid": "3bf24e5b-6142-4ea9-8294-88b9a36b5d7f",
+  "uname": "6.12.6-1-default #1 SMP PREEMPT_DYNAMIC Thu Dec 19 17:23:25 UTC 2024 (fb072de)",
+  "arch_specs": {
+    "layer_type": "ONETYPE",
+    "type": "8561",
+    "type_name": "IBM LinuxONE III"
+  }
+}
