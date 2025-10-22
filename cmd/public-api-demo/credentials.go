@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 type SccCredentials struct {
 	SystemLogin string
@@ -14,17 +18,13 @@ func (SccCredentials) HasAuthentication() bool {
 }
 
 func (creds *SccCredentials) Token() (string, error) {
-	if creds.ShowTraces {
-		fmt.Printf("<- fetch token %s\n", creds.SystemToken)
-	}
-	return creds.SystemToken, nil
+	randomToken, _ := uuid.NewRandom()
+	fmt.Printf("<- randomized token: %s\n", randomToken)
+
+	return randomToken.String(), nil
 }
 
 func (creds *SccCredentials) UpdateToken(token string) error {
-	if creds.ShowTraces {
-		fmt.Printf("-> update token %s\n", token)
-	}
-	creds.SystemToken = token
 	return nil
 }
 
