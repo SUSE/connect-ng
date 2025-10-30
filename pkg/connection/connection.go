@@ -66,11 +66,11 @@ func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*htt
 }
 
 func (conn ApiConnection) BuildRequestRaw(verb string, path string, body io.Reader) (*http.Request, error) {
-	request, err := http.NewRequest(verb, conn.Options.URL, body)
+	fullUrl := fmt.Sprintf("%s%s", conn.Options.URL, path)
+	request, err := http.NewRequest(verb, fullUrl, body)
 	if err != nil {
 		return nil, err
 	}
-	request.URL.Path = path
 
 	conn.setupGenericHeaders(request)
 
