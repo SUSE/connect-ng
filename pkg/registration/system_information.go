@@ -34,7 +34,7 @@ type requestWithInformation struct {
 	InstanceData      string         `json:"instance_data,omitempty"`
 	Namespace         string         `json:"namespace,omitempty"`
 	OnlineAt          []string       `json:"online_at,omitempty"`
-	DataProfiles      map[string]any `json:"data_profiles,omitempty"`
+	SystemProfiles    map[string]any `json:"system_profiles,omitempty"`
 }
 
 func enrichWithSystemInformation(payload *requestWithInformation, info SystemInformation) {
@@ -52,8 +52,8 @@ func enrichWithExtraData(payload *requestWithInformation, extraData ExtraData) e
 			payload.Namespace, converted = value.(string)
 		case "online_at":
 			payload.OnlineAt, converted = value.([]string)
-		case "data_profiles":
-			payload.DataProfiles, converted = value.(map[string]any)
+		case "system_profiles":
+			payload.SystemProfiles, converted = value.(map[string]any)
 		}
 
 		if !converted {
