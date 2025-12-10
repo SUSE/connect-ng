@@ -2,7 +2,7 @@
 title: SUSECONNECT
 section: 5
 header: SUSEConnect
-date: January 2022
+date: December 2025
 ---
 # NAME
 
@@ -28,12 +28,22 @@ Example:
 
 **debug: false**
 
+**no_zypper_refs: false**
+
+**auto_agree_with_licenses: false**
+
+**enable_system_uptime_tracking: false**
+
+
 Each line of the file specifies a single parameter.  The fields are as follows:
 
   * url: (optional) URL of the registration server.  Corresponds to the --url argument to SUSEConnect. Defaults to https://scc.suse.com
   * language: (optional) Language code to use for error messages
   * insecure: (optional) Do not verify SSL certificates when using https (default: false)
   * debug: (optional) Enable additional debugging output (default: false)
+  * no_zypper_refs: (optional) Do not refresh zypper service when registering (default: false)
+  * auto_agree_with_licenses: (optional) Automatically agree to extension and module license confirmation prompts (default: false)
+  * enable_system_uptime_tracking: (optional) Enable system uptime tracking. The system uptime log will be sent to SCC/RMT as part of keepalive (default: false)
 
 
 # AUTHOR
