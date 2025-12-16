@@ -136,7 +136,6 @@ install -D -m 644 docs/SUSEConnect.5 %{buildroot}/%{_mandir}/man5/SUSEConnect.5
 install -D -m 644 docs/SUSEConnect.8 %{buildroot}/%{_mandir}/man8/SUSEConnect.8
 install -D -m 644 docs/zypper-migration.8 %{buildroot}/%{_mandir}/man8/zypper-migration.8
 install -D -m 644 docs/zypper-search-packages.8 %{buildroot}/%{_mandir}/man8/zypper-search-packages.8
-install -D -m 644 SUSEConnect.example %{buildroot}%{_sysconfdir}/SUSEConnect.example
 
 # Install the SUSEConnect --keepalive timer and service.
 install -D -m 644 build/packaging/suseconnect-keepalive.timer %{buildroot}/%{_unitdir}/suseconnect-keepalive.timer
@@ -234,7 +233,6 @@ fi
 %{_mandir}/man5/*
 %{_unitdir}/suseconnect-keepalive.service
 %{_unitdir}/suseconnect-keepalive.timer
-%config %{_sysconfdir}/SUSEConnect.example
 %{_unitdir}/suse-uptime-tracker.service
 %{_unitdir}/suse-uptime-tracker.timer
 

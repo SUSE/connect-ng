@@ -28,7 +28,6 @@ dist: clean internal/connect/version.txt vendor
 	@cp go.mod $(DIST)
 	@cp go.sum $(DIST)
 	@cp LICENSE README.md $(DIST)
-	@cp SUSEConnect.example $(DIST)
 	@cp build/packaging/suseconnect-keepalive* $(DIST)/build/packaging
 	@cp build/packaging/suse-uptime-tracker* $(DIST)/build/packaging
 	@cp -r build/packaging/suseconnect-ng* $(DIST)
