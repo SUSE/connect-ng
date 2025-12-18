@@ -73,16 +73,11 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 
 // Helper for checking for and handling ClearCache actions
 func ClearProfileCache(code registration.StatusCode, err error) error {
-	if code == registration.ClearCache {
-		profiles.IncFailedProfileUpdate()
-		profiles.DeleteProfileCache("*-profile-id")
-	} else if code == registration.Unregistered {
+	if code == registration.Unregistered {
 		profiles.DeleteProfileCache("*-profile-id")
 		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
 	} else if err != nil {
 		profiles.DeleteProfileCache("*-profile-id")
-	} else {
-		profiles.ResetFailedProfileUpdate()
 	}
 	return err
 }
@@ -114,7 +109,11 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 	}
 
 	return &Wrapper{
-		Connection: connection.New(connectionOpts, &creds),
+                Connection: &connection.ApiConnection{
+                    Options:      connectionOpts,
+                    Credentials:  &creds,
+                    ProfileCache: &profiles.ProfileCache{},
+                },
 		Registered: registered,
 	}
 }
@@ -147,7 +146,14 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 	}
 
 	code, err := registration.Status(w.Connection, hostname, hwinfo, profileData, extraData)
-	return ClearProfileCache(code, err)
+	if code == registration.Unregistered {
+		profiles.DeleteProfileCache("*-profile-id")
+		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+	} else if err != nil {
+		profiles.DeleteProfileCache("*-profile-id")
+	}
+
+	return err
 }
 
 func (w Wrapper) Register(regcode, instanceDataFile string) error {
@@ -171,12 +177,15 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 	}
 
 	// Clear profile data before registration
-	profiles.DeleteProfileCache("*-profile-id")
+	profiles.DeleteProfileCache("*")
 	profileData, err := FetchSystemProfiles(arch, true)
 	extraData["data_profiles"] = profileData
 
-	code, _, err := registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
-	return ClearProfileCache(code, err)
+	_, _, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
+	if err != nil {
+		profiles.DeleteProfileCache("*-profile-id")
+	}
+	return err
 }
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on

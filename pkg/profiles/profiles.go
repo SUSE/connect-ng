@@ -69,6 +69,7 @@ func (cache *ProfileCache) PutCacheValue(name string, value string) error {
 
 	filePath := filepath.Join(GetProfileFilePath(), name)
 	perms = os.FileMode(0644)
+        util.Debug.Println("PutCacheValue file, value: ", filePath, []byte(value))
 	err = os.WriteFile(filePath, []byte(value), perms)
 	return err
 }
@@ -88,6 +89,15 @@ func (cache *ProfileCache) GetCacheValue(name string) string {
 		return ""
 	}
 	return string(content)
+}
+
+func (cache *ProfileCache) Clear() {
+    cache.DeleteProfileCache("*-profile-id")
+    IncFailedProfileUpdate()
+}
+
+func (cache *ProfileCache) ResetClearCount() {
+    ResetFailedProfileUpdate()
 }
 
 // ---------------------------------------------------------------------
@@ -151,6 +161,7 @@ func BuildProfile(updateCache bool, tag string, cacheFile string, dataBlock any)
 
 // DeleteProfileCache simply calls the interface method
 func DeleteProfileCache(filter string) {
+	util.Debug.Print("clearing ProfileCache with filter: ", filter)
 	profileCache.DeleteProfileCache(filter)
 }
 
@@ -164,12 +175,14 @@ func GetProfileFilePath() string {
 }
 
 func ResetFailedProfileUpdate() {
+	util.Debug.Print("reset clearCacheCount: ")
 	profileCache.PutCacheValue(clearCacheCount, "0")
 }
 
 func IncFailedProfileUpdate() {
 	cnt, _ := strconv.Atoi(profileCache.GetCacheValue(clearCacheCount))
 	cnt++
+	util.Debug.Print("clearCacheCount set to: ", cnt)
 	profileCache.PutCacheValue(clearCacheCount, strconv.Itoa(cnt))
 }
 

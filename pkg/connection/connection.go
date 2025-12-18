@@ -14,6 +14,12 @@ const (
 	DefaultAPIVersion = "application/json,application/vnd.scc.suse.com.v4+json"
 )
 
+// Interface to Clear Profile Cache
+type ProfileCache interface {
+	Clear()
+	ResetClearCount()
+}
+
 // Connection is to be implemented by any struct that attempts to perform
 // requests against a remote resource that implements the /connect API.
 type Connection interface {
@@ -38,6 +44,7 @@ type Connection interface {
 type ApiConnection struct {
 	Options     Options
 	Credentials Credentials
+	ProfileCache ProfileCache
 }
 
 // Returns an ApiConnection object initialized with the given Options and
@@ -105,9 +112,14 @@ func (conn ApiConnection) Do(request *http.Request) (int, []byte, error) {
 	if readErr != nil {
 		return response.StatusCode, nil, readErr
 	}
-	profileAction := response.Header.Get("X-System-Profiles-Action")
-	if profileAction == "clear-cache" {
-		response.StatusCode = 205
+
+	if conn.ProfileCache != nil {
+	        profileAction := response.Header.Get("X-System-Profiles-Action")
+	        if profileAction == "clear-cache" {
+		        conn.ProfileCache.Clear()
+		} else {
+                        conn.ProfileCache.ResetClearCount()
+		}
 	}
 	return response.StatusCode, data, nil
 }
