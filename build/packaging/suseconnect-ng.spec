@@ -56,6 +56,7 @@ Requires:       ca-certificates
 %endif
 
 Requires:       coreutils
+Requires:       pciutils
 Requires:       zypper
 Requires:       util-linux
 Recommends:     systemd
@@ -192,6 +193,9 @@ if [ "$1" -eq 1 ]; then
   /usr/bin/systemctl is-enabled suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-enabled || :
   /usr/bin/systemctl is-active suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-active || :
 fi
+
+# Delete all files in the profile cache
+rm -f /run/suseconnect/*
 
 %post
 # Randomize schedule time for SLES12. SLES12 systemd does not support RandomizedDelaySec.
