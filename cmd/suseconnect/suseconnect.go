@@ -18,6 +18,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/internal/zypper"
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/SUSE/connect-ng/pkg/profiles"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -118,6 +119,7 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
 		os.Exit(0)
@@ -263,6 +265,8 @@ func main() {
 		fmt.Println(output)
 		os.Exit(0)
 	} else if deRegister {
+		// Clear ProfileCache on deregister even if dereg does not succeed.
+		profiles.DeleteProfileCache("*")
 		err := connect.Deregister(api, opts)
 		if jsonFlag && err != nil {
 			out := connect.RegisterOut{Success: false, Message: err.Error()}
@@ -276,6 +280,8 @@ func main() {
 		if jsonFlag {
 			exitOnError(errors.New("cannot use the json option with the 'cleanup' command"), api, opts)
 		}
+		// Clear ProfileCache on cleanup even if cleanup does not succeed.
+		profiles.DeleteProfileCache("*")
 		err := connect.Cleanup(opts.BaseURL, opts.FsRoot)
 		exitOnError(err, api, opts)
 	} else if rollback {
@@ -285,9 +291,18 @@ func main() {
 		err := connect.Rollback(api.GetConnection(), opts)
 		exitOnError(err, api, opts)
 	} else if info {
-		sysInfo, err := connect.FetchSystemInformation()
+		sysInfo, err := connect.FetchSystemInformation("")
 		exitOnError(err, api, opts)
 
+		profileInfo, err := connect.FetchSystemProfiles("", false)
+		exitOnError(err, api, opts)
+
+		// -i/--info outputs json data and is expected to be a single
+		// json blob. So, copy contents of profileInfo to
+		// sysInfo amd marshal sysInfo
+		for key, value := range profileInfo {
+			sysInfo[key] = value
+		}
 		out, err := json.Marshal(sysInfo)
 		exitOnError(err, api, opts)
 
@@ -314,8 +329,11 @@ func main() {
 				exitOnError(err, api, opts)
 			}
 
+			profiles.DeleteProfileCache("*")
 			err := connect.Register(api, opts)
 			if err != nil {
+				// Clear profile cache on registration errors
+				profiles.DeleteProfileCache("*")
 				if jsonFlag {
 					out := connect.RegisterOut{Success: false, Message: err.Error()}
 					str, _ := json.Marshal(&out)
@@ -345,6 +363,7 @@ func main() {
 }
 
 func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
+	util.Debug.Println("exitOnError err: ", err)
 	if err == nil {
 		return
 	}

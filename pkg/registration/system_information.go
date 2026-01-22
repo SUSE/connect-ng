@@ -21,6 +21,7 @@ var NoSystemInformation = map[string]any{}
 //   - instance data (string): Information provided by a cloud instance (Cloud)
 //   - namespace (string): Namespace in which the API operates (SMT)
 //   - online_at ([]string): OnlineAt definition which records hourly usage time of the system (Cloud)
+//   - system_profiles (map[string]any): DataProfiles record of large data profiles
 type ExtraData = map[string]any
 
 // Use NoExtraData when no extra information is used by the registration or status method.
@@ -29,11 +30,16 @@ type ExtraData = map[string]any
 //	registration.Register(conn, "regcode", "hostname", NoSystemInformation, NoExtraData)
 var NoExtraData = map[string]any{}
 
+// DataProfiles encapsulates any data which is expected to be big and so it
+// needs special encoding and treatment.
+type DataProfiles = map[string]any
+
 type requestWithInformation struct {
-	SystemInformation any      `json:"hwinfo"`
-	InstanceData      string   `json:"instance_data,omitempty"`
-	Namespace         string   `json:"namespace,omitempty"`
-	OnlineAt          []string `json:"online_at,omitempty"`
+	SystemInformation any          `json:"hwinfo"`
+	InstanceData      string       `json:"instance_data,omitempty"`
+	Namespace         string       `json:"namespace,omitempty"`
+	OnlineAt          []string     `json:"online_at,omitempty"`
+	DataProfiles      DataProfiles `json:"system_profiles,omitempty"`
 }
 
 func enrichWithSystemInformation(payload *requestWithInformation, info SystemInformation) {
@@ -51,6 +57,8 @@ func enrichWithExtraData(payload *requestWithInformation, extraData ExtraData) e
 			payload.Namespace, converted = value.(string)
 		case "online_at":
 			payload.OnlineAt, converted = value.([]string)
+		case "system_profiles":
+			payload.DataProfiles, converted = value.(map[string]any)
 		}
 
 		if !converted {

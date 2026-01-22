@@ -1,6 +1,7 @@
 package registration
 
 import (
+	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
 
@@ -27,12 +28,13 @@ type statusRequest struct {
 
 // Returns the registration status for the system pointed by the authorized
 // connection.
-func Status(conn connection.Connection, hostname string, systemInformation SystemInformation, extraData ExtraData) (StatusCode, error) {
+func Status(conn connection.Connection, hostname string, systemInformation SystemInformation, profiles DataProfiles, extraData ExtraData) (StatusCode, error) {
 	payload := statusRequest{
 		Hostname: hostname,
 	}
 
 	enrichWithSystemInformation(&payload.requestWithInformation, systemInformation)
+	payload.DataProfiles = profiles
 	enrichErr := enrichWithExtraData(&payload.requestWithInformation, extraData)
 	if enrichErr != nil {
 		return 0, enrichErr
@@ -50,8 +52,11 @@ func Status(conn connection.Connection, hostname string, systemInformation Syste
 
 	connection.AddSystemAuth(request, login, password)
 
+	util.Debug.Println("registration payload : ", payload)
+	util.Debug.Println("registration request : ", request)
 	_, doErr := conn.Do(request)
 	if doErr != nil {
+		util.Debug.Println("registration.Status doErr: ", doErr)
 		return Unregistered, nil
 	}
 
