@@ -127,7 +127,9 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 
 	systemInformation["uname"] = "public api demo - ping"
 
-	status, statusErr := registration.Status(conn, hostname, systemInformation, extraData)
+	profiles := registration.DataProfiles{}
+
+	status, statusErr := registration.Status(conn, hostname, systemInformation, profiles, extraData)
 	if statusErr != nil {
 		return statusErr
 	}

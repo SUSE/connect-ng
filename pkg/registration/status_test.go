@@ -13,6 +13,8 @@ const (
 	hostname = "test-hostname"
 )
 
+var noProfileData = map[string]any{}
+
 func TestStatusRegistered(t *testing.T) {
 	assert := assert.New(t)
 
@@ -22,7 +24,7 @@ func TestStatusRegistered(t *testing.T) {
 	// 204 No Content
 	conn.On("Do", mock.Anything).Return([]byte(""), nil).Run(checkAuthBySystemCredentials(t, login, password))
 
-	status, err := Status(conn, hostname, NoSystemInformation, NoExtraData)
+	status, err := Status(conn, hostname, NoSystemInformation, noProfileData, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Registered, status)
 }
@@ -35,7 +37,7 @@ func TestStatusUnregistered(t *testing.T) {
 	// 404 Not Found
 	conn.On("Do", mock.Anything).Return([]byte(""), errors.New("system not found"))
 
-	status, err := Status(conn, hostname, NoSystemInformation, NoExtraData)
+	status, err := Status(conn, hostname, NoSystemInformation, noProfileData, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Unregistered, status)
 }
@@ -53,7 +55,7 @@ func TestStatusWithSystemInformation(t *testing.T) {
 	expected := string(fixture(t, "pkg/registration/status_with_system_information.json"))
 	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
 
-	status, err := Status(conn, hostname, systemInformation, NoExtraData)
+	status, err := Status(conn, hostname, systemInformation, noProfileData, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Registered, status)
 }
@@ -77,7 +79,28 @@ func TestStatusWithExtraData(t *testing.T) {
 	expected := string(fixture(t, "pkg/registration/status_with_extra_data.json"))
 	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
 
-	status, err := Status(conn, hostname, NoSystemInformation, extraData)
+	status, err := Status(conn, hostname, NoSystemInformation, noProfileData, extraData)
+	assert.NoError(err)
+	assert.Equal(Registered, status)
+}
+
+func TestStatusWithProfileData(t *testing.T) {
+	assert := assert.New(t)
+
+	profileData := map[string]any{
+		"pci_data:": []string{
+			"identifier:9c90e32ca4d6f7c106d98069539bdbef9078c349f03b474031ad702854c03f1c",
+			"data:somedata",
+		},
+	}
+
+	conn, _ := connection.NewMockConnectionWithCredentials()
+
+	// 204 No Content
+	expected := string(fixture(t, "pkg/registration/status_with_profile_data.json"))
+	conn.On("Do", mock.AnythingOfType("*http.Request")).Return([]byte(""), nil).Run(matchBody(t, expected))
+
+	status, err := Status(conn, hostname, NoSystemInformation, profileData, NoExtraData)
 	assert.NoError(err)
 	assert.Equal(Registered, status)
 }

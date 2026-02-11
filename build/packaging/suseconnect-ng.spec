@@ -1,7 +1,7 @@
 #
 # spec file for package suseconnect-ng
 #
-# Copyright (c) 2024 SUSE LLC
+# Copyright (c) 2026 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -18,7 +18,7 @@
 %global project github.com/SUSE/connect-ng
 
 Name:           suseconnect-ng
-Version:        1.20.0
+Version:        1.21.0
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
 License:        LGPL-2.1-or-later
@@ -56,6 +56,7 @@ Requires:       ca-certificates
 %endif
 
 Requires:       coreutils
+Requires:       pciutils
 Requires:       zypper
 Requires:       util-linux
 Recommends:     systemd
@@ -192,6 +193,9 @@ if [ "$1" -eq 1 ]; then
   /usr/bin/systemctl is-enabled suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-enabled || :
   /usr/bin/systemctl is-active suseconnect-keepalive.timer >/dev/null 2>&1 && touch /run/suseconnect-keepalive.timer.is-active || :
 fi
+
+# Delete all files in the profile cache
+rm -f /run/suseconnect/*
 
 %post
 # Randomize schedule time for SLES12. SLES12 systemd does not support RandomizedDelaySec.
