@@ -68,7 +68,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 	api := connect.NewWrappedAPI(opts)
 
-	if err := connect.Register(api, opts); err != nil {
+	if err := api.Register(opts.Token, opts.InstanceDataFile); err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
@@ -77,7 +77,14 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 		return C.CString(errorToJSON(err))
 	}
 
-	jsn, _ := json.Marshal(&creds)
+	login := creds.Username
+	password := creds.Password
+
+	var res struct {
+		Credentials []string `json:"credentials"`
+	}
+	res.Credentials = []string{login, password, ""}
+	jsn, _ := json.Marshal(&res)
 	return C.CString(string(jsn))
 }
 
