@@ -1,1 +1,1 @@
-{"hostname":"hostname","hwinfo":{},"instance_data":"<document>{\"instanceId\": \"dummy_instance_data\"}</document>","namespace":"staging-sles","online_at":["12122025:000000000000000000000000","11122025:000000000000000000000000","10122025:000000000000000000000000"]}
+{"hostname":"hostname","distro_target":"","hwinfo":{},"instance_data":"<document>{\"instanceId\": \"dummy_instance_data\"}</document>","namespace":"staging-sles","online_at":["12122025:000000000000000000000000","11122025:000000000000000000000000","10122025:000000000000000000000000"]}

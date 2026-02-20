@@ -149,6 +149,15 @@ func (p Product) FindExtension(triplet string) (Product, error) {
 	return Product{}, fmt.Errorf("extension not found")
 }
 
+func (p Product) DistroTarget() string {
+	identifier := strings.ToLower(p.Identifier)
+	if strings.HasPrefix(identifier, "sle") {
+		identifier = "sle"
+	}
+	version := strings.Split(p.Version, ".")[0]
+	return identifier + "-" + version + "-" + p.Arch
+}
+
 // Transforms the current product into a list of extensions.
 func (p Product) ToExtensionsList() []Product {
 	res := make([]Product, 0)
