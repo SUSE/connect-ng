@@ -7,7 +7,8 @@ import (
 )
 
 type announceRequest struct {
-	Hostname string `json:"hostname"`
+	Hostname     string `json:"hostname"`
+	DistroTarget string `json:"distro_target"`
 
 	requestWithInformation
 }
@@ -28,6 +29,14 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 		Hostname: hostname,
 	}
 
+	// distro_target may be data in extra data, but only needed for smt
+	// and it must be at the same level in the payload as hostname
+	// so, if it is present add to payload and remove from extraData
+	if _, ok := extraData["distro_target"]; ok {
+		payload.DistroTarget = extraData["distro_target"].(string)
+		delete(extraData, "distro_target")
+	}
+
 	enrichWithSystemInformation(&payload.requestWithInformation, systemInformation)
 	enrichErr := enrichWithExtraData(&payload.requestWithInformation, extraData)
 	if enrichErr != nil {
@@ -35,14 +44,12 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 	}
 
 	creds := conn.GetCredentials()
-
 	request, buildErr := conn.BuildRequest("POST", "/connect/subscriptions/systems", payload)
 	if buildErr != nil {
 		return 0, buildErr
 	}
 
 	connection.AddRegcodeAuth(request, regcode)
-
 	response, doErr := conn.Do(request)
 	if doErr != nil {
 		return 0, doErr

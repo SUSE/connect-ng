@@ -53,28 +53,27 @@ func Register(api WrappedAPI, opts *Options) error {
 		printInformation(fmt.Sprintf("Registering system to %s", opts.ServerName()), opts)
 	}
 
-	if err := api.RegisterOrKeepAlive(opts.Token, opts.InstanceDataFile, opts.EnableSystemUptimeTracking); err != nil {
-		return err
-	}
-
 	installReleasePkg := true
-	product := opts.Product
-	if product.IsEmpty() {
+	if opts.Product.IsEmpty() {
 		base, err := zypper.BaseProduct()
 		if err != nil {
 			return err
 		}
-		product = base
+		opts.Product = base
 		installReleasePkg = false
 	}
 
-	if service, err := registerProduct(conn, opts, product, installReleasePkg); err == nil {
+	if err := api.RegisterOrKeepAlive(opts); err != nil {
+		return err
+	}
+
+	if service, err := registerProduct(conn, opts, opts.Product, installReleasePkg); err == nil {
 		out.Products = append(out.Products, ProductService{
 			Product: ProductOut{
-				Name:       product.Name,
-				Identifier: product.Identifier,
-				Version:    product.Version,
-				Arch:       product.Arch,
+				Name:       opts.Product.Name,
+				Identifier: opts.Product.Identifier,
+				Version:    opts.Product.Version,
+				Arch:       opts.Product.Arch,
 			},
 			Service: ServiceOut{
 				Id:   service.ID,
@@ -86,8 +85,8 @@ func Register(api WrappedAPI, opts *Options) error {
 		return err
 	}
 
-	if product.IsBase {
-		p, err := registration.FetchProductInfo(conn, product.Identifier, product.Version, product.Arch)
+	if opts.Product.IsBase {
+		p, err := registration.FetchProductInfo(conn, opts.Product.Identifier, opts.Product.Version, opts.Product.Arch)
 		if err != nil {
 			return err
 		}
