@@ -14,34 +14,44 @@ type ToolInput struct{}
 
 type JSONOutput struct {
 	Response string `json:"response" jsonschema:"the response from the tool"`
+	Error    string `json:"error,omitempty" jsonschema:"the error message if the tool failed"`
 }
 
-func RegistrationStatus(ctx context.Context, req *mcp.CallToolRequest, input ToolInput ) ( 
+func RegistrationStatus(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("RegistrationStatus tool called")
+
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
-  if err != nil {
-		return nil, JSONOutput{}, err
+	if err != nil {
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
 	}
+
 	statuses, err := connect.GetProductStatuses(opts, connect.StatusJSON)
 	if err != nil {
-		return nil, JSONOutput{}, err
+		return nil, JSONOutput{Error: "Failed to retrieve registration status"}, err
 	}
+
 	return nil, JSONOutput{Response: statuses}, nil
 }
 
 func ListExtensions(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("ListExtensions tool called")
+
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
-		return nil, JSONOutput{}, err
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
 	}
-  api := connect.NewWrappedAPI(opts)
+
+	api := connect.NewWrappedAPI(opts)
 	tree, err := connect.RenderExtensionTree(api, true)
 	if err != nil {
-		return nil, JSONOutput{}, err
+		if errors.Is(err, connect.ErrListExtensionsUnregistered) {
+			return nil, JSONOutput{}, fmt.Errorf("System is not registered; Extension listing requires the system to register first.")
+		}
+		return nil, JSONOutput{Response: ""}, fmt.Errorf("Failed to list extensions: %w", err)
 	}
+
 	return nil, JSONOutput{Response: tree}, nil
 }
 
@@ -50,7 +60,7 @@ func main() {
 	flag.Parse()
 
 	server := mcp.NewServer(&mcp.Implementation{Name: "suseconnect", Version: "v0.0.1"}, nil)
-	
+
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "RegistrationStatus",
 		Description: "Tool to output the registration status of the system and activated/non-activated installed products",
