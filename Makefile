@@ -8,7 +8,7 @@ GOFLAGS       = -v -mod=vendor
 BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
 
-CONTAINER     = registry.suse.com/bci/golang:1.21-openssl
+CONTAINER     = registry.suse.com/bci/golang:1.23-openssl
 CRM           = docker run --rm -it --privileged
 ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
@@ -57,6 +57,7 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/public-api-demo
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/validate-offline-certificate
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/offline-register-api
+	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect-mcp
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
