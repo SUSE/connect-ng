@@ -2,15 +2,29 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/SUSE/connect-ng/internal/connect"
+	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 type ToolInput struct{}
+
+type RegisterInput struct {
+	Regcode string `json:"regcode" jsonschema:"The subscription registration code to register the system with"`
+	Email   string `json:"email,omitempty" jsonschema:"Email Address to associate the registration with"`
+}
+
+type ActivateInput struct {
+	Regcode string `json:"regcode,omitempty" jsonschema:"The subscription registration code to register the system with"`
+	Product string `json:"product" jsonschema:"The product to activate on the system, e.g. 'sle-module-basesystem/15.5/x86_64'. The system needs to be registered first. Available extensions and modules to activate can be found via the ListExtensions tool."`
+	Email   string `json:"email,omitempty" jsonschema:"Email Address to associate the registration with"`
+}
 
 type JSONOutput struct {
 	Response string `json:"response" jsonschema:"the response from the tool"`
@@ -55,6 +69,51 @@ func ListExtensions(ctx context.Context, req *mcp.CallToolRequest, input ToolInp
 	return nil, JSONOutput{Response: tree}, nil
 }
 
+func RegisterSystem(ctx context.Context, req *mcp.CallToolRequest, input RegisterInput) (
+	*mcp.CallToolResult, JSONOutput, error) {
+	slog.Info("RegisterSystem tool called")
+
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
+	}
+	opts.Token = input.Regcode
+	opts.Email = input.Email
+
+	api := connect.NewWrappedAPI(opts)
+	err = connect.Register(api, opts)
+	if err != nil {
+		return nil, JSONOutput{Error: "System registration failed"}, err
+	}
+
+	return nil, JSONOutput{Response: "System successfully registered"}, nil
+}
+
+func ActivateProduct(ctx context.Context, req *mcp.CallToolRequest, input ActivateInput) (
+	*mcp.CallToolResult, JSONOutput, error) {
+	slog.Info("ActivateProduct tool called")
+
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
+	}
+	opts.Token = input.Regcode
+	opts.Email = input.Email
+	if p, err := registration.FromTriplet(input.Product); err != nil {
+		return nil, JSONOutput{Error: "Please provide the product identifier in this format: <internal name>/<version>/<architecture>. You can find these values in the ListExtensions tool"}, err
+	} else {
+		opts.Product = p
+	}
+
+	api := connect.NewWrappedAPI(opts)
+	err = connect.Register(api, opts)
+	if err != nil {
+		return nil, JSONOutput{Error: "System registration failed"}, err
+	}
+
+	return nil, JSONOutput{Response: "System successfully registered"}, nil
+}
+
 func main() {
 	listenAddr := flag.String("http", "", "address for http transport, defaults to stdio")
 	flag.Parse()
@@ -69,6 +128,14 @@ func main() {
 		Name:        "ListExtensions",
 		Description: "List available extension products for your SUSE system. Your system's base product must be activated first.",
 	}, ListExtensions)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "RegisterSystem",
+		Description: "Registers and activates your SUSE system. This will enable access to online repositories and additional extensions and modules.",
+	}, RegisterSystem)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "ActivateProduct",
+		Description: "Activates and additional extension product or module on your SUSE system. Available extensions can get queried with the ListExtensions tool.",
+	}, ActivateProduct)
 
 	if *listenAddr == "" {
 		// Run the server on the stdio transport.
