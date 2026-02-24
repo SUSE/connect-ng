@@ -20,6 +20,27 @@ func TestProductToTriplet(t *testing.T) {
 	assert.Equal("SLES/15.5/x86_64", product.ToTriplet())
 }
 
+func TestProductDistroTargetSle(t *testing.T) {
+	assert := assert.New(t)
+
+	productJson := fixture(t, "pkg/registration/product_tree.json")
+	product := Product{}
+
+	assert.NoError(json.Unmarshal(productJson, &product))
+	assert.Equal("sle-15-x86_64", product.DistroTarget())
+}
+
+func TestProductDistroTargetNotSle(t *testing.T) {
+	assert := assert.New(t)
+
+	productJson := fixture(t, "pkg/registration/product_tree.json")
+	product := Product{}
+
+	assert.NoError(json.Unmarshal(productJson, &product))
+	product.Identifier = "not-suse-really"
+	assert.Equal("not-suse-really-15-x86_64", product.DistroTarget())
+}
+
 func TestProductTraverseExtensionsFull(t *testing.T) {
 	assert := assert.New(t)
 

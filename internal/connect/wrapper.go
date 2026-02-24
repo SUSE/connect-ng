@@ -20,8 +20,8 @@ import (
 // when unit testing
 type WrappedAPI interface {
 	KeepAlive(uptimeTracking bool) error
-	Register(regcode, instanceDataFile string) error
-	RegisterOrKeepAlive(regcode, instanceDataFile string, uptimeTracking bool) error
+	Register(opts *Options) error
+	RegisterOrKeepAlive(opts *Options) error
 	IsRegistered() bool
 	AssignLabels(labels []string) ([]labels.Label, error)
 
@@ -145,7 +145,7 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 	return err
 }
 
-func (w Wrapper) Register(regcode, instanceDataFile string) error {
+func (w Wrapper) Register(opts *Options) error {
 	arch, _ := collectors.DetectArchitecture()
 	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
@@ -157,8 +157,8 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 	// "extra" data. This will be used inside of the `registration.Register`
 	// code.
 	extraData := registration.ExtraData{}
-	if instanceDataFile != "" {
-		data, err := os.ReadFile(instanceDataFile)
+	if opts.InstanceDataFile != "" {
+		data, err := os.ReadFile(opts.InstanceDataFile)
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,10 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 	profileData, err := FetchSystemProfiles(arch, true)
 	extraData["system_profiles"] = profileData
 
-	_, err = registration.Register(w.Connection, regcode, hostname, hwinfo, extraData)
+	// add distro_target to extra data
+	extraData["distro_target"] = opts.Product.DistroTarget()
+
+	_, err = registration.Register(w.Connection, opts.Token, hostname, hwinfo, extraData)
 	if err != nil {
 		profiles.DeleteProfileCache("*-profile-id")
 	}
@@ -179,11 +182,11 @@ func (w Wrapper) Register(regcode, instanceDataFile string) error {
 
 // RegisterOrKeepAlive calls either `Register` or `KeepAlive` depending on
 // whether the current system is registered or not.
-func (w Wrapper) RegisterOrKeepAlive(regcode, instanceDataFile string, uptimeTracking bool) error {
+func (w Wrapper) RegisterOrKeepAlive(opts *Options) error {
 	if w.Registered {
-		return w.KeepAlive(uptimeTracking)
+		return w.KeepAlive(opts.EnableSystemUptimeTracking)
 	}
-	return w.Register(regcode, instanceDataFile)
+	return w.Register(opts)
 }
 
 func (w Wrapper) IsRegistered() bool {
