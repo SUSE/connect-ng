@@ -32,10 +32,6 @@ const (
 	dummyBinPath = "/usr/local/bin/dummy"
 )
 
-var (
-	testSvcMatcher = regexp.MustCompile(`^test\d+\.service$`)
-)
-
 func TestMatchers(t *testing.T) {
 	testUnitFile := "test.unit"
 	enabled := "enabled"
