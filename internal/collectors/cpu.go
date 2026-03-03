@@ -12,6 +12,12 @@ import (
 
 type CPU struct{}
 
+// Paths where the `compatible` file for `device-tree` might be located.
+var deviceTreePaths = []string{
+	"/sys/firmware/devicetree/base/compatible",
+	"/sys/firmware/devicetree/base/hypervisor/compatible",
+}
+
 func (cpu CPU) run(arch string) (Result, error) {
 	// Z systems live on their own planet when it comes to counting CPUs and
 	// sockets (i.e. even the concept of "what is a CPU?" is different there).
@@ -82,14 +88,8 @@ func addArchExtras(arch string, result Result) Result {
 	return result
 }
 
-// Paths where the `compatible` file for `device-tree` might be located.
-var deviceTreePaths = []string{
-	"/sys/firmware/devicetree/base/compatible",
-	"/sys/firmware/devicetree/base/hypervisor/compatible",
-}
-
-func readDeviceTreeFile() string {
-	for _, deviceTreePath := range deviceTreePaths {
+func readDeviceTreeFile(fileList []string) string {
+	for _, deviceTreePath := range fileList {
 		b := util.ReadFile(deviceTreePath)
 		if len(b) > 0 {
 			// NOTE: the device tree `compatible` file can be weird and contain
@@ -112,7 +112,7 @@ func addPpc64Extras(result Result) Result {
 	specs := make(map[string]string)
 
 	// PowerPC machines usually have `device_tree` information. Let's grab it.
-	if dt := readDeviceTreeFile(); len(dt) > 0 {
+	if dt := readDeviceTreeFile(deviceTreePaths); len(dt) > 0 {
 		specs["device_tree"] = dt
 	}
 
@@ -159,7 +159,7 @@ func exactStringMatch(id string, text []byte) string {
 func addArm64Extras(result Result) Result {
 	specs := make(map[string]string)
 
-	if dt := readDeviceTreeFile(); len(dt) > 0 {
+	if dt := readDeviceTreeFile(deviceTreePaths); len(dt) > 0 {
 		specs["device_tree"] = dt
 	} else {
 		output, _ := util.Execute([]string{"dmidecode", "-t", "processor"}, nil)
