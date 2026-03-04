@@ -12,19 +12,19 @@ import (
 )
 
 const (
-	// supported kubernetes providers
+	// recognised kubernetes providers
 	RKE2_PROVIDER = "rke2"
 	K3S_PROVIDER  = "k3s"
 
-	// supported kubernetes provider node roles
+	// recognised kubernetes provider node roles
 	KUBERNETES_SERVER = "server"
 	KUBERNETES_AGENT  = "agent"
 )
 
 // Custom Errors
 var (
-	KubernetesProviderNotSupported = errors.New("kubernetes provider not supported")
-	KubernetesRoleNotSupported     = errors.New("kubernetes role not supported")
+	KubernetesProviderNotRecognised = errors.New("kubernetes provider not recognised")
+	KubernetesRoleNotRecognised     = errors.New("kubernetes role not recognised")
 )
 
 var (
@@ -68,11 +68,11 @@ var (
 	//
 	// kubernetes providers and roles
 	//
-	supportedKubernetesProviders = []string{
+	recognisedKubernetesProviders = []string{
 		RKE2_PROVIDER,
 		K3S_PROVIDER,
 	}
-	supportedKubernetesRoles = []string{
+	recognisedKubernetesRoles = []string{
 		KUBERNETES_SERVER,
 		KUBERNETES_AGENT,
 	}
@@ -164,13 +164,13 @@ func getKubernetesServices() ([]*KubernetesService, error) {
 
 		for _, unitFile := range unitFiles {
 			ks, err := NewKubernetesService(unitFile)
-			if errors.Is(err, KubernetesProviderNotSupported) {
+			if errors.Is(err, KubernetesProviderNotRecognised) {
 				util.Debug.Printf(
 					"NewKubernetesService() failed for unitFile %q: %s\n",
 					unitFile, err,
 				)
 				continue
-			} else if errors.Is(err, KubernetesRoleNotSupported) {
+			} else if errors.Is(err, KubernetesRoleNotRecognised) {
 				util.Debug.Printf(
 					"NewKubernetesService() failed for unitFile %q: %s\n",
 					unitFile, err,
@@ -283,22 +283,22 @@ func NewKubernetesService(unitFile *UnitFile) (*KubernetesService, error) {
 	ks.Role = string(matches[2])
 	ks.Type = filepath.Base(ks.Binary)
 
-	// validate type is supported
-	if !slices.Contains(supportedKubernetesProviders, ks.Type) {
+	// validate type is recognised
+	if !slices.Contains(recognisedKubernetesProviders, ks.Type) {
 		err = fmt.Errorf(
-			"type %q not in supported providers list %v: %w",
-			ks.Type, supportedKubernetesProviders,
-			KubernetesProviderNotSupported,
+			"type %q not in recognised providers list %v: %w",
+			ks.Type, recognisedKubernetesProviders,
+			KubernetesProviderNotRecognised,
 		)
 		return nil, err
 	}
 
-	// validate role is supported
-	if !slices.Contains(supportedKubernetesRoles, ks.Role) {
+	// validate role is recognised
+	if !slices.Contains(recognisedKubernetesRoles, ks.Role) {
 		err = fmt.Errorf(
-			"role %q not in supported providers list %v: %w",
-			ks.Role, supportedKubernetesRoles,
-			KubernetesRoleNotSupported,
+			"role %q not in recognised providers list %v: %w",
+			ks.Role, recognisedKubernetesRoles,
+			KubernetesRoleNotRecognised,
 		)
 		return nil, err
 	}
