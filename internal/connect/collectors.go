@@ -20,6 +20,7 @@ func FetchSystemInformation(arch string) (collectors.Result, error) {
 		// Optional collectors
 		collectors.Uname{},
 		collectors.SAP{},
+		collectors.K8S{},
 	}
 
 	var err error
