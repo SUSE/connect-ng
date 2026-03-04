@@ -32,23 +32,28 @@ var (
 	// regexp matchers
 	//
 
-	// match lines with the format: "<unit_file> <state> <preset>"
+	// match lines with the format "<unit_file> <state> <preset>" and extract
+	// the <unit_file> and <state> fields
 	listUnitFilesOutPutMatcher = regexp.MustCompile(`^(\S+)\s+(\S+)\s+\S+$`)
 
-	// rke2 service name matcher
+	// rke2 service name matcher used to detect candidate RKE2 service names
 	rke2ServiceNameMatcher = regexp.MustCompile(`^rke2-(?:server|agent)\.service$`)
 
-	// rke2 service name matcher
+	// rke2 service name matcher used to detect candidate K3s service names which
+	// default to 'k3s' and 'k3s-agent' for server and agent roles respectively,
+	// but which can be arbitrarily overridden to `k3s-<suffix>` if a explicit
+	// <suffix> is specified when installing the K3s on a system.
 	k3sServiceNameMatcher = regexp.MustCompile(`^k3s(?:|-[^.]+)\.service$`)
 
-	// match lines with the format: "ExecStart={ <binary> ; argv[]=<binary> <role> ... ; ... }"
-	//execStartPropertyMatcher = regexp.MustCompile(`^ExecStart=[{]\s+path=(\S+)\s+;\s+argv\[\]=\S+\s+(\S+)(?:\s+\S+)*\s+;\s+.*\s+[}]$`)
+	// match lines with the format "ExecStart={ path=<binary> ; argv[]=<binary> <role> ... ; ... }"
+	// and extract the <binary> and <role> fields from matched lines
 	execStartPropertyMatcher = regexp.MustCompile(
 		`^ExecStart=\{\s+path=(\S+)\s+;\s+argv\[\]=\S+\s+([^ ;}]+)(?:\s+[^ ;}]+)*\s+` +
 			`(?:;\s+\S+=(?:[^ ;}]+\s+)*)*\}$`,
 	)
 
-	// match lines with the format: "<app> version <version> (<hash>)"
+	// match lines with the format "<app> version <version> (<hash>)" and extract
+	// <version> and <hash> fields
 	versionMatcher = regexp.MustCompile(`^\S+\s+version\s+(\S+)\s+\(([[:xdigit:]]+)\)$`)
 
 	//
@@ -66,7 +71,7 @@ var (
 	}
 
 	//
-	// kubernetes providers and roles
+	// kubernetes providers and roles that this collector recognises and reports
 	//
 	recognisedKubernetesProviders = []string{
 		RKE2_PROVIDER,
@@ -296,7 +301,7 @@ func NewKubernetesService(unitFile *UnitFile) (*KubernetesService, error) {
 	// validate role is recognised
 	if !slices.Contains(recognisedKubernetesRoles, ks.Role) {
 		err = fmt.Errorf(
-			"role %q not in recognised providers list %v: %w",
+			"role %q not in recognised roles list %v: %w",
 			ks.Role, recognisedKubernetesRoles,
 			KubernetesRoleNotRecognised,
 		)
@@ -324,7 +329,7 @@ func (ks *KubernetesService) setVersion() error {
 	outputLines := bytes.Split(output, []byte("\n"))
 	matches := versionMatcher.FindSubmatch(outputLines[0])
 	if len(matches) != 3 {
-		// report an error if
+		// report an error if version output doesn't match expected format
 		err = fmt.Errorf("failed to parse %s --version output", ks.Binary)
 		return err
 	}
