@@ -102,7 +102,7 @@ func (K8S) run(arch string) (Result, error) {
 
 	provider, err := getKubernetesProvider()
 	if err != nil {
-		util.Info.Printf("Failed to get kubernetes provider: %s", err)
+		util.Debug.Printf("Failed to get kubernetes provider: %s", err)
 		return Result{}, err
 	}
 
