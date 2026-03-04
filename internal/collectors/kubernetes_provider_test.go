@@ -988,7 +988,6 @@ func TestGetKubernetesProviderFailedOperation(t *testing.T) {
 		},
 	)
 	callEnv := newTestK8sUtilExecuteEnv()
-	tkp := testEnv.Rke2
 
 	// setup util.Execute() mocking
 	origUtilExecute := setupUtilExecuteFunc(testEnv, callEnv)
@@ -999,22 +998,29 @@ func TestGetKubernetesProviderFailedOperation(t *testing.T) {
 	kpInfo, err := getKubernetesProvider()
 
 	// check returned values
-	assert.Nil(kpInfo, "getKubernetesProvider() should have returned nil for provider info")
-	assert.Error(err, "getKubernetesProvider() should have returned an error")
-	assert.ErrorIs(err, testEnv.DefaultError, "getKubernetesProvider() returned unexpected error")
+	assert.Empty(kpInfo, "getKubernetesProvider() should have returned an empty list of provider infos")
+	assert.NoError(err, "getKubernetesProvider() shouldn't have returned an error")
 
 	// check util.Execute() called expected number of times and skip remaining tests if not
-	expectedNumCalls := 1 /* list-unit-files for each provider pattern */
+	expectedNumCalls := 2 /* list-unit-files for each provider pattern */
 
 	require.Equal(expectedNumCalls, callEnv.NumCalls, "util.Execute() called unexpected number of times")
 
 	// check util.Execute() was called as expected for listMatchingUnitFilesOfTypeAndState()
-	assert.Equal(
-		tkp.ListUnitFilesCmd.CmdLine,
-		callEnv.CmdLinesList[0],
-		"listMatchingUnitFilesOfTypeAndState() triggered util.Execute() with unexpected cmd argument for %s",
-		tkp.SvcPattern,
-	)
+	for _, i := range []struct {
+		tkp      *testK8sProvider
+		cmdIndex int
+	}{
+		{testEnv.Rke2, 0},
+		{testEnv.K3s, 1},
+	} {
+		assert.Equal(
+			i.tkp.ListUnitFilesCmd.CmdLine,
+			callEnv.CmdLinesList[i.cmdIndex],
+			"listMatchingUnitFilesOfTypeAndState() triggered util.Execute() with unexpected cmd argument for %s",
+			i.tkp.SvcPattern,
+		)
+	}
 
 	// check all util.Execute() exit codes are as expected
 	for i, exitCodes := range callEnv.ExitCodesList {
@@ -1134,8 +1140,7 @@ func TestK8sRunGetKubernetesProvidersFailed(t *testing.T) {
 
 	// check returned values
 	assert.NotNil(result, "K8S.run() returned nil")
-	assert.Error(err, "K8S.run() should have returned an error")
-	assert.ErrorIs(err, testEnv.DefaultError, "K8S.run() error not the expected one")
+	assert.NoError(err, "K8S.run() shouldn't have returned an error")
 	assert.Equal(expectedResult, result, "K8S.run() returned unexpected provider info")
 }
 

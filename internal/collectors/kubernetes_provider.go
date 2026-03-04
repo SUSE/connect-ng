@@ -159,7 +159,7 @@ func getKubernetesServices() ([]*KubernetesService, error) {
 				"listMatchingUnitFilesOfTypeAndState() for pattern %q nameMatcher %s failed to match services: %s\n",
 				filters.pattern, filters.nameMatcher, err,
 			)
-			return nil, err
+			continue
 		}
 
 		for _, unitFile := range unitFiles {
