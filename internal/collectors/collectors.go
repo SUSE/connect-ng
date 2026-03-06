@@ -12,6 +12,7 @@ Example:
 		collectors.Architecture{},
 		collectors.Memory{},
 		collectors.UUID{},
+		collectors.Vendor{},
 	}
 
 result, error := collectors.CollectInformation("x86_64", MandatoryCollectors)
