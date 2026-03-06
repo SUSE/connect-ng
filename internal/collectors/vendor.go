@@ -24,16 +24,17 @@ func (Vendor) run(arch string) (Result, error) {
 		}
 	}
 
-	if model := readDeviceTreeFile([]string{"/sys/firmware/devicetree/base/model"}); len(model) > 0 {
-		return Result{"vendor": strings.TrimSpace(model)}, nil
+	if model, _ := localOsReadfile("/sys/firmware/devicetree/base/model"); len(model) > 0 {
+		return Result{"vendor": strings.TrimSpace(string(model))}, nil
 	}
 
 	if model := readDeviceTreeFile([]string{"/sys/firmware/devicetree/hypervisor/model"}); len(model) > 0 {
 		return Result{"vendor": strings.TrimSpace(model)}, nil
 	}
-
-	if sysInfo := readDeviceTreeFile([]string{"/proc/sysinfo"}); len(sysInfo) > 0 {
-		if vendor := strings.TrimSpace(exactStringMatch("Manufacturer", []byte(sysInfo))); vendor != "" {
+//	if sysInfo := readDeviceTreeFile([]string{"/proc/sysinfo"}); len(sysInfo) > 0 {
+	sysInfo, _ := localOsReadfile("/proc/sysinfo")
+	if len(sysInfo) > 0 {
+		if vendor := strings.TrimSpace(exactStringMatch("Manufacturer", sysInfo)); vendor != "" {
 			return Result{"vendor": string(vendor)}, nil
 		}
 	}

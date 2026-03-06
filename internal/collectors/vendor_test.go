@@ -29,3 +29,18 @@ func TestVendorRunDefaultInPhysical(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(expectedVendor, result["vendor"])
 }
+
+func TestVendorRunSysInfo(t *testing.T) {
+	assert := assert.New(t)
+//	fileData := "Manufacturer: IBM S390"
+	expectedVendor := "IBM S390"
+	vendor := Vendor{}
+
+	mockUtilExecute("", nil)
+
+	
+//	mockLocalOsReadfile(t, "/proc/sysinfo", "Manufacturer: IBM S390")
+	result, err := vendor.run(ARCHITECTURE_Z)
+	assert.NoError(err)
+	assert.Equal(expectedVendor, result["vendor"])
+}
