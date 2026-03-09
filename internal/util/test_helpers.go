@@ -29,3 +29,55 @@ func TestContentMatches(t *testing.T, expected string, got string) {
 		t.Errorf(strings.Join(message, "\n"), expected, got)
 	}
 }
+
+//
+// Helpers for mocking Execute()
+//
+
+type MockExecuteEnv struct {
+	// Public Attributes
+	NumCalls      int
+	CmdLinesList  [][]string
+	ExitCodesList [][]int
+	Cfg           any
+
+	// Private Attributes
+	origExecute ExecuteFunc
+}
+
+func NewExecuteMockEnv(cfg any) *MockExecuteEnv {
+	return &MockExecuteEnv{
+		NumCalls:      0,
+		CmdLinesList:  [][]string{},
+		ExitCodesList: [][]int{},
+		Cfg:           cfg,
+		origExecute:   nil,
+	}
+}
+
+type MockExecuteFunc func(cmd []string, exitCodes []int, env *MockExecuteEnv) ([]byte, error)
+
+func (m *MockExecuteEnv) Setup(handler MockExecuteFunc) {
+	// save the original Execute
+	m.origExecute = Execute
+	Execute = func(cmd []string, exitCodes []int) ([]byte, error) {
+		// the mocked execute was called so update tracking settings
+		m.NumCalls++
+		m.CmdLinesList = append(m.CmdLinesList, cmd)
+		m.ExitCodesList = append(m.ExitCodesList, exitCodes)
+
+		// call the handler, passing in the cmd, exitCodes and mock env
+		// and return the results
+		return handler(cmd, exitCodes, m)
+	}
+}
+
+func (m *MockExecuteEnv) OriginalExecute() ExecuteFunc {
+	return m.origExecute
+}
+
+func (m *MockExecuteEnv) Teardown() {
+	// restore the original Execute
+	Execute = m.origExecute
+	m.origExecute = nil
+}
