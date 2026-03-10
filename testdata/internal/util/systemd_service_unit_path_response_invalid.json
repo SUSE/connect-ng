@@ -1,0 +1,23 @@
+{
+  "type": "v",
+  "data": [
+    {
+      "type": "a(sasbttttuii)",
+      "data": [
+        "/usr/local/bin/k3s",
+        [
+          "/usr/local/bin/k3s",
+          "agent"
+        ],
+        false,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

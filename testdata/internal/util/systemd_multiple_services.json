@@ -1,0 +1,43 @@
+{
+  "type": "a(ssssssouso)",
+  "data": [
+    [
+      [
+        "sshd.service",
+        "OpenSSH Daemon",
+        "loaded",
+        "active",
+        "running",
+        "",
+        "/org/freedesktop/systemd1/unit/sshd_2eservice",
+        0,
+        "",
+        "/"
+      ],
+      [
+        "cups.service",
+        "CUPS Scheduler",
+        "loaded",
+        "active",
+        "running",
+        "",
+        "/org/freedesktop/systemd1/unit/cups_2eservice",
+        0,
+        "",
+        "/"
+      ],
+      [
+        "cron.service",
+        "Command Scheduler",
+        "loaded",
+        "active",
+        "running",
+        "",
+        "/org/freedesktop/systemd1/unit/cron_2eservice",
+        0,
+        "",
+        "/"
+      ]
+    ]
+  ]
+}
