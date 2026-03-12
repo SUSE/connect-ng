@@ -1,10 +1,17 @@
 -------------------------------------------------------------------
-Thu Jan 22 11:13:43 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
+Thu Mar 11 18:53:13 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
 
 - Update version to 1.21 (pre):
   - Add expanded metric collection for kernel modules and hardware
-    detection.
+    detection (jsc#TEL-226).
   - Support new profile based metric collection
+
+-------------------------------------------------------------------
+Wed Mar  4 16:48:14 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
+
+- Regressions found during QA test runs:
+  - Ignore product in announce call (bsc#1257490)
+  - Registration to SMT server with failed (bsc#1257625)
 
 -------------------------------------------------------------------
 Thu Jan 22 10:46:00 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
