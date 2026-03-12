@@ -68,7 +68,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 	opts := loadConfig(C.GoString(clientParams))
 	api := connect.NewWrappedAPI(opts)
 
-	if err := api.Register(opts.Token, opts.InstanceDataFile); err != nil {
+	if err := api.Register(opts); err != nil {
 		return C.CString(errorToJSON(err))
 	}
 
