@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -134,10 +135,17 @@ func main() {
 	util.Debug.Println("cmd line:", os.Args)
 	util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 
+	// Ensure --root parameter is actually an absolute path
+	if fsRoot != "" && !filepath.IsAbs(fsRoot) {
+		fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
+		os.Exit(1)
+	}
+
 	// Fetch the options to be passed to the internal/connect library by reading
-	// at the default configuration. If that default configuration is not there,
+	// at the default configuration in the provided path. If that default configuration is not there,
 	// then it will simply default to scc.suse.com with no proxy in between.
-	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	configPath := filepath.Join(fsRoot, connect.DefaultConfigPath)
+	opts, err := connect.ReadFromConfiguration(configPath)
 	exitOnError(err, nil, nil)
 
 	// Parsing the given URL. This URL can be given both as an explicit command
@@ -159,13 +167,10 @@ func main() {
 	}
 
 	if fsRoot != "" {
-		if fsRoot[0] != '/' {
-			fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
-			os.Exit(1)
-		}
 		opts.FsRoot = fsRoot
 		zypper.SetFilesystemRoot(fsRoot)
 	}
+
 	if namespace != "" {
 		opts.Namespace = namespace
 		writeConfig = true
