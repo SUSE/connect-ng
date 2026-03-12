@@ -101,10 +101,13 @@ func (opts *Options) Print(msg string) {
 func ReadFromConfiguration(path string) (*Options, error) {
 	cfg := DefaultOptions()
 
+	// Update the path even if there is no configuration file present. This allows
+	// to write to a non existing, non default root (/) location later on.
+	cfg.Path = path
+
+	util.Debug.Printf("Reading configuration from: %s\n", path)
 	if f, err := os.Open(path); err == nil {
 		defer f.Close()
-
-		cfg.Path = path
 		return parseFromConfiguration(f, cfg)
 	}
 	return cfg, nil
@@ -195,6 +198,7 @@ func (opts *Options) SaveAsConfiguration() error {
 	fmt.Fprintf(&buf, "auto_agree_with_licenses: %v\n", opts.AutoAgreeEULA)
 	fmt.Fprintf(&buf, "enable_system_uptime_tracking: %v\n", opts.EnableSystemUptimeTracking)
 
+	util.Debug.Printf("Writing configuration to: %s\n", opts.Path)
 	return os.WriteFile(opts.Path, buf.Bytes(), 0644)
 }
 
