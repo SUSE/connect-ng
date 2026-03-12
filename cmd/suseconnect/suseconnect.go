@@ -136,11 +136,9 @@ func main() {
 	util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 
 	// Ensure --root parameter is actually an absolute path
-	if fsRoot != "" {
-		if fsRoot[0] != '/' {
-			fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
-			os.Exit(1)
-		}
+	if fsRoot != "" && !filepath.IsAbs(fsRoot) {
+		fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
+		os.Exit(1)
 	}
 
 	// Fetch the options to be passed to the internal/connect library by reading
