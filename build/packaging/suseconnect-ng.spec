@@ -30,7 +30,7 @@ Source2:        vendor.tar.xz
 
 # Build against latest golang in Tumbleweed and
 # go1.21-openssl on all other distributions
-%if 0%{?suse_version} > 1600
+%if 0%{?suse_version} == 1699
 BuildRequires:  golang(API)
 %else
 BuildRequires:  go1.21-openssl
