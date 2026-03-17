@@ -9,6 +9,7 @@ Thu Mar 12 18:53:13 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
     writing configuration (bsc#1257667)
   - Add expanded metric collection for system vendor/manfacturer
     (jsc#TEL-260).
+  - Removed backport patch: fix-libsuseconnect-and-pci.patch
 
 -------------------------------------------------------------------
 Wed Mar  4 16:48:14 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
