@@ -1,7 +1,7 @@
 #
 # spec file for package suseconnect-ng
 #
-# Copyright (c) 2026 SUSE LLC
+# Copyright (c) 2026 SUSE LLC and contributors
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -15,13 +15,14 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
+
 %global project github.com/SUSE/connect-ng
 
 Name:           suseconnect-ng
 Version:        1.21.0
 Release:        0
 URL:            https://github.com/SUSE/connect-ng
-License:        LGPL-2.1-or-later
+License:        LGPL-3.0-or-later
 Summary:        Utility to register a system with the SUSE Customer Center
 Group:          System/Management
 Source:         suseconnect-ng-%{version}.tar.xz
@@ -57,8 +58,8 @@ Requires:       ca-certificates
 
 Requires:       coreutils
 Requires:       pciutils
-Requires:       zypper
 Requires:       util-linux
+Requires:       zypper
 Recommends:     systemd
 
 %ifarch s390x
