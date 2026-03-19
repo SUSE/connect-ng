@@ -10,6 +10,7 @@ import (
 
 // Product as defined from SCC's API.
 type Product struct {
+	ID int `json:"id"`
 	// NOTE: what in SCC's API is called "identifier", it is the "name" in
 	// zypper's nomenclature, but that's different from SCC's "name". Hence,
 	// internally we will be consistent with SCC's API and name this attribute
