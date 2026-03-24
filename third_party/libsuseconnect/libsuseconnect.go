@@ -21,6 +21,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/SUSE/connect-ng/pkg/search"
 )
@@ -303,7 +304,7 @@ func errorToJSON(err error) string {
 		// TODO: add other values as needed
 	}
 
-	if ae, ok := err.(connect.APIError); ok {
+	if ae, ok := err.(*connection.ApiError); ok {
 		s.ErrType = "APIError"
 		s.Code = ae.Code
 		s.Message = ae.Message
