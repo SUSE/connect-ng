@@ -39,6 +39,7 @@ func FetchSystemProfiles(arch string, updateCache bool) (collectors.Result, erro
 	var usedCollectors = []collectors.Collector{
 		collectors.PCI{UpdateDataIDs: updateCache},
 		collectors.LSMOD{UpdateDataIDs: updateCache},
+		collectors.InstalledPackages{UpdateDataIDs: updateCache},
 	}
 
 	var err error
