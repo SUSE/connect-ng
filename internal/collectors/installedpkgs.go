@@ -25,7 +25,7 @@ func (p InstalledPackages) run(arch string) (Result, error) {
 	// This could come from CollectorOptions by adding a Params field to installed_pkgs collector
 	filterVendor := "SUSE"
 
-	qf := "%{VENDOR}\\t%{NAME}\\t%{VERSION}-%{RELEASE}\n"
+	qf := "%{VENDOR}\\t%{NAME}\\t%{VERSION}\\t%{RELEASE}\\t%{ARCH}\n"
 	pkgs, err := util.Execute([]string{"rpm", "-qa", "--qf", qf}, nil)
 	if err != nil {
 		return Result{}, err
@@ -36,8 +36,20 @@ func (p InstalledPackages) run(arch string) (Result, error) {
 		return Result{}, err
 	}
 
-	result, _ := profiles.BuildProfile(p.UpdateDataIDs, PackagesTag, PkgsChecksumFile, filteredPkgs)
+	packagesPayload := formatPackagesPayload(filteredPkgs)
+
+	result, _ := profiles.BuildProfile(p.UpdateDataIDs, PackagesTag, PkgsChecksumFile, packagesPayload)
 	return result, nil
+}
+
+// formatPackagesPayload converts the raw package strings into the tuple payload format
+func formatPackagesPayload(pkgs []string) [][]string {
+	payload := make([][]string, 0, len(pkgs))
+	for _, p := range pkgs {
+		fields := strings.Split(p, "\t")
+		payload = append(payload, fields)
+	}
+	return payload
 }
 
 // filterPackages returns a sorted list of packages filtered by vendor
@@ -53,19 +65,21 @@ func filterPackages(pkgs []byte, filterVendor string) ([]string, error) {
 	}
 
 	pkgSet := make(map[string]struct{})
-	pkgList := []string{}
+	var pkgList []string
 
 	for sc.Scan() {
 		pkg := sc.Text()
 		fields := strings.Split(pkg, "\t")
-		if len(fields) < 3 {
+		if len(fields) < 5 {
 			continue
 		}
 
 		vendor := fields[0]
 		name := fields[1]
 		version := fields[2]
-		setKey := fmt.Sprintf("%s %s", name, version)
+		release := fields[3]
+		arch := fields[4]
+		setKey := fmt.Sprintf("%s\t%s\t%s\t%s", name, version, release, arch)
 
 		// Apply vendor filter if specified
 		if vendorRegex != nil && !vendorRegex.MatchString(vendor) {
