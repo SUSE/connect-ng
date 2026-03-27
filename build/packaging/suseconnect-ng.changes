@@ -13,6 +13,8 @@ Thu Mar 12 18:53:13 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
   - Add missing product id to allow yast2-registration to not break (bsc#1257825)
   - Fix libsuseconnect APIError detection logic (bsc#1257825)
   - Fix nil token handling (bsc#1261155)
+  - Switch to using go1.24-openssl as the default Go version to
+    install to support building the package.
 
 -------------------------------------------------------------------
 Wed Mar  4 16:48:14 UTC 2026 - Felix Schnizlein <fschnizlein@suse.com>
