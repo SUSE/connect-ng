@@ -27,14 +27,20 @@ func (api *ValidationAPI) ensureConnection() {
 	}
 }
 
-func (api *ValidationAPI) FetchCredentials() {
+func (api *ValidationAPI) GetCredentials() credentials.Credentials {
 	creds, readErr := credentials.ReadCredentials(credentials.SystemCredentialsPath("/"))
 
 	if readErr != nil {
 		assert.FailNow(api.t, "Can not read credentials while I should be able: %s", readErr)
-		return
+		return creds
 	}
+	return creds
 
+
+}
+
+func (api *ValidationAPI) FetchCredentials() {
+	creds := api.GetCredentials()
 	conn := connection.New(connection.DefaultOptions("connect-integration-tests", "0.0.0", "us"), &creds)
 	api.conn = conn
 

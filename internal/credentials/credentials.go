@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
 )
@@ -47,7 +48,13 @@ func (c *Credentials) Token() (string, error) {
 
 // Writes into the configuration the given system token and updates the value of
 // this instance. Needed to implement the Credentials interface from `pkg/`.
+// Do not update system token if token is empty.
 func (c *Credentials) UpdateToken(token string) error {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		util.Debug.Printf("Skipping null token\n")
+		return nil
+	}
 	c.SystemToken = token
 
 	util.Debug.Printf("Token has been updated to `%s`\n", c.Username)
