@@ -18,7 +18,7 @@ If you do not want to run a full RPM build process you can do the following:
 ```
  # Make sure your .env is populated!
  $ cp .env-example .env
- $ docker run --rm --privileged --env-file .env -ti -v $(pwd):/connect registry.suse.com/bci/golang:1.21-openssl
+ $ docker run --rm --privileged --env-file .env -ti -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl
  > git config --global --add safe.directory /connect
  > cd /connect
  > make build
