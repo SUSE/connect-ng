@@ -134,7 +134,7 @@ func testActivateExtensionWithoutRegcode(t *testing.T) {
 	creds := api.GetCredentials()
 	assert.Contains(cli.Stdout(), "Error: Registration server returned 'Please provide a Registration Code for this product'")
 	assert.Equal(67, cli.ExitCode())
-	assert.NotEqual("",creds.SystemToken,"Failed extension activation should not clear saved system token")
+	assert.NotEqual("", creds.SystemToken, "Failed extension activation should not clear saved system token")
 }
 
 func testActivateAndDeactivateExtensionWithRegcode(t *testing.T) {
