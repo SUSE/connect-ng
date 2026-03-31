@@ -7,6 +7,7 @@ import (
 	"github.com/SUSE/connect-ng/features/helpers"
 	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtensions(t *testing.T) {
@@ -161,17 +162,49 @@ func testActivateAndDeactivateExtensionWithRegcode(t *testing.T) {
 
 func testActivateLeafModule(t *testing.T) {
 	assert := assert.New(t)
+	require := require.New(t)
 
 	zypp := helpers.NewZypper(t)
-	_, version, arch := zypp.BaseProduct()
+	identifier, version, arch := zypp.BaseProduct()
+	api := helpers.NewValidationAPI(t)
+	// Assume we are already registered
+	api.FetchCredentials()
 
 	// Pick a module which is depended on another module which is not yet activated
-	// HPC requires Web and Scripting module
-	extension := fmt.Sprintf("%s/%s/%s", "sle-module-hpc", version, arch)
+	// HPC requires Web and Scripting module in SLE 15
+	// NOTE: This test may not be viable in a SLE 16 based test environment
+	targetModule := "sle-module-hpc"
+	dependentModule := "sle-module-web-scripting"
+	extension := fmt.Sprintf("%s/%s/%s", targetModule, version, arch)
+
+	// determine friendly names for the target and dependent modules
+	targetFriendlyName := ""
+	dependentFriendlyName := ""
+	tree := api.ProductTree(identifier, version, arch)
+	tree.TraverseExtensions(func(ext registration.Product) (bool, error) {
+		switch ext.Identifier {
+		case targetModule:
+			targetFriendlyName = ext.FriendlyName
+		case dependentModule:
+			dependentFriendlyName = ext.FriendlyName
+		}
+		if targetFriendlyName != "" && dependentFriendlyName != "" {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	// ensure test fails immediately if unable to determine the friendly names of
+	// the target and dependent modules
+	require.NotEmpty(targetFriendlyName, "Failed to determine friendly name for %q extension", targetModule)
+	require.NotEmpty(dependentFriendlyName, "Failed to determine friendly name for %q extension", targetModule)
+
+	// construct expected error message for failure using discovered friendly names
+	expectedError := fmt.Sprintf("Error: Registration server returned 'The product you are attempting to activate (%s) requires one of these products to be activated first: %s'", targetFriendlyName, dependentFriendlyName)
 
 	cli := helpers.NewRunner(t, "suseconnect -p %s", extension)
 	cli.Run()
 
-	assert.Contains(cli.Stdout(), "Error: Registration server returned 'The product you are attempting to activate (HPC Module 15 SP6 x86_64) requires one of these products to be activated first: Web and Scripting Module 15 SP6 x86_64'")
+	assert.Contains(cli.Stdout(), expectedError)
 	assert.Equal(67, cli.ExitCode())
 }
