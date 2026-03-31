@@ -122,6 +122,7 @@ func testActivateAndDeactivateModule(t *testing.T) {
 func testActivateExtensionWithoutRegcode(t *testing.T) {
 	assert := assert.New(t)
 
+	api := helpers.NewValidationAPI(t)
 	zypp := helpers.NewZypper(t)
 	_, version, arch := zypp.BaseProduct()
 
@@ -130,8 +131,10 @@ func testActivateExtensionWithoutRegcode(t *testing.T) {
 	cli := helpers.NewRunner(t, "suseconnect -p %s", extension)
 
 	cli.Run()
+	creds := api.GetCredentials()
 	assert.Contains(cli.Stdout(), "Error: Registration server returned 'Please provide a Registration Code for this product'")
 	assert.Equal(67, cli.ExitCode())
+	assert.NotEqual("", creds.SystemToken, "Failed extension activation should not clear saved system token")
 }
 
 func testActivateAndDeactivateExtensionWithRegcode(t *testing.T) {
