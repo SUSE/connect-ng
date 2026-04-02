@@ -59,12 +59,12 @@ var logFun C.logLineFunc
 
 //export set_log_callback
 func set_log_callback(logCallback C.logLineFunc) {
-	trace("set_log_callback - call args - logCallback: %v", logCallback)
+	trace("set_log_callback - call args - logCallback: %p", logCallback)
 	logFun = logCallback
 	// NOTE: Debug is not redirected here as it is disabled by default
 	util.Info.SetOutput(callbackWriter{llInfo})
 	// TODO: add other levels?
-	trace("set_log_callback - exit")
+	// NOTE: DO NOT trace() the exit path here to avoid a recursive deadlock issue
 }
 
 //export free_string
