@@ -466,19 +466,17 @@ func getstatus(format *C.char) *C.char {
 
 //export update_certificates
 func update_certificates() *C.char {
-	trace("update_certificates - call args")
+	trace("update_certificates - call/exit - no longer relevant")
 	// NOTE: this is no longer relevant, but we keep it for
 	// backwards-compatibility.
-	trace("update_certificates - exit - no longer relevant")
 	return C.CString("{}")
 }
 
 //export reload_certificates
 func reload_certificates() *C.char {
-	trace("reload_certificates - call args")
+	trace("reload_certificates - call/exit - no longer relevant")
 	// NOTE: this is no longer relevant, but we keep it for
 	// backwards-compatibility.
-	trace("reload_certificates - exit - no longer relevant")
 	return C.CString("{}")
 }
 
