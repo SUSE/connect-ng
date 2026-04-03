@@ -29,7 +29,7 @@ import (
 // trace entry & exit to exported calls
 func trace(fmt string, args ...interface{}) {
 	// use util.Info for now as util.Debug output doesn't show up in /var/log/YaST2/y2log
-	util.Info.Printf("libsuseconnect - "+fmt, args...)
+	util.Debug.Printf("libsuseconnect - "+fmt, args...)
 }
 
 // log level
@@ -320,12 +320,17 @@ func loadConfig(clientParams string) *connect.Options {
 	// unmarshal extra config fields only for local use
 	var extConfig struct {
 		Debug string `json:"debug"`
+		Verbose bool `json:"verbose"`
 	}
+	// The first time loadConfig is called, this output will
+	// be sent to discard, bcause debug output has not yet been enabled.
+	trace("loadConfig - call args - clientParams: %s", clientParams)
 	json.Unmarshal([]byte(clientParams), &extConfig)
-	// enable debug output if "debug" was set in json
-	if v, _ := strconv.ParseBool(extConfig.Debug); v {
-		trace("loadConfig - enable debug output")
+	// enable debug output if "debug" or "verbose" was set in json
+        v, _ := strconv.ParseBool(extConfig.Debug)
+	if v || extConfig.Verbose {
 		util.Debug.SetOutput(callbackWriter{llDebug})
+		trace("loadConfig - enabled debug output")
 	}
 
 	// Read the options from the default configuration path and merge the
