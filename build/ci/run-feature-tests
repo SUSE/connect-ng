@@ -4,6 +4,9 @@ set -e
 # Where the connect-ng source is located within the container
 SOURCE=${SOURCE:-/usr/src/connect-ng}
 
+# test coverage profile directory
+COV_FEATURE=${SOURCE}/coverage/feature
+
 # exported variables we expect to exist to run the tests
 KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE HA_REGCODE)
 
@@ -26,6 +29,9 @@ groupend
 
 group "run feature tests"
 pushd "$SOURCE"
- go test -v features/suseconnect/*
+  if [ "${COVERAGE:-false}" == "true" ]; then
+    export GOCOVERDIR=$COV_FEATURE
+  fi
+  go test -v features/suseconnect/*
 popd
 groupend

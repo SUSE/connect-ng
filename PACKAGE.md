@@ -2,87 +2,142 @@
 ## TL;DR
 
 The package is available at `obs://systemsmanagement:SCC/suseconnect-ng` and it
-can be fetched with `osc` in the usual way (or you can also copy the `_service`
-file from git and recreate the package with `osc service manualrun`).
+can be fetched with `osc` in the usual way. This retrieves the last tagged
+release version.
 
-## Step 1. Update version
+## Step 1. Version management
 
-The version of `connect-ng` is a mix of a version specified in the `.spec` file
-and the git commit sha. The version is thus updated automatically on every git
-commit. On a service run, the latest git tag gets copied as version to the .spec file.
+The version of `connect-ng` is a dynamically derived from the version specified
+in the RPM package [suseconnect-ng.spec](build/packaging/suseconnect-ng.spec),
+so to update the version, just need update the value on the `Version:` line in the
+spec file.
 
-## Step 2. The OBS package
+## Step 2. Ensure the change log is up to date
 
-The RPM is built from OBS, and you need to access the main repository from
-there:
-[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng).
-From this repository, you can build the package as usual with:
+Ensure that the [suseconnect-ng.changes](build/packaging/suseconnect-ng.changes)
+file is up to date. If necessary create a new entry for the target version, and
+add appropriate changes entries to it.
+
+**Note**: Remember to include any relevant Bugzilla (bsc#xxxxxxx) and Jira
+(jsc#xxxxxxx) references in the changelog entries.
+
+## Step 3. Verify the package builds locally
+
+To verify that the package builds locally you can use the `build-rpm` Makefile
+target to run a build locally in an appropriate container environment and fix
+any build issues encountered.
+
+See below for details on testing the locally built package.
+
+## Step 4. Tagging the release
+
+When preparing a release the version specifed in the
+[suseconnect-ng.spec](build/packaging/suseconnect-ng.spec)
+should be used to create a `v<Version>` tag, which will be the basis for building
+an updated package in OBS.
+
+**Note**: Remember to push the tag to the repository if you are creating the tag
+locally.
+
+## Step 5. Updating the package in OBS
+
+The RPM is built via the OBS [systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+package.
+
+**Note**: To modify the package there please ensure that you have been assigned
+the required access.
+
+First you need to checkout the package:
 
 ```bash
-$ osc build openSUSE_Leap_15.4 x86_64 --no-verify
-$ osc build SLE_15_SP3 x86_64 --no-verify
+$ mkdir obs
+$ cd obs
+$ osc co systemsmanagement:SCC suseconnect-ng -o .
 ```
 
-### Testing the package locally
+To build the new candidate version of the package you will first need to update
+the `revision` parameter in the _service` file, specifying the new version tag
+created previously.
 
-First of all, you need to create an updated .tar.xz file. In order to do this, you
-need to checkout the package and run the service that fetches the code (change
-the `revision` parameter in `_service` to build the tar from another branch/sha
-than `main`):
+Once the `_service` file has been updated you can then `osc service manualrun`
+to update the package. Note that `manualrun` can be abbrediated to `mr`.
+
+Remember to delete the tarball associated with the previous version.
 
 ```bash
-$ mkdir obs; cd obs; osc co systemsmanagement:SCC suseconnect-ng -o .
 $ osc service manualrun
 ```
 
-This will create a `connect-ng` directory with the latest changes from the specified
-branch. After this, you can apply whatever changes you want inside of
-the `connect-ng` and commit it.
+This retrieve the sources associated with the specified tag, generates a compressed
+tarball, extracts the spec, changes and rpmlintrc files and generates a compressed
+Go vendor tarball to be used to build the package.
 
-If you have the source code somewhere else, you have two ways to go. First of
-all, you can produce a patch by using `git diff` on your locally cloned
-repository and then apply it into the source code that was downloaded when you
-first run `osc service manualrun`. Then, you can run `osc service manualrun` in
-order to produce the tar again and build it.
+Once you have successfully run the service to update the package, you can build it
+as usual with:
 
-Otherwise, you can simply push your changes into a remote development branch.
-Then, inside of your local copy of the OBS project, change the `revision`
-parameter inside of the `_service` file to match the branch name or the commit
-sha you are testing. After that, you can continuously run `osc service
-manualrun` and `osc build ...` in order to test multiple iterations of your
-development branch.
+```bash
+$ osc build Leap_16.0 x86_64
+$ osc build SLE_15_SP7 x86_64
+```
 
-Either way you will give get an RPM that you can install locally.
+**Note**: You can optionally specify `--no-verify` to skip PGP signature checks if your
+local builds fail for that reason.
 
-To use a different version than the current latest tag, use the `version` param and
-comment out the `match-tag`, `versionrewrite-pattern`, `versionrewrite-replacement`
-and `versionformat` params from `_service`.
+Once you are happy that the updated package is building correctly, make sure to
+add any new files and remove any that are no longer required, either using the
+`osc add ...`, `osc remove ...` or `osc addremove` commands.
 
-## Step 3. Update package in OBS devel project
+Then use `osc commit` to submit the updated changes to the OBS project.
 
-As with any other OBS project, whenever you are done with testing a package, you
-can update the package as usual:
+## Step 6. Verify updated package builds in OBS for relevant code streams
 
-1. Make sure that the `revision` on the `_service` file is back on `main`
-   (upstream should always point to `main`).
-2. Make sure to run `osc service manualrun` and `osc build ...` again and that
-   everything is working.
-3. Add/remove files with the `add` and `remove` commands (tip: you can also use
-   the `addremove` command to automate this!).
-4. Update the changelog with the `vc` command and call `commit`.
+Either check the status of the
+[suseconnect-ng package in OBS](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+or using the `osc results` command from the command line and verify that it
+builds successfully for the relevant code streams or that any build failures
+are for known reasons, e.g. go1.xx-openssl packages in OBS are not available
+for older streams such as SLE 12 and SLE 15 prior to SP3.
 
-## Submit maintenance updates
+## Step 7. Submit the updated package to Factory
 
-To get a maintenance request accepted, each changelog entry needs to have at
-least one reference to a bug or feature request like `bsc#123` or `fate#123`.
+If not triggered automatically, because
+[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+is the devel project for the `suseconnect-ng` package in openSUSE:Factory, submit
+the updated package to openSUSE:Factory.
 
-**Note**: If you want to disable automatic changes made by osc (e.g. License
-string) use the `--no-cleanup` switch. Can be used for commands like `osc mr`,
-`osc sr` and `osc ci`.
+```bash
+$ osc submitrequest systemsmanagement:SCC suseconnect-ng openSUSE:Factory
+```
 
-### Submit maintenance updates for SLES to the Internal Build Service
+### Monitor your OBS submissions
 
-#### Get target codestreams where to submit
+You can check the status of your OBS requests
+[here](https://build.opensuse.org/package/requests/systemsmanagement:SCC/suseconnect-ng).
+
+Monitor the submission and address any issues identified until the submission is
+accepted.
+
+**Note**: If any patches need to be applied, please ensure that any associated changes
+to the suseconnect-ng.changes file are replicated to the
+[SUSE/connect-ng/build/packaging/suseconnect-ng.changes](build/packaging/suseconnect-ng.changes)
+file.
+
+## Step 8. Verify updated package in the Internal Build Service
+
+The IBS equivalent of the OBS
+[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+package is
+[Devel:SCC:suseconnect/suseconnect-ng](https://build.suse.de/package/Devel:SCC:suseconnect/suseconnect-ng).
+
+Once the OBS submission to openSUSE:Factory has been accepted the IBS package
+should be automatically updated.
+
+Verify that it has been updated, and that the updated package builds successfully
+for all relevant code streams, including the older SLE 12 and SLE 15 streams.
+
+## Step 9. Submit maintenance updates to SLES
+
+### Determine target codestreams where to submit maintenance updates
 
 To checkout in which codestreams the package is currently maintaned, run:
 
@@ -94,25 +149,13 @@ Some code streams may be missing in the previous command, for a more detailed
 view which target codestreams are in which state, find the `suseconnect-ng`
 package on[maintenance.suse.de](https://smelt.suse.de/maintained/)
 
-#### Submit updates
+### Submit maintenance updates
 
-For each maintained codestream you need to create a new submit request:
+For each maintained codestream you need to create a new maintance or submit request:
 
 ```bash
-osc -A https://api.suse.de sr openSUSE.org:systemsmanagement:SCC suseconnect-ng SUSE:SLE-15-SP4:GA
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP6:Update
 ```
-
-**Note**: The codestreams of SLE-15-SP1, SLE-15-SP2 and SLE-15-SP3 are connected, that means we only need to submit for SP1 and it will get released on SP2 and SP3 also.
-
-**Note**: The codestreams that are not yet on final codefreeze (alphas or betas) work with submit requests.
-
-**Note**: SLE Micro <= 5.5 inherits MicroOS and SLE Releases.
-
-**Note**: `submitrequest` (`sr`)'s would auto-translate to `maintenancerequest` (`mr`)'s!
-
-**Note**: In case the `sr` (submit request) command is not working properly, try
-  `mr` (maintenance request) command. If a maintenance request is not
-  applicable, the maintainers will notify you in the request.
 
 **Note:**
 
@@ -120,19 +163,93 @@ osc -A https://api.suse.de sr openSUSE.org:systemsmanagement:SCC suseconnect-ng 
   Saying "yes" would overwrite the previous request made, cancelling the release
   process for its codestream.
 
+**Note**: The codestreams of SLE-15-SP1, SLE-15-SP2 and SLE-15-SP3 are connected, that means we only need to submit for SP1 and it will get released on SP2 and SP3 also.
+
+**Note**: The codestreams that are not yet on final codefreeze (alphas or betas) work with submit requests rather than maintenance requests.
+
+**Note**: SLE Micro <= 5.5 inherits MicroOS and SLE Releases.
+
+**Note**: `submitrequest` (`sr`)'s should auto-translate to `maintenancerequest` (`mr`)'s!
+
+**Note**: In case the `sr` (submit request) command is not working properly, try
+  `mr` (maintenance request) command. If a maintenance request is not
+  applicable, the maintainers will notify you in the request.
+
+### RES8 Submissions
+
 For RES8 (SUSE Linux Enterprise Server with Expanded Support), package updates
 need to get done by EPAM (contact is: res-coord@suse.de). We agreed to only push
 critical security updates there.
 
-You can check the status of your requests
-[here](https://build.opensuse.org/package/requests/systemsmanagement:SCC/suseconnect-ng).
+### Monitor your IBS submissions
 
-Whenever your requests get accepted, they still have to pass maintenance testing
-before they get released to customers. You can check their progress by searching
-for the package on
-[maintenance.suse.de](https://maintenance.suse.de/maintained/). If you still
-need help, the maintenance team can be reached at
-[maint-coord@suse.de](maint-coord@suse.de) or `#discuss-maintenance` on Slack.
+You can check the status of your IBS requests
+[here](https://build.suse.de/package/requests/Devel:SCC:suseconnect/suseconnect-ng).
+
+Monitor the submission and address any issues identified until the submission is
+accepted.
+
+**Note**: If any patches need to be applied, please ensure that any associated changes
+to the suseconnect-ng.changes file are replicated to the
+[SUSE/connect-ng/build/packaging/suseconnect-ng.changes](build/packaging/suseconnect-ng.changes)
+file.
+
+# Testing the package locally
+
+You can perform basic validating tests of the RPM package using some of the
+available [Makefile](Makefile) targets, such as `build-rpm` or `feature-tests`.
+Alternatively you can build the packages localy with `osc build ...` or retrieve
+the built packages from OBS with `osc getbinaries ...` and test them out inside
+a container environment.
+
+## Performing basic suseconnect feature validation
+
+You can verify basic operation of the built RPM packages using the feature
+tests by running `make feature-tests` which will build the associated RPM
+packages in a local container environment, which are then used to install
+the `suseconnect-ng` package and it's dependencies, so that the feature
+tests can exercise the installed `suseconnect` binary.
+
+## Testing built packages in a local container
+
+If you have built the `suseconnect-ng` packages locally using `osc build ...`
+you can copy them to a directory such as `/tmp/suseconnect-rpms`. Alternatively
+you can download the packages built in OBS for the
+[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+package.
+
+### Setup using locally built RPMs
+
+Build the RPMs locally using `osc build ...` and copy them to a directory, e.g.
+`/tmp/suseconnect-rpms`.
+
+```bash
+$ osc build SLE_15_SP7 x86_64
+$ cp /var/tmp/build-root/SLE_15_SP7-x86_64/home/abuild/rpmbuild/RPMS/*suseconnect*.rpm /tmp/suseconnect-rpms
+```
+
+### Setup using packages built in OBS
+
+Download the packages built in OBS for the
+[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
+package to `/tmp/suseconnect-rpms`.
+
+```bash
+$ osc getbinaries systemsmanagement:SCC suseconnect-ng SLE_15_SP7 x86_64 -d /tmp/suseconnect-rpms
+```
+
+### Start a local container
+You can use either `podman` or `docker` to start a local container matching distro
+release and architecture that the candidate packages were built for. The important
+thing is that the `/tmp/suseconnect-rpms` directory needs to be mounted into the
+container runtime environment.
+
+```bash
+$ podman run --rm -it --privileged -v /tmp/suseconnect-rpms:/rpms registry.suse.com/bci/bci-base:15.7
+a1ed05dd1bbb:/ # zypper --no-gpg-checks in /rpms/*.rpm
+a1ed05dd1bbb:/ # suseconnect --version
+1.21.1
+```
 
 # The CI
 

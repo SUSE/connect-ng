@@ -144,7 +144,7 @@ func main() {
 
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
-		fmt.Printf("Something went wrong when reading the configuration: %v\n")
+		fmt.Printf("Something went wrong when reading the configuration: %v\n", connect.DefaultConfigPath)
 		os.Exit(1)
 	}
 
