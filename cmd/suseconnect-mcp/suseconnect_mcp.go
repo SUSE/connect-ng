@@ -26,6 +26,10 @@ type ActivateInput struct {
 	Email   string `json:"email,omitempty" jsonschema:"Email Address to associate the registration with"`
 }
 
+type DeactivateInput struct {
+	Product string `json:"product" jsonschema:"The product to deactivate, e.g. 'sle-module-basesystem/15.5/x86_64'"`
+}
+
 type JSONOutput struct {
 	Response string `json:"response" jsonschema:"the response from the tool"`
 	Error    string `json:"error,omitempty" jsonschema:"the error message if the tool failed"`
@@ -114,6 +118,48 @@ func ActivateProduct(ctx context.Context, req *mcp.CallToolRequest, input Activa
 	return nil, JSONOutput{Response: "System successfully registered"}, nil
 }
 
+func DeregisterSystem(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
+	*mcp.CallToolResult, JSONOutput, error) {
+	slog.Info("DeregisterSystem tool called")
+
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
+	}
+
+	api := connect.NewWrappedAPI(opts)
+	err = connect.Deregister(api, opts)
+	if err != nil {
+		return nil, JSONOutput{Error: "System deregistration failed"}, err
+	}
+
+	return nil, JSONOutput{Response: "System successfully deregistered"}, nil
+}
+
+func DeactivateProduct(ctx context.Context, req *mcp.CallToolRequest, input DeactivateInput) (
+	*mcp.CallToolResult, JSONOutput, error) {
+	slog.Info("DeactivateProduct tool called")
+
+	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if err != nil {
+		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
+	}
+
+	if p, err := registration.FromTriplet(input.Product); err != nil {
+		return nil, JSONOutput{Error: "Please provide the product identifier in this format: <internal name>/<version>/<architecture>. You can find these values in the ListExtensions tool"}, err
+	} else {
+		opts.Product = p
+	}
+
+	api := connect.NewWrappedAPI(opts)
+	err = connect.Deregister(api, opts)
+	if err != nil {
+		return nil, JSONOutput{Error: "Product deactivation failed"}, err
+	}
+
+	return nil, JSONOutput{Response: "Product successfully deactivated"}, nil
+}
+
 func main() {
 	listenAddr := flag.String("http", "", "address for http transport, defaults to stdio")
 	flag.Parse()
@@ -136,6 +182,14 @@ func main() {
 		Name:        "ActivateProduct",
 		Description: "Activates and additional extension product or module on your SUSE system. Available extensions can get queried with the ListExtensions tool.",
 	}, ActivateProduct)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "DeregisterSystem",
+		Description: "Deregisters your SUSE system. This will remove the system's registration and disable access to online repositories.",
+	}, DeregisterSystem)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "DeactivateProduct",
+		Description: "Deactivates an extension product or module on your SUSE system.",
+	}, DeactivateProduct)
 
 	if *listenAddr == "" {
 		// Run the server on the stdio transport.
