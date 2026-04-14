@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/SUSE/connect-ng/internal/connect"
 	"github.com/SUSE/connect-ng/pkg/registration"
@@ -163,6 +164,11 @@ func DeactivateProduct(ctx context.Context, req *mcp.CallToolRequest, input Deac
 func main() {
 	listenAddr := flag.String("http", "", "address for http transport, defaults to stdio")
 	flag.Parse()
+
+	if os.Geteuid() != 0 {
+		fmt.Fprintln(os.Stderr, "Root privileges are required to run the MCP server.")
+		os.Exit(1)
+	}
 
 	server := mcp.NewServer(&mcp.Implementation{Name: "suseconnect", Version: "v0.0.1"}, nil)
 
