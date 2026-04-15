@@ -42,7 +42,7 @@ func setupCustomRoot(t *testing.T) string {
 	err := os.MkdirAll(filepath.Join(root, "etc"), 0755)
 	assert.NoError(err)
 
-	// FIXME: Once golang 1.23 is integrated this becomes much more nice to implement in pure go
+	// FIXME: With golang 1.24, this can be implemented in pure go using os.CopyFS
 	err = exec.Command("cp", "-r", "/etc/zypp", filepath.Join(root, "etc/zypp")).Run()
 	assert.NoError(err)
 
