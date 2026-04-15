@@ -2,6 +2,8 @@
 Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
 
 - Update version to 1.22 (pre):
+  - Add collector support for gathering RKE2 & K3s kubernetes provider
+    info if enabled on a system (jsc#TEL-317)
   
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
