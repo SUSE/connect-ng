@@ -87,9 +87,9 @@ func (opts *Options) ServerName() string {
 func (opts *Options) Print(msg string) {
 	switch opts.OutputKind {
 	case Text:
-		util.Info.Printf(msg)
+		util.Info.Print(msg)
 	case JSON:
-		util.Debug.Printf(msg)
+		util.Debug.Print(msg)
 	}
 }
 

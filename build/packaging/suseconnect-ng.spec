@@ -18,6 +18,8 @@
 
 %global project github.com/SUSE/connect-ng
 
+%bcond_with coverage
+
 Name:           suseconnect-ng
 Version:        1.22.0
 Release:        0
@@ -104,16 +106,22 @@ This package provides bindings needed to use libsuseconnect from Ruby scripts.
 %autosetup -p1 -a2 -n%{name}-%{version}
 
 %build
+# set up go_cover_flag is needed
+%if %{with coverage}
+  %define go_cover_flag -cover
+%else
+  %define go_cover_flag %{nil}
+%endif
 # the binary
 echo %{version} > internal/connect/version.txt
-go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
-go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
-go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
-go build -v -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/suse-uptime-tracker %{project}/cmd/suse-uptime-tracker
+go build -v %{?go_cover_flag} -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/suseconnect %{project}/cmd/suseconnect
+go build -v %{?go_cover_flag} -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-migration %{project}/cmd/zypper-migration
+go build -v %{?go_cover_flag} -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/zypper-search-packages %{project}/cmd/zypper-search-packages
+go build -v %{?go_cover_flag} -ldflags "-s -w" -mod=vendor -buildmode=pie -o bin/suse-uptime-tracker %{project}/cmd/suse-uptime-tracker
 
 # the library
 mkdir -p %_builddir/go/lib
-go build -v -ldflags "-s -w" -mod=vendor -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
+go build -v %{?go_cover_flag} -ldflags "-s -w" -mod=vendor -buildmode=c-shared -o lib/libsuseconnect.so %{project}/third_party/libsuseconnect
 
 %install
 # Install binary + symlinks
@@ -149,6 +157,11 @@ ln -sf service %{buildroot}/%{_sbindir}/rcsuse-uptime-tracker
 
 # we currently do not ship the source for any go module
 rm -rf %{buildroot}/usr/share/go
+
+%if %{with coverage}
+# Create the directory where covdata will be written
+mkdir -p %{buildroot}/var/lib/suseconnect/coverage
+%endif
 
 %pre
 %service_add_pre suseconnect-keepalive.service suseconnect-keepalive.timer suse-uptime-tracker.service suse-uptime-tracker.timer
@@ -240,6 +253,10 @@ fi
 %{_unitdir}/suseconnect-keepalive.timer
 %{_unitdir}/suse-uptime-tracker.service
 %{_unitdir}/suse-uptime-tracker.timer
+
+%if %{with coverage}
+%dir %attr(0755, root, root) /var/lib/suseconnect/coverage
+%endif
 
 %files -n libsuseconnect
 %license LICENSE

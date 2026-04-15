@@ -13,6 +13,13 @@ BUILD_DIR=${BUILD_DIR:-/usr/src/packages}
 # Where copy the built rpm files after a successful build
 ARTIFACT_DIR=${ARTIFACT_DIR:-$SOURCE/artifacts}
 
+# check if coverage collection should be enabled
+if [ "${COVERAGE:-false}" == "true" ]; then
+  WITH_COVERAGE="--with coverage"
+else
+  WITH_COVERAGE=""
+fi
+
 # Current version we are working with
 function get_version {
   pushd "$SOURCE" &> /dev/null
@@ -74,7 +81,7 @@ groupend
 
 group "build suseconnect-ng-$VERSION.rpm"
 pushd "$BUILD_DIR"
-  rpmbuild -ba --define '_srcdefattr (-,root,root)' --nosignature --undefine _enable_debug_packages SOURCES/suseconnect-ng.spec
+  rpmbuild -ba --define '_srcdefattr (-,root,root)' ${WITH_COVERAGE} --nosignature --undefine _enable_debug_packages SOURCES/suseconnect-ng.spec
   cp "RPMS/${ARCH}"/*.rpm "$ARTIFACT_DIR"
 popd
 groupend
