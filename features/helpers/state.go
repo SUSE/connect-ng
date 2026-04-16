@@ -4,11 +4,21 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/SUSE/connect-ng/internal/zypper"
 )
 
 func TrySUSEConnectCleanup() {
 	fmt.Printf("[cleanup] Try running suseconnect --cleanup...\n")
-	cmd := exec.Command("suseconnect", "--cleanup")
+	args := []string{}
+
+	// Add --root flag if custom root is set
+	if zypper.GetFilesystemRoot() != "/" {
+		args = append(args, "--root", zypper.GetFilesystemRoot())
+	}
+
+	args = append(args, "--cleanup")
+	cmd := exec.Command("suseconnect", args...)
 	err := cmd.Run()
 
 	if err != nil {
@@ -18,7 +28,15 @@ func TrySUSEConnectCleanup() {
 
 func TrySUSEConnectDeregister() {
 	fmt.Printf("[cleanup] Try running suseconnect --de-register...\n")
-	cmd := exec.Command("suseconnect", "--de-register")
+	args := []string{}
+
+	// Add --root flag if custom root is set
+	if zypper.GetFilesystemRoot() != "/" {
+		args = append(args, "--root", zypper.GetFilesystemRoot())
+	}
+
+	args = append(args, "--de-register")
+	cmd := exec.Command("suseconnect", args...)
 	err := cmd.Run()
 
 	if err != nil {
