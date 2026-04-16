@@ -237,9 +237,13 @@ func InstallReleasePackage(identifier string, autoImportRepoKeys bool) error {
 	if identifier == "" {
 		return nil
 	}
-	// return if the rpm is already installed
-	args := []string{"rpm", "-q", identifier + "-release"}
-	if _, err := util.Execute(args, nil); err == nil {
+	cmd := []string{"rpm"}
+
+	if zypperFilesystemRoot != "/" {
+		cmd = append(cmd, "--root", zypperFilesystemRoot)
+	}
+	cmd = append(cmd, "-q", identifier+"-release")
+	if _, err := util.Execute(cmd, nil); err == nil {
 		return nil
 	}
 
@@ -251,7 +255,7 @@ func InstallReleasePackage(identifier string, autoImportRepoKeys bool) error {
 		validExitCodes = append(validExitCodes, zypperInfoReposSkipped)
 	}
 
-	args = []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
+	args := []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
 		"--auto-agree-with-product-licenses", "-t", "product", identifier}
 
 	if autoImportRepoKeys {
