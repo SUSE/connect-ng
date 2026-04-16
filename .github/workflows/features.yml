@@ -3,23 +3,24 @@ name: feature tests
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
   COVERAGE_BIN: true
-  REGCODE: ${{ secrets.REGCODE }}
-  HA_REGCODE: ${{ secrets.HA_REGCODE }}
-  EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
 
 jobs:
   feature-tests:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     container:
       image: registry.suse.com/bci/golang:1.26-openssl
       options: --user root --privileged
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: move source to /usr/src/connect-ng
         run: |
