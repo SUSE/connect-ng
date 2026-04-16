@@ -16,6 +16,9 @@ name: lint + unit tests
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on: [pull_request]
 
+permissions:
+  contents: read
+
 env:
   SOURCE: /usr/src/connect-ng
 
@@ -26,7 +29,7 @@ jobs:
       image: registry.suse.com/bci/golang:1.24-openssl
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: move source to /usr/src/connect-ng
         run: |
