@@ -85,7 +85,7 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 	}
 
 	bold("1) Setup connection and perform an request\n")
-	conn := connection.New(opts, &SccCredentials{})
+	conn := connection.New(opts, creds)
 
 	// Proxies do not implement /connect/subscriptions/info so we skip it
 	if !isProxy {
