@@ -35,6 +35,10 @@ jobs:
           make build
 
       - name: run feature tests
+        env:
+          REGCODE: ${{ secrets.REGCODE }}
+          HA_REGCODE: ${{ secrets.HA_REGCODE }}
+          EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
         run: |
           set -e
           cd $SOURCE
