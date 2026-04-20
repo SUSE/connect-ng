@@ -14,7 +14,10 @@ func TestChangedRoot(t *testing.T) {
 	assert := assert.New(t)
 	env := helpers.NewEnv(t)
 
-	// cleanup any cruft left from container creation 
+	// cleanup any stale state left from container creation by registering and
+	// then cleanly deregistering which removes any related zypper repo services
+	// and associated release packages
+	
 	cli := helpers.NewRunner(t, "suseconnect -r %s", env.REGCODE)
 	cli.Run()
 	cli = helpers.NewRunner(t, "suseconnect -d")
