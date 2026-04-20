@@ -14,13 +14,19 @@ func TestChangedRoot(t *testing.T) {
 	assert := assert.New(t)
 	env := helpers.NewEnv(t)
 
+	// cleanup any cruft left from container creation 
+	cli := helpers.NewRunner(t, "suseconnect -r %s", env.REGCODE)
+	cli.Run()
+	cli = helpers.NewRunner(t, "suseconnect -d")
+	cli.Run()
+
 	root := setupCustomRoot(t)
 	namespace := "test-namespace"
 
 	// No need to install rpm packages just registration
 	t.Setenv("SKIP_SERVICE_INSTALL", "true")
 
-	cli := helpers.NewRunner(t, "suseconnect --root %s --namespace %s -r %s", root, namespace, env.REGCODE)
+	cli = helpers.NewRunner(t, "suseconnect --root %s --namespace %s -r %s", root, namespace, env.REGCODE)
 	cli.Run()
 
 	assert.Equal(0, cli.ExitCode())
@@ -33,6 +39,9 @@ func TestChangedRoot(t *testing.T) {
 	t.Run("check credentials location", func(t *testing.T) {
 		testChangedRootCredentialsLocation(t, root)
 	})
+	// dereg to remove created system from SCC
+	cli = helpers.NewRunner(t, "suseconnect --root %s -d", root)
+	cli.Run()
 }
 
 func setupCustomRoot(t *testing.T) string {
