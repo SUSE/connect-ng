@@ -6,7 +6,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
+	collectorsconfig "github.com/SUSE/connect-ng/pkg/collectors"
 	"github.com/SUSE/connect-ng/pkg/registration"
 	"gopkg.in/yaml.v3"
 )
@@ -58,6 +60,17 @@ type Options struct {
 	AutoImportRepoKeys         bool
 	SkipServiceInstall         bool
 	OutputKind                 OutputKind
+}
+
+// configFile represents the structure of the YAML configuration file
+type configFile struct {
+	Options    `yaml:",inline"`                // Flattened top-level options
+	Collectors map[string]collectorConfigEntry `yaml:"collectors"`
+}
+
+// collectorConfigEntry represents a single collector's configuration
+type collectorConfigEntry struct {
+	Enabled *bool `yaml:"enabled"` // Pointer distinguishes unset vs. false
 }
 
 // Returns the Options suitable for targeting the SCC reference server without a
@@ -130,14 +143,54 @@ func parseConfiguration(content []byte, cfg *Options) (*Options, error) {
 		return cfg, nil
 	}
 
+	var configData configFile
+	configData.Options = *cfg
+
 	decoder := yaml.NewDecoder(bytes.NewReader(content))
 	decoder.KnownFields(true)
 
-	if err := decoder.Decode(cfg); err != nil {
+	if err := decoder.Decode(&configData); err != nil {
 		return nil, fmt.Errorf("error parsing configuration: %w", err)
 	}
 
+	*cfg = configData.Options
+
+	if len(configData.Collectors) > 0 {
+		if err := applyCollectorConfig(configData.Collectors); err != nil {
+			return nil, err
+		}
+	}
+
 	return cfg, nil
+}
+
+// applyCollectorConfig validates and applies collector configuration
+func applyCollectorConfig(collectorConfigs map[string]collectorConfigEntry) error {
+	validatedConfig := make(map[string]collectorsconfig.CollectorConfig)
+
+	for collectorName, entry := range collectorConfigs {
+		if entry.Enabled == nil {
+			continue
+		}
+
+		// Validate collector exists
+		if !collectors.IsValidCollector(collectorName) {
+			return fmt.Errorf("unknown collector '%s' in configuration", collectorName)
+		}
+
+		// Warn if trying to disable a mandatory collector
+		if collectors.IsMandatoryCollector(collectorName) && !*entry.Enabled {
+			util.Debug.Printf("Warning: Cannot disable mandatory collector '%s', it will remain enabled\n", collectorName)
+			continue
+		}
+
+		validatedConfig[collectorName] = collectorsconfig.CollectorConfig{
+			Enabled: *entry.Enabled,
+		}
+	}
+
+	SetCollectorConfig(collectors.NewCollectorOptions(validatedConfig))
+	return nil
 }
 
 // Change the base url to be used when talking to the server to the one being
@@ -189,4 +242,17 @@ func (opts *Options) IsScc() bool {
 		return true
 	}
 	return false
+}
+
+// Global collector configuration
+var collectorConfig collectorsconfig.CollectorOptions = &collectorsconfig.NoCollectorOptions{}
+
+// SetCollectorConfig sets the global collector configuration
+func SetCollectorConfig(opts collectorsconfig.CollectorOptions) {
+	collectorConfig = opts
+}
+
+// GetCollectorConfig returns the current global collector configuration
+func GetCollectorConfig() collectorsconfig.CollectorOptions {
+	return collectorConfig
 }

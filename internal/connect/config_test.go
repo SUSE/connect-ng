@@ -196,3 +196,76 @@ language: en_US`,
 		})
 	}
 }
+
+func TestParseConfigWithCollectors(t *testing.T) {
+	config := `---
+url: https://example.com
+collectors:
+  pci_devices:
+    enabled: false
+  sap:
+    enabled: true`
+
+	opts := DefaultOptions()
+	result, err := parseConfiguration([]byte(config), opts)
+	if err != nil {
+		t.Fatalf("Failed to parse configuration with collectors: %v", err)
+	}
+
+	if result.BaseURL != "https://example.com" {
+		t.Errorf("Expected URL https://example.com, got %s", result.BaseURL)
+	}
+
+	// Verify collector config was applied
+	collectorConfig := GetCollectorConfig()
+
+	if collectorConfig.IsCollectorEnabled("pci_devices") {
+		t.Error("pci_devices should be disabled per config")
+	}
+
+	if !collectorConfig.IsCollectorEnabled("sap") {
+		t.Error("sap should be enabled per config")
+	}
+
+	// Verify mandatory collectors are always enabled
+	if !collectorConfig.IsCollectorEnabled("cpu") {
+		t.Error("cpu (mandatory) should always be enabled")
+	}
+}
+
+func TestParseConfigMandatoryCollectorWarning(t *testing.T) {
+	config := `---
+collectors:
+  cpu:
+    enabled: false`
+
+	opts := DefaultOptions()
+	_, err := parseConfiguration([]byte(config), opts)
+	if err != nil {
+		t.Fatalf("Should not error on attempt to disable mandatory collector: %v", err)
+	}
+
+	// Verify mandatory collector is still enabled despite config
+	collectorConfig := GetCollectorConfig()
+	if !collectorConfig.IsCollectorEnabled("cpu") {
+		t.Error("cpu (mandatory) should still be enabled even if config tries to disable it")
+	}
+}
+
+func TestParseConfigUnknownCollector(t *testing.T) {
+	config := `---
+collectors:
+  invalid_collector:
+    enabled: true`
+
+	opts := DefaultOptions()
+	_, err := parseConfiguration([]byte(config), opts)
+	if err == nil {
+		t.Fatal("Expected error for unknown collector, got nil")
+	}
+
+	expectedErrMsg := "unknown collector 'invalid_collector' in configuration"
+	if err.Error() != expectedErrMsg {
+		t.Errorf("Expected error message '%s', got '%s'", expectedErrMsg, err.Error())
+	}
+}

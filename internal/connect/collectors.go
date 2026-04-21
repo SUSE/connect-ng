@@ -5,22 +5,19 @@ import (
 	"github.com/SUSE/connect-ng/pkg/profiles"
 )
 
-// Fetch system information based on the available collectors for the system.
+// FetchSystemInformation collects basic system information from enabled collectors.
+//
+// Parameters:
+//   - arch: system architecture (empty string to auto-detect)
 func FetchSystemInformation(arch string) (collectors.Result, error) {
-	var usedCollectors = []collectors.Collector{
-		collectors.CPU{},
-		collectors.Hostname{},
-		collectors.Memory{},
-		collectors.UUID{},
-		collectors.Virtualization{},
-		collectors.CloudProvider{},
-		collectors.Architecture{},
-		collectors.ContainerRuntime{},
+	collectorOpts := GetCollectorConfig()
 
-		// Optional collectors
-		collectors.Uname{},
-		collectors.SAP{},
-		collectors.Vendor{},
+	var usedCollectors []collectors.Collector
+
+	for name, entry := range collectors.GetCollectorsByType(collectors.SystemInfoCollector) {
+		if collectorOpts.IsCollectorEnabled(name) {
+			usedCollectors = append(usedCollectors, entry.Collector)
+		}
 	}
 
 	var err error
@@ -34,11 +31,25 @@ func FetchSystemInformation(arch string) (collectors.Result, error) {
 	return collectors.CollectInformation(arch, usedCollectors)
 }
 
-// Fetch system profile information
+// FetchSystemProfiles collects system profile data from enabled profile collectors.
+//
+// Parameters:
+//   - arch: system architecture (empty string to auto-detect)
+//   - updateCache: whether to update profile data IDs cache
 func FetchSystemProfiles(arch string, updateCache bool) (collectors.Result, error) {
-	var usedCollectors = []collectors.Collector{
-		collectors.PCI{UpdateDataIDs: updateCache},
-		collectors.LSMOD{UpdateDataIDs: updateCache},
+	collectorOpts := GetCollectorConfig()
+
+	var usedCollectors []collectors.Collector
+
+	for name, entry := range collectors.GetCollectorsByType(collectors.ProfileCollector) {
+		if collectorOpts.IsCollectorEnabled(name) {
+			// Use factory function to create collector with runtime parameter
+			if entry.CollectorFactory != nil {
+				usedCollectors = append(usedCollectors, entry.CollectorFactory(updateCache))
+			} else {
+				usedCollectors = append(usedCollectors, entry.Collector)
+			}
+		}
 	}
 
 	var err error
