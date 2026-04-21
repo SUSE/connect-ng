@@ -33,7 +33,7 @@ jobs:
       options: --user root --privileged
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: move source to /usr/src/connect-ng
         run: |
