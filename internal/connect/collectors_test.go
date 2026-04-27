@@ -101,9 +101,9 @@ func TestFetchSystemInformationCollectorConfig(t *testing.T) {
 			name:   "only system info collectors run",
 			config: map[string]collectorsconfig.CollectorConfig{},
 			checkFields: map[string]bool{
-				"cpus":           true,  // System info collector
-				"pci_devices":    false, // Profile collector, should not run
-				"kernel_modules": false, // Profile collector, should not run
+				"cpus":     true,  // System info collector
+				"pci_data": false, // Profile collector (pci_devices), should not run
+				"mod_list": false, // Profile collector (kernel_modules), should not run
 			},
 		},
 	}
@@ -115,6 +115,126 @@ func TestFetchSystemInformationCollectorConfig(t *testing.T) {
 			SetCollectorConfig(collectors.NewCollectorOptions(tt.config))
 
 			result, err := FetchSystemInformation(collectors.ARCHITECTURE_X86_64)
+			assert.Nil(err)
+
+			for field, shouldExist := range tt.checkFields {
+				_, exists := result[field]
+				assert.Equal(shouldExist, exists, "field %s existence mismatch", field)
+			}
+		})
+	}
+}
+
+func TestFetchSystemProfiles(t *testing.T) {
+	tests := []struct {
+		name         string
+		arch         string
+		updateCache  bool
+		mockArchFunc func() (string, error)
+		expectError  bool
+	}{
+		{
+			name:        "explicit architecture with cache update",
+			arch:        collectors.ARCHITECTURE_X86_64,
+			updateCache: true,
+			expectError: false,
+		},
+		{
+			name:        "explicit architecture without cache update",
+			arch:        collectors.ARCHITECTURE_X86_64,
+			updateCache: false,
+			expectError: false,
+		},
+		{
+			name:        "auto-detect architecture",
+			arch:        "",
+			updateCache: true,
+			mockArchFunc: func() (string, error) {
+				return collectors.ARCHITECTURE_X86_64, nil
+			},
+			expectError: false,
+		},
+		{
+			name:        "architecture detection error",
+			arch:        "",
+			updateCache: false,
+			mockArchFunc: func() (string, error) {
+				return "", fmt.Errorf("architecture detection failed")
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			SetCollectorConfig(collectors.NewCollectorOptions(map[string]collectorsconfig.CollectorConfig{}))
+
+			if tt.mockArchFunc != nil {
+				originalDetectArch := collectors.DetectArchitecture
+				defer func() { collectors.DetectArchitecture = originalDetectArch }()
+				collectors.DetectArchitecture = tt.mockArchFunc
+			}
+
+			result, err := FetchSystemProfiles(tt.arch, tt.updateCache)
+
+			if tt.expectError {
+				assert.NotNil(err)
+				assert.Equal(collectors.NoResult, result)
+			} else {
+				assert.Nil(err)
+				assert.NotEqual(collectors.NoResult, result)
+			}
+		})
+	}
+}
+
+func TestFetchSystemProfilesCollectorConfig(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      map[string]collectorsconfig.CollectorConfig
+		checkFields map[string]bool // field name -> should exist
+	}{
+		{
+			name:   "default profile collectors run",
+			config: map[string]collectorsconfig.CollectorConfig{},
+			checkFields: map[string]bool{
+				"pci_data": true,  // Profile collector (pci_devices), enabled by default
+				"mod_list": true,  // Profile collector (kernel_modules), enabled by default
+				"cpus":     false, // System info collector, should not run
+			},
+		},
+		{
+			name: "disable profile collector",
+			config: map[string]collectorsconfig.CollectorConfig{
+				"pci_devices": {Enabled: false},
+			},
+			checkFields: map[string]bool{
+				"pci_data": false, // Disabled
+				"mod_list": true,  // Still enabled
+			},
+		},
+		{
+			name: "disable all profile collectors",
+			config: map[string]collectorsconfig.CollectorConfig{
+				"pci_devices":    {Enabled: false},
+				"kernel_modules": {Enabled: false},
+			},
+			checkFields: map[string]bool{
+				"pci_data": false,
+				"mod_list": false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			SetCollectorConfig(collectors.NewCollectorOptions(tt.config))
+
+			result, err := FetchSystemProfiles(collectors.ARCHITECTURE_X86_64, false)
 			assert.Nil(err)
 
 			for field, shouldExist := range tt.checkFields {
