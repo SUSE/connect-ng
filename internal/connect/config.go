@@ -134,12 +134,17 @@ func ReadFromConfiguration(path string) (*Options, error) {
 		return cfg, nil
 	}
 
+	// Initialize collector config with defaults
+	SetCollectorConfig(collectors.NewCollectorOptions(map[string]collectorsconfig.CollectorConfig{}))
+
 	return cfg, nil
 }
 
 // parseConfiguration parses the YAML configuration file and populates the Options struct
 func parseConfiguration(content []byte, cfg *Options) (*Options, error) {
 	if len(content) == 0 {
+		// Initialize collector config with defaults for empty config files
+		SetCollectorConfig(collectors.NewCollectorOptions(map[string]collectorsconfig.CollectorConfig{}))
 		return cfg, nil
 	}
 
@@ -155,10 +160,8 @@ func parseConfiguration(content []byte, cfg *Options) (*Options, error) {
 
 	*cfg = configData.Options
 
-	if len(configData.Collectors) > 0 {
-		if err := applyCollectorConfig(configData.Collectors); err != nil {
-			return nil, err
-		}
+	if err := applyCollectorConfig(configData.Collectors); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil
