@@ -27,16 +27,46 @@ type CollectorRegistryEntry struct {
 // collectorsRegistry is the single source of truth for all collectors
 var collectorsRegistry = map[string]CollectorRegistryEntry{
 	// Mandatory system information collectors
-	"architecture":      {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Architecture{}},
-	"virtualization":    {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Virtualization{}},
-	"cloud_provider":    {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: CloudProvider{}},
-	"container_runtime": {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: ContainerRuntime{}},
-	"cpu":               {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: CPU{}},
-	"memory":            {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Memory{}},
-	"vendor":            {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Vendor{}},
-	"uname":             {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Uname{}},
-	"hostname":          {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: Hostname{}},
-	"uuid":              {Metadata: CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector}, Collector: UUID{}},
+	"architecture": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Architecture{},
+	},
+	"virtualization": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Virtualization{},
+	},
+	"cloud_provider": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: CloudProvider{},
+	},
+	"container_runtime": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: ContainerRuntime{},
+	},
+	"cpu": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: CPU{},
+	},
+	"memory": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Memory{},
+	},
+	"vendor": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Vendor{},
+	},
+	"uname": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Uname{},
+	},
+	"hostname": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: Hostname{},
+	},
+	"uuid": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: UUID{},
+	},
 
 	// Optional profile collectors
 	"pci_devices": {
@@ -49,7 +79,10 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 	},
 
 	// Optional/specialized collectors
-	"sap": {Metadata: CollectorMetadata{DefaultEnabled: false, Mandatory: false, Type: SystemInfoCollector}, Collector: SAP{}},
+	"sap": {
+		Metadata:  CollectorMetadata{DefaultEnabled: false, Mandatory: false, Type: SystemInfoCollector},
+		Collector: SAP{},
+	},
 }
 
 // GetCollectorsByType returns all collectors of a specific type
