@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var cfg1 = `---
@@ -15,92 +17,68 @@ auto_agree_with_licenses: true
 enable_system_uptime_tracking: false`
 
 func TestParseConfig(t *testing.T) {
+	assert := assert.New(t)
 	content := []byte(cfg1)
 
 	opts := DefaultOptions()
 	opts, err := parseConfiguration(content, opts)
-	if err != nil {
-		t.Fatalf("Failed to parse configuration: %v", err)
-	}
+	assert.Nil(err)
 
 	expectedURL := "https://smt-azure.susecloud.net"
-	if opts.BaseURL != expectedURL {
-		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.BaseURL, expectedURL)
-	}
+	assert.Equal(expectedURL, opts.BaseURL)
+
 	expectedLanguage := "en_US.UTF-8"
-	if opts.Language != expectedLanguage {
-		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.Language, expectedLanguage)
-	}
-	if !opts.NoZypperRefresh {
-		t.Fatalf("NoZypperRefresh should be true")
-	}
-	if !opts.AutoAgreeEULA {
-		t.Fatalf("AutoAgreeEULA should be true")
-	}
+	assert.Equal(expectedLanguage, opts.Language)
+
+	assert.True(opts.NoZypperRefresh)
+	assert.True(opts.AutoAgreeEULA)
 }
 
 func TestSaveLoad(t *testing.T) {
+	assert := assert.New(t)
 	path := filepath.Join(t.TempDir(), "SUSEConnect.test")
 	c1 := DefaultOptions()
 	c1.Path = path
 	c1.AutoAgreeEULA = true
 	c1.ServerType = UnknownProvider
-	if err := c1.SaveAsConfiguration(); err != nil {
-		t.Fatalf("Unable to write config: %s", err)
-	}
+
+	err := c1.SaveAsConfiguration()
+	assert.Nil(err)
+
 	c2, err := ReadFromConfiguration(path)
-	if err != nil {
-		t.Fatalf("Got an error: %v", err)
-	}
-	if !reflect.DeepEqual(c1, c2) {
-		t.Errorf("got %+v, expected %+v", c2, c1)
-	}
+	assert.Nil(err)
+	assert.True(reflect.DeepEqual(c1, c2))
 }
 
 func TestMinimalAndNonExistingConfiguration(t *testing.T) {
+	assert := assert.New(t)
+
 	// Test empty file - should use defaults
 	emptyContent := []byte("")
 	opts := DefaultOptions()
 	result, err := parseConfiguration(emptyContent, opts)
-	if err != nil {
-		t.Fatalf("Empty configuration should not error, got: %v", err)
-	}
-	if result.BaseURL != defaultBaseURL {
-		t.Errorf("Expected default URL %s, got %s", defaultBaseURL, result.BaseURL)
-	}
-	if result.Insecure != defaultInsecure {
-		t.Errorf("Expected default Insecure %v, got %v", defaultInsecure, result.Insecure)
-	}
+	assert.Nil(err)
+	assert.Equal(defaultBaseURL, result.BaseURL)
+	assert.Equal(defaultInsecure, result.Insecure)
 
 	// Test minimal YAML file - should use defaults
 	minimalContent := []byte("---\n")
 	opts2 := DefaultOptions()
 	result2, err := parseConfiguration(minimalContent, opts2)
-	if err != nil {
-		t.Fatalf("Minimal configuration should not error, got: %v", err)
-	}
-	if result2.BaseURL != defaultBaseURL {
-		t.Errorf("Expected default URL %s, got %s", defaultBaseURL, result2.BaseURL)
-	}
-	if result2.Insecure != defaultInsecure {
-		t.Errorf("Expected default Insecure %v, got %v", defaultInsecure, result2.Insecure)
-	}
+	assert.Nil(err)
+	assert.Equal(defaultBaseURL, result2.BaseURL)
+	assert.Equal(defaultInsecure, result2.Insecure)
 
 	// Test non-existing file - should use defaults
 	nonExistentPath := filepath.Join(t.TempDir(), "does_not_exist")
 	result3, err := ReadFromConfiguration(nonExistentPath)
-	if err != nil {
-		t.Fatalf("Non-existing configuration file should not error, got: %v", err)
-	}
-	if result3.BaseURL != defaultBaseURL {
-		t.Errorf("Expected default URL %s, got %s", defaultBaseURL, result3.BaseURL)
-	}
-	if result3.Path != nonExistentPath {
-		t.Errorf("Expected path %s, got %s", nonExistentPath, result3.Path)
-	}
+	assert.Nil(err)
+	assert.Equal(defaultBaseURL, result3.BaseURL)
+	assert.Equal(nonExistentPath, result3.Path)
 }
 
 func TestParseValidConfig(t *testing.T) {
+	assert := assert.New(t)
 	config := `---
 url: https://example.com
 insecure: true
@@ -113,28 +91,16 @@ no_zypper_refs: true`
 
 	opts := DefaultOptions()
 	result, err := parseConfiguration([]byte(config), opts)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	assert.Nil(err)
 
-	if result.BaseURL != "https://example.com" {
-		t.Errorf("Expected URL https://example.com, got %s", result.BaseURL)
-	}
-	if !result.Insecure {
-		t.Error("Insecure should be true")
-	}
-	if result.Language != "de_DE.UTF-8" {
-		t.Errorf("Expected language de_DE.UTF-8, got %s", result.Language)
-	}
-	if result.Namespace != "test-namespace" {
-		t.Errorf("Expected namespace test-namespace, got %s", result.Namespace)
-	}
-	if result.Email != "user@example.com" {
-		t.Errorf("Expected email user@example.com, got %s", result.Email)
-	}
-	if !result.AutoAgreeEULA || !result.EnableSystemUptimeTracking || !result.NoZypperRefresh {
-		t.Error("All boolean fields should be true")
-	}
+	assert.Equal("https://example.com", result.BaseURL)
+	assert.True(result.Insecure)
+	assert.Equal("de_DE.UTF-8", result.Language)
+	assert.Equal("test-namespace", result.Namespace)
+	assert.Equal("user@example.com", result.Email)
+	assert.True(result.AutoAgreeEULA)
+	assert.True(result.EnableSystemUptimeTracking)
+	assert.True(result.NoZypperRefresh)
 }
 
 func TestParseInvalidConfigurations(t *testing.T) {
@@ -188,16 +154,16 @@ language: en_US`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
 			opts := DefaultOptions()
 			_, err := parseConfiguration([]byte(tt.config), opts)
-			if err == nil {
-				t.Error("Expected error, got nil")
-			}
+			assert.NotNil(err)
 		})
 	}
 }
 
 func TestParseConfigWithCollectors(t *testing.T) {
+	assert := assert.New(t)
 	config := `---
 url: https://example.com
 collectors:
@@ -208,32 +174,21 @@ collectors:
 
 	opts := DefaultOptions()
 	result, err := parseConfiguration([]byte(config), opts)
-	if err != nil {
-		t.Fatalf("Failed to parse configuration with collectors: %v", err)
-	}
-
-	if result.BaseURL != "https://example.com" {
-		t.Errorf("Expected URL https://example.com, got %s", result.BaseURL)
-	}
+	assert.Nil(err)
+	assert.Equal("https://example.com", result.BaseURL)
 
 	// Verify collector config was applied
 	collectorConfig := GetCollectorConfig()
 
-	if collectorConfig.IsCollectorEnabled("pci_devices") {
-		t.Error("pci_devices should be disabled per config")
-	}
-
-	if !collectorConfig.IsCollectorEnabled("sap") {
-		t.Error("sap should be enabled per config")
-	}
+	assert.False(collectorConfig.IsCollectorEnabled("pci_devices"))
+	assert.True(collectorConfig.IsCollectorEnabled("sap"))
 
 	// Verify mandatory collectors are always enabled
-	if !collectorConfig.IsCollectorEnabled("cpu") {
-		t.Error("cpu (mandatory) should always be enabled")
-	}
+	assert.True(collectorConfig.IsCollectorEnabled("cpu"))
 }
 
 func TestParseConfigMandatoryCollectorWarning(t *testing.T) {
+	assert := assert.New(t)
 	config := `---
 collectors:
   cpu:
@@ -241,18 +196,15 @@ collectors:
 
 	opts := DefaultOptions()
 	_, err := parseConfiguration([]byte(config), opts)
-	if err != nil {
-		t.Fatalf("Should not error on attempt to disable mandatory collector: %v", err)
-	}
+	assert.Nil(err)
 
 	// Verify mandatory collector is still enabled despite config
 	collectorConfig := GetCollectorConfig()
-	if !collectorConfig.IsCollectorEnabled("cpu") {
-		t.Error("cpu (mandatory) should still be enabled even if config tries to disable it")
-	}
+	assert.True(collectorConfig.IsCollectorEnabled("cpu"))
 }
 
 func TestParseConfigUnknownCollector(t *testing.T) {
+	assert := assert.New(t)
 	config := `---
 collectors:
   invalid_collector:
@@ -260,12 +212,8 @@ collectors:
 
 	opts := DefaultOptions()
 	_, err := parseConfiguration([]byte(config), opts)
-	if err == nil {
-		t.Fatal("Expected error for unknown collector, got nil")
-	}
+	assert.NotNil(err)
 
 	expectedErrMsg := "unknown collector 'invalid_collector' in configuration"
-	if err.Error() != expectedErrMsg {
-		t.Errorf("Expected error message '%s', got '%s'", expectedErrMsg, err.Error())
-	}
+	assert.Equal(expectedErrMsg, err.Error())
 }
