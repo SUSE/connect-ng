@@ -2,12 +2,36 @@ package connect
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/collectors"
+	"github.com/SUSE/connect-ng/internal/util"
 	collectorsconfig "github.com/SUSE/connect-ng/pkg/collectors"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	// Mock system commands for all tests
+	util.Execute = func(cmd []string, _ []int) ([]byte, error) {
+		if len(cmd) == 0 {
+			return []byte(""), nil
+		}
+
+		switch cmd[0] {
+		case "lspci":
+			return []byte("00:00.0 Host bridge: Test Device\n"), nil
+		case "lsmod":
+			return []byte("Module                  Size  Used by\ntest_module            16384  0\n"), nil
+		case "lscpu":
+			return []byte("# CPU,Socket\n0,0\n1,0\n2,1\n3,1\n"), nil
+		default:
+			return []byte(""), nil
+		}
+	}
+
+	os.Exit(m.Run())
+}
 
 func TestFetchSystemInformation(t *testing.T) {
 	tests := []struct {
@@ -77,33 +101,29 @@ func TestFetchSystemInformationCollectorConfig(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      map[string]collectorsconfig.CollectorConfig
-		checkFields map[string]bool // field name -> should exist
+		checkFields map[string]bool
 	}{
 		{
-			name: "mandatory collectors always run",
-			config: map[string]collectorsconfig.CollectorConfig{
-				"cpu": {Enabled: false},
-			},
+			name:   "mandatory collectors always run",
+			config: map[string]collectorsconfig.CollectorConfig{"cpu": {Enabled: false}},
 			checkFields: map[string]bool{
-				"cpus": true, // CPU is mandatory, should exist despite config
+				"cpus": true,
 			},
 		},
 		{
-			name: "opt-in collector enabled",
-			config: map[string]collectorsconfig.CollectorConfig{
-				"sap": {Enabled: true},
-			},
+			name:   "opt-in collector enabled",
+			config: map[string]collectorsconfig.CollectorConfig{"sap": {Enabled: true}},
 			checkFields: map[string]bool{
-				"cpus": true, // Other collectors still run
+				"cpus": true,
 			},
 		},
 		{
 			name:   "only system info collectors run",
 			config: map[string]collectorsconfig.CollectorConfig{},
 			checkFields: map[string]bool{
-				"cpus":     true,  // System info collector
-				"pci_data": false, // Profile collector (pci_devices), should not run
-				"mod_list": false, // Profile collector (kernel_modules), should not run
+				"cpus":     true,
+				"pci_data": false,
+				"mod_list": false,
 			},
 		},
 	}
@@ -194,25 +214,23 @@ func TestFetchSystemProfilesCollectorConfig(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      map[string]collectorsconfig.CollectorConfig
-		checkFields map[string]bool // field name -> should exist
+		checkFields map[string]bool
 	}{
 		{
 			name:   "default profile collectors run",
 			config: map[string]collectorsconfig.CollectorConfig{},
 			checkFields: map[string]bool{
-				"pci_data": true,  // Profile collector (pci_devices), enabled by default
-				"mod_list": true,  // Profile collector (kernel_modules), enabled by default
-				"cpus":     false, // System info collector, should not run
+				"pci_data": true,
+				"mod_list": true,
+				"cpus":     false,
 			},
 		},
 		{
-			name: "disable profile collector",
-			config: map[string]collectorsconfig.CollectorConfig{
-				"pci_devices": {Enabled: false},
-			},
+			name:   "disable profile collector",
+			config: map[string]collectorsconfig.CollectorConfig{"pci_devices": {Enabled: false}},
 			checkFields: map[string]bool{
-				"pci_data": false, // Disabled
-				"mod_list": true,  // Still enabled
+				"pci_data": false,
+				"mod_list": true,
 			},
 		},
 		{
