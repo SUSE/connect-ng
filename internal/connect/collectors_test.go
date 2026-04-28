@@ -111,13 +111,6 @@ func TestFetchSystemInformationCollectorConfig(t *testing.T) {
 			},
 		},
 		{
-			name:   "opt-in collector enabled",
-			config: map[string]collectorsconfig.CollectorConfig{"sap": {Enabled: true}},
-			checkFields: map[string]bool{
-				"cpus": true,
-			},
-		},
-		{
 			name:   "only system info collectors run",
 			config: map[string]collectorsconfig.CollectorConfig{},
 			checkFields: map[string]bool{

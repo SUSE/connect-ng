@@ -20,7 +20,7 @@ func TestGetCollectorsByType(t *testing.T) {
 	profileCollectors := GetCollectorsByType(ProfileCollector)
 
 	// Verify we have the expected number of each type
-	assert.Equal(11, len(systemInfoCollectors)) // 10 mandatory + 1 optional (sap)
+	assert.Equal(11, len(systemInfoCollectors)) // 11 mandatory
 	assert.Equal(2, len(profileCollectors))     // pci_devices, kernel_modules
 
 	// Verify specific collectors are in the right category
@@ -38,7 +38,7 @@ func TestIsMandatoryCollector(t *testing.T) {
 	mandatoryCollectors := []string{
 		"cpu", "hostname", "memory", "uuid", "architecture",
 		"virtualization", "cloud_provider", "container_runtime",
-		"uname", "vendor",
+		"uname", "vendor", "sap",
 	}
 
 	for _, name := range mandatoryCollectors {
@@ -46,7 +46,7 @@ func TestIsMandatoryCollector(t *testing.T) {
 	}
 
 	// Optional collectors
-	optionalCollectors := []string{"pci_devices", "kernel_modules", "sap"}
+	optionalCollectors := []string{"pci_devices", "kernel_modules"}
 
 	for _, name := range optionalCollectors {
 		assert.False(IsMandatoryCollector(name))
@@ -61,7 +61,7 @@ func TestIsValidCollector(t *testing.T) {
 	validCollectors := []string{
 		"cpu", "hostname", "memory", "uuid", "architecture",
 		"virtualization", "cloud_provider", "container_runtime",
-		"uname", "vendor", "pci_devices", "kernel_modules", "sap",
+		"uname", "vendor", "sap", "pci_devices", "kernel_modules",
 	}
 
 	for _, name := range validCollectors {
@@ -78,15 +78,12 @@ func TestDefaultCollectorState(t *testing.T) {
 	defaultEnabledCollectors := []string{
 		"cpu", "hostname", "memory", "uuid", "architecture",
 		"virtualization", "cloud_provider", "container_runtime",
-		"uname", "vendor", "pci_devices", "kernel_modules",
+		"uname", "vendor", "sap", "pci_devices", "kernel_modules",
 	}
 
 	for _, name := range defaultEnabledCollectors {
 		assert.True(DefaultCollectorState(name))
 	}
-
-	// Disabled by default (opt-in)
-	assert.False(DefaultCollectorState("sap"))
 
 	// Non-existent collector should default to false
 	assert.False(DefaultCollectorState("non_existent"))
@@ -106,12 +103,10 @@ func TestCollectorOptionsIsCollectorEnabled(t *testing.T) {
 	// Test user configuration for optional collectors
 	config2 := map[string]collectorsconfig.CollectorConfig{
 		"pci_devices": {Enabled: false},
-		"sap":         {Enabled: true},
 	}
 	opts2 := NewCollectorOptions(config2)
 
 	assert.False(opts2.IsCollectorEnabled("pci_devices"))
-	assert.True(opts2.IsCollectorEnabled("sap"))
 
 	// Test default behavior when not in config
 	assert.True(opts2.IsCollectorEnabled("kernel_modules"))

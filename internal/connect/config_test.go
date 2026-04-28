@@ -169,7 +169,7 @@ url: https://example.com
 collectors:
   pci_devices:
     enabled: false
-  sap:
+  kernel_modules:
     enabled: true`
 
 	opts := DefaultOptions()
@@ -181,10 +181,11 @@ collectors:
 	collectorConfig := GetCollectorConfig()
 
 	assert.False(collectorConfig.IsCollectorEnabled("pci_devices"))
-	assert.True(collectorConfig.IsCollectorEnabled("sap"))
+	assert.True(collectorConfig.IsCollectorEnabled("kernel_modules"))
 
 	// Verify mandatory collectors are always enabled
 	assert.True(collectorConfig.IsCollectorEnabled("cpu"))
+	assert.True(collectorConfig.IsCollectorEnabled("sap"))
 }
 
 func TestParseConfigMandatoryCollectorWarning(t *testing.T) {
@@ -192,15 +193,18 @@ func TestParseConfigMandatoryCollectorWarning(t *testing.T) {
 	config := `---
 collectors:
   cpu:
+    enabled: false
+  sap:
     enabled: false`
 
 	opts := DefaultOptions()
 	_, err := parseConfiguration([]byte(config), opts)
 	assert.Nil(err)
 
-	// Verify mandatory collector is still enabled despite config
+	// Verify mandatory collectors are still enabled despite config
 	collectorConfig := GetCollectorConfig()
 	assert.True(collectorConfig.IsCollectorEnabled("cpu"))
+	assert.True(collectorConfig.IsCollectorEnabled("sap"))
 }
 
 func TestParseConfigUnknownCollector(t *testing.T) {

@@ -67,6 +67,10 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: UUID{},
 	},
+	"sap": {
+		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
+		Collector: SAP{},
+	},
 
 	// Optional profile collectors
 	"pci_devices": {
@@ -76,12 +80,6 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 	"kernel_modules": {
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return LSMOD{UpdateDataIDs: updateDataIDs} },
-	},
-
-	// Optional/specialized collectors
-	"sap": {
-		Metadata:  CollectorMetadata{DefaultEnabled: false, Mandatory: false, Type: SystemInfoCollector},
-		Collector: SAP{},
 	},
 }
 
