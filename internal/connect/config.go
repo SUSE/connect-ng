@@ -248,8 +248,9 @@ func (opts *Options) IsScc() bool {
 	return false
 }
 
-// Global collector configuration
-var collectorConfig collectorsconfig.CollectorOptions = &collectorsconfig.NoCollectorOptions{}
+// Global collector configuration. Initialized with empty config map which means
+// all mandatory collectors are enabled and optional collectors use their default states.
+var collectorConfig collectorsconfig.CollectorOptions = collectors.NewCollectorOptions(map[string]collectorsconfig.CollectorConfig{})
 
 // SetCollectorConfig sets the global collector configuration
 func SetCollectorConfig(opts collectorsconfig.CollectorOptions) {

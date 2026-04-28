@@ -13,11 +13,10 @@ type CollectorOptions interface {
 	IsCollectorEnabled(collectorName string) bool
 }
 
-// NoCollectorOptions is a default implementation that disables all collectors
+// NoCollectorOptions is a stub implementation that disables all collectors
 // Useful for testing and when collector options are not available
 type NoCollectorOptions struct{}
 
 func (NoCollectorOptions) IsCollectorEnabled(collectorName string) bool {
-	// Collectors are disabled by default when no configuration is provided
 	return false
 }
