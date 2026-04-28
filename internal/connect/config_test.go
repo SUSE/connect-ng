@@ -212,12 +212,15 @@ func TestParseConfigUnknownCollector(t *testing.T) {
 	config := `---
 collectors:
   invalid_collector:
-    enabled: true`
+    enabled: true
+  pci_devices:
+    enabled: false`
 
 	opts := DefaultOptions()
 	_, err := parseConfiguration([]byte(config), opts)
-	assert.NotNil(err)
+	assert.Nil(err)
 
-	expectedErrMsg := "unknown collector 'invalid_collector' in configuration"
-	assert.Equal(expectedErrMsg, err.Error())
+	// Verify unknown collector is ignored and valid collectors still work
+	collectorConfig := GetCollectorConfig()
+	assert.False(collectorConfig.IsCollectorEnabled("pci_devices"))
 }

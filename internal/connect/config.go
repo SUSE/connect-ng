@@ -178,7 +178,8 @@ func applyCollectorConfig(collectorConfigs map[string]collectorConfigEntry) erro
 
 		// Validate collector exists
 		if !collectors.IsValidCollector(collectorName) {
-			return fmt.Errorf("unknown collector '%s' in configuration", collectorName)
+			util.Debug.Printf("Warning: Unknown collector '%s' in configuration, skipping\n", collectorName)
+			continue
 		}
 
 		// Warn if trying to disable a mandatory collector

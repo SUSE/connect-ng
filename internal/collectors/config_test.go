@@ -20,8 +20,8 @@ func TestGetCollectorsByType(t *testing.T) {
 	profileCollectors := GetCollectorsByType(ProfileCollector)
 
 	// Verify we have the expected number of each type
-	assert.Equal(11, len(systemInfoCollectors)) // 11 mandatory
-	assert.Equal(2, len(profileCollectors))     // pci_devices, kernel_modules
+	assert.Equal(11, len(systemInfoCollectors))
+	assert.Equal(2, len(profileCollectors))
 
 	// Verify specific collectors are in the right category
 	_, ok := systemInfoCollectors["cpu"]
