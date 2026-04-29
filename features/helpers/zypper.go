@@ -22,7 +22,16 @@ func NewZypper(t *testing.T) *Zypper {
 }
 
 func (zypp *Zypper) run(params ...string) []byte {
-	cmd := exec.Command("zypper", params...)
+	args := []string{}
+
+	// Add --root flag if custom root is set
+	if zypper.GetFilesystemRoot() != "/" {
+		args = append(args, "--root", zypper.GetFilesystemRoot())
+	}
+
+	args = append(args, params...)
+
+	cmd := exec.Command("zypper", args...)
 	env := NewEnv(zypp.t)
 	result, err := cmd.CombinedOutput()
 

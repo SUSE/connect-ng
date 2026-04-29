@@ -26,6 +26,6 @@ groupend
 
 group "run feature tests"
 pushd "$SOURCE"
- go test -v features/suseconnect/*
+ go test -timeout 20m -v features/suseconnect/*
 popd
 groupend

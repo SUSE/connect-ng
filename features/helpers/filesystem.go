@@ -3,18 +3,26 @@ package helpers
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/SUSE/connect-ng/internal/zypper"
 	"github.com/stretchr/testify/assert"
 )
 
 func CleanupPolutedFilesystem() {
 	fmt.Printf("[cleanup] Cleanup /etc/zypp/{credentials.d, services.d, repos.d}/*...\n")
-	removeInnerRecursive("/etc/zypp/credentials.d")
-	removeInnerRecursive("/etc/zypp/services.d")
-	removeInnerRecursive("/etc/zypp/repos.d")
+	if zypper.GetFilesystemRoot() != "/" {
+		removeInnerRecursive(filepath.Join(zypper.GetFilesystemRoot(), "/etc/zypp/credentials.d"))
+		removeInnerRecursive(filepath.Join(zypper.GetFilesystemRoot(), "/etc/zypp/services.d"))
+		removeInnerRecursive(filepath.Join(zypper.GetFilesystemRoot(), "/etc/zypp/repos.d"))
+	} else {
+		removeInnerRecursive("/etc/zypp/credentials.d")
+		removeInnerRecursive("/etc/zypp/services.d")
+		removeInnerRecursive("/etc/zypp/repos.d")
+	}
 }
 
 func removeInnerRecursive(dir string) {
@@ -46,6 +54,24 @@ func FriendlyNameToServiceName(friendlyName string) string {
 
 func FriendlyNameToCredentialsName(friendlyName string) string {
 	return FriendlyNameToServiceName(friendlyName)
+}
+
+func SetupCustomRoot(t *testing.T) string {
+	assert := assert.New(t)
+	root := t.TempDir()
+	zypper.SetFilesystemRoot(root)
+
+	err := os.MkdirAll(filepath.Join(root, "etc"), 0755)
+	assert.NoError(err)
+
+	// FIXME: Once golang 1.23 is integrated this becomes much more nice to implement in pure go
+	err = exec.Command("cp", "-r", "/etc/zypp", filepath.Join(root, "etc/zypp")).Run()
+	assert.NoError(err)
+
+	err = exec.Command("cp", "-r", "/etc/products.d", filepath.Join(root, "etc/products.d")).Run()
+	assert.NoError(err)
+
+	return root
 }
 
 func TryCurlrcCleanup() {
