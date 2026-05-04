@@ -14,7 +14,8 @@ ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
 
-.PHONY: dist build clean ci-env build-rpm feature-tests format vendor
+.PHONY: all build build-arm build-ppc64le build-rpm build-s390 check-format
+.PHONY: ci-env clean dist feature-tests out test test-yast vendor vet
 
 all: clean build test
 
@@ -37,7 +38,6 @@ dist: clean internal/connect/version.txt vendor
 
 	@rm -r $(NAME)-$(VERSION)
 
-
 vendor:
 	@$(GO) mod download
 	@$(GO) mod verify
@@ -48,6 +48,9 @@ out:
 
 internal/connect/version.txt:
 	@echo -n "$(VERSION)" > internal/connect/version.txt
+
+vet: internal/connect/version.txt
+	$(GO) vet ./...
 
 build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
