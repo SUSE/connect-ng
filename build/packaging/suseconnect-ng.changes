@@ -6,7 +6,9 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
     (jsc#SCC-630).
   - Restore exit code 71 handling when attempting keepalive and not
     registered (bsc#1263772)
-  
+  - Add collector support for gathering RKE2 & K3s kubernetes provider
+    info if enabled on a system (jsc#TEL-317)
+
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
 
