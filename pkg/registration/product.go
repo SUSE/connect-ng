@@ -3,6 +3,7 @@ package registration
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
@@ -73,10 +74,11 @@ func (p *Product) UnmarshalJSON(data []byte) error {
 }
 
 // Builds a new Product object by parsing the given string considering to be a
-// product "triplet" (i.e. a string with the format "<name>/<version>/<arch>").
+// product "triplet" (i.e. a string with the format "<name>/<version>/<arch>"
+// without any empty elements).
 func FromTriplet(triplet string) (Product, error) {
 	parts := strings.Split(triplet, "/")
-	if len(parts) != 3 {
+	if (len(parts) != 3) || slices.Contains(parts, "") {
 		return Product{}, fmt.Errorf("invalid product; <internal name>/<version>/<architecture> format expected")
 	}
 	return Product{Identifier: parts[0], Version: parts[1], Arch: parts[2]}, nil
