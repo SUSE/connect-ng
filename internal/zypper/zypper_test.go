@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/SUSE/connect-ng/internal/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseProductsXML(t *testing.T) {
@@ -157,4 +158,59 @@ func TestParseSearchResultXML(t *testing.T) {
 	if packages[1].Repo != "SLE-Product-SLES15-SP2-Pool" {
 		t.Errorf("Expected SLE-Product-SLES15-SP2-Pool. Got %v", packages[1].Repo)
 	}
+}
+
+func TestInstallReleasePakage(t *testing.T) {
+	identifier := "SLES"
+	util.Execute = func(args []string, validExitCodes []int) ([]byte, error) {
+		if args[0] == "rpm" {
+			return []byte("SLES-release-15.5"), nil
+		}
+		return nil, nil
+	}
+
+	err := InstallReleasePackage(identifier, false)
+
+	assert.NoError(t, err)
+}
+
+func TestInstallReleasePakageRpmFails(t *testing.T) {
+	identifier := "PackageHub"
+	util.Execute = func(args []string, validExitCodes []int) ([]byte, error) {
+		if args[0] == "rpm" {
+			return nil, util.ExecuteError{ExitCode: 1}
+		}
+		if args[0] == zypperPath {
+			// Verify specific PackageHub flags and GPG auto-import
+			assert.Contains(t, validExitCodes, zypperInfoReposSkipped, "PackageHub must allow exit code 106")
+			assert.Contains(t, args, "--gpg-auto-import-keys")
+			assert.Contains(t, args, "PackageHub")
+			return []byte("installed"), nil
+		}
+		return nil, nil
+	}
+
+	err := InstallReleasePackage(identifier, true)
+
+	assert.NoError(t, err)
+}
+
+func TestInstallReleasePakageZypperFails(t *testing.T) {
+	identifier := "SLES"
+	util.Execute = func(args []string, validExitCodes []int) ([]byte, error) {
+		if args[0] == "rpm" {
+			return nil, util.ExecuteError{ExitCode: 1}
+		}
+		if args[0] == zypperPath {
+			return nil, util.ExecuteError{
+				ExitCode: 4, // zypperErrZypp
+				Output:   []byte("ZYPP error"),
+			}
+		}
+		return nil, nil
+	}
+
+	err := InstallReleasePackage(identifier, true)
+
+	assert.Error(t, err)
 }
