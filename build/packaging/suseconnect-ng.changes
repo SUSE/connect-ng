@@ -4,6 +4,8 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
 - Update version to 1.22 (pre):
   - InstallReleasePackage should consider zypperFilesystemRoot
     (jsc#SCC-630).
+  - Restore exit code 71 handling when attempting keepalive and not
+    registered (bsc#1263772)
   
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
