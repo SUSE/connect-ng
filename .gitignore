@@ -8,3 +8,4 @@ bin
 *.tar.xz
 *.env*
 .mise.toml
+coverage/
