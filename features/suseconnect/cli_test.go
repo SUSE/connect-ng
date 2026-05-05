@@ -11,6 +11,7 @@ import (
 func TestCLI(t *testing.T) {
 	t.Run("showing help", testCLIPrintsHelp)
 	t.Run("showing version", testCLIPrintsVersion)
+	t.Run("keepalive unregistered", testCLIKeepAliveUnregistered)
 }
 
 func testCLIPrintsHelp(t *testing.T) {
@@ -42,4 +43,13 @@ func testCLIPrintsVersion(t *testing.T) {
 	cli.Run()
 	assert.Regexp(regexp.MustCompile(`\d{1,2}\.\d{1,2}(\.\d{1,2})?`), cli.Stdout())
 	assert.Equal(0, cli.ExitCode())
+}
+
+func testCLIKeepAliveUnregistered(t *testing.T) {
+	assert := assert.New(t)
+	cli := helpers.NewRunner(t, "suseconnect --keepalive")
+
+	cli.Run()
+	assert.Contains(cli.Stdout(), "Error sending keepalive: System is not registered. Use the --regcode parameter to register it.")
+	assert.Equal(71, cli.ExitCode())
 }
