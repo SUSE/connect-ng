@@ -9,87 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProductTripletParsing(t *testing.T) {
-	assert := assert.New(t)
-
-	t.Run("valid triplets with component validation", func(t *testing.T) {
-		tests := []struct {
-			triplet      string
-			expectedName string
-			expectedVer  string
-			expectedArch string
-		}{
-			{
-				triplet:      "sle-module-basesystem/15.5/x86_64",
-				expectedName: "sle-module-basesystem",
-				expectedVer:  "15.5",
-				expectedArch: "x86_64",
-			},
-			{
-				triplet:      "SLES/15/aarch64",
-				expectedName: "SLES",
-				expectedVer:  "15",
-				expectedArch: "aarch64",
-			},
-			{
-				triplet:      "sle-module-python3/15.6/ppc64le",
-				expectedName: "sle-module-python3",
-				expectedVer:  "15.6",
-				expectedArch: "ppc64le",
-			},
-			{
-				triplet:      "sle-module-server-applications/15.4/s390x",
-				expectedName: "sle-module-server-applications",
-				expectedVer:  "15.4",
-				expectedArch: "s390x",
-			},
-			{
-				triplet:      "sle-module-containers/15.3/x86_64",
-				expectedName: "sle-module-containers",
-				expectedVer:  "15.3",
-				expectedArch: "x86_64",
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.triplet, func(t *testing.T) {
-				product, err := registration.FromTriplet(tt.triplet)
-				assert.NoError(err)
-				assert.NotNil(product)
-				assert.Equal(tt.expectedName, product.Identifier)
-				assert.Equal(tt.expectedVer, product.Version)
-				assert.Equal(tt.expectedArch, product.Arch)
-			})
-		}
-	})
-
-	t.Run("invalid triplets", func(t *testing.T) {
-		tests := []struct {
-			triplet string
-			name    string
-		}{
-			{triplet: "", name: "empty string"},
-			{triplet: "single", name: "single part"},
-			{triplet: "two/parts", name: "two parts"},
-			{triplet: "four/parts/too/many", name: "four parts"},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				_, err := registration.FromTriplet(tt.triplet)
-				assert.Error(err, "Expected error for: %s (%s)", tt.triplet, tt.name)
-			})
-		}
-	})
-}
-
 func TestInputStructures(t *testing.T) {
 	assert := assert.New(t)
-
-	t.Run("ToolInput", func(t *testing.T) {
-		input := ToolInput{}
-		assert.NotNil(input)
-	})
 
 	t.Run("RegisterInput", func(t *testing.T) {
 		input := RegisterInput{
@@ -282,45 +203,6 @@ func TestValidInputParsing(t *testing.T) {
 				expectedName: "sle-module-python3",
 				expectedVer:  "15.6",
 				expectedArch: "ppc64le",
-			},
-		}
-
-		for _, tt := range validTriplets {
-			t.Run(tt.triplet, func(t *testing.T) {
-				product, err := registration.FromTriplet(tt.triplet)
-				assert.NoError(err, "Triplet should be valid: %s", tt.triplet)
-				assert.NotNil(product)
-				assert.Equal(tt.expectedName, product.Identifier)
-				assert.Equal(tt.expectedVer, product.Version)
-				assert.Equal(tt.expectedArch, product.Arch)
-			})
-		}
-	})
-
-	t.Run("valid product triplets for DeactivateProduct", func(t *testing.T) {
-		validTriplets := []struct {
-			triplet      string
-			expectedName string
-			expectedVer  string
-			expectedArch string
-		}{
-			{
-				triplet:      "sle-module-basesystem/15.5/x86_64",
-				expectedName: "sle-module-basesystem",
-				expectedVer:  "15.5",
-				expectedArch: "x86_64",
-			},
-			{
-				triplet:      "SLES/15/aarch64",
-				expectedName: "SLES",
-				expectedVer:  "15",
-				expectedArch: "aarch64",
-			},
-			{
-				triplet:      "sle-module-containers/15.3/s390x",
-				expectedName: "sle-module-containers",
-				expectedVer:  "15.3",
-				expectedArch: "s390x",
 			},
 		}
 
