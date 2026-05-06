@@ -33,7 +33,7 @@ define cover-test-flags
 endef
 
 .PHONY: all build build-arm build-ppc64le build-rpm build-s390 check-format
-.PHONY: ci-env clean dist feature-tests out test test-yast vendor vet
+.PHONY: ci-env clean dist feature-tests out show-version test test-yast vendor vet
 .PHONY: coverage coverage-check-enabled coverage-dirs coverage-func coverage-percent
 
 all: clean build test
@@ -67,6 +67,9 @@ out:
 
 internal/connect/version.txt:
 	@echo -n "$(VERSION)" > internal/connect/version.txt
+
+show-version: internal/connect/version.txt
+	@cat internal/connect/version.txt
 
 vet: internal/connect/version.txt
 	$(GO) vet ./...
