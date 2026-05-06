@@ -36,6 +36,15 @@ type JSONOutput struct {
 	Error    string `json:"error,omitempty" jsonschema:"the error message if the tool failed"`
 }
 
+var (
+	_ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error)       = RegistrationStatus
+	_ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error)       = ListExtensions
+	_ func(context.Context, *mcp.CallToolRequest, RegisterInput) (*mcp.CallToolResult, JSONOutput, error)   = RegisterSystem
+	_ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error)       = DeregisterSystem
+	_ func(context.Context, *mcp.CallToolRequest, ActivateInput) (*mcp.CallToolResult, JSONOutput, error)   = ActivateProduct
+	_ func(context.Context, *mcp.CallToolRequest, DeactivateInput) (*mcp.CallToolResult, JSONOutput, error) = DeactivateProduct
+)
+
 func RegistrationStatus(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("RegistrationStatus tool called")

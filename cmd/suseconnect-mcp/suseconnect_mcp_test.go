@@ -89,18 +89,6 @@ func TestJSONOutputStructure(t *testing.T) {
 	})
 }
 
-func TestToolFunctionSignatures(t *testing.T) {
-	t.Run("all function signatures match MCP requirements", func(t *testing.T) {
-		// These assignments will fail at compile time if signatures are wrong
-		var _ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error) = RegistrationStatus
-		var _ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error) = ListExtensions
-		var _ func(context.Context, *mcp.CallToolRequest, RegisterInput) (*mcp.CallToolResult, JSONOutput, error) = RegisterSystem
-		var _ func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, JSONOutput, error) = DeregisterSystem
-		var _ func(context.Context, *mcp.CallToolRequest, ActivateInput) (*mcp.CallToolResult, JSONOutput, error) = ActivateProduct
-		var _ func(context.Context, *mcp.CallToolRequest, DeactivateInput) (*mcp.CallToolResult, JSONOutput, error) = DeactivateProduct
-	})
-}
-
 func TestToolExecutionWithInvalidInputs(t *testing.T) {
 	assert := assert.New(t)
 	ctx := context.Background()
