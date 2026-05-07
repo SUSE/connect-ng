@@ -159,7 +159,7 @@ func (env *systemdTestEnv) AddK8sUnit(svcName, k8sType, k8sRole, svcState string
 	case "disabled":
 		activeState = "inactive"
 		subState = "dead"
-	case "ensabled":
+	case "enabled":
 		activeState = "active"
 		subState = "running"
 	default:
