@@ -137,7 +137,7 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 	code, err := registration.Status(w.Connection, hostname, hwinfo, profileData, extraData)
 	if code == registration.Unregistered {
 		profiles.DeleteProfileCache("*-profile-id")
-		return fmt.Errorf("trying to send a keepalive from a system not yet registered. Register this system first")
+		return ErrPingFromUnregistered
 	} else if err != nil {
 		profiles.DeleteProfileCache("*-profile-id")
 	}

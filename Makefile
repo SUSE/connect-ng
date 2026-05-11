@@ -4,6 +4,10 @@ DIST          = $(NAME)-$(VERSION)/
 PWD           = $(shell pwd)
 GO            = go
 OUT           = -o out/
+# coverage testing enabled by default
+COVERAGE     ?= true
+COVERAGE_DIR  = $(PWD)/coverage
+COVERAGE_UNIT = $(COVERAGE_DIR)/unit
 GOFLAGS       = -v -mod=vendor
 BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
@@ -14,7 +18,23 @@ ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
 
-.PHONY: dist build clean ci-env build-rpm feature-tests format vendor
+define go-tool-covdata
+	@if [ -z "$(strip $(1))" ]; then \
+		echo "ERROR: no go tool covdata action specified."; \
+		exit 1; \
+	fi
+	@if $(if $(filter true,$(strip $(COVERAGE))),true,false); then \
+		$(GO) tool covdata $(1) -i=$(COVERAGE_UNIT); \
+	fi
+endef
+
+define cover-test-flags
+	$(if $(filter true,$(strip $(COVERAGE))),-cover -args -test.gocoverdir=$(COVERAGE_UNIT))
+endef
+
+.PHONY: all build build-arm build-ppc64le build-rpm build-s390 check-format
+.PHONY: ci-env clean dist feature-tests out test test-yast vendor vet
+.PHONY: coverage coverage-check-enabled coverage-dirs coverage-func coverage-percent
 
 all: clean build test
 
@@ -37,7 +57,6 @@ dist: clean internal/connect/version.txt vendor
 
 	@rm -r $(NAME)-$(VERSION)
 
-
 vendor:
 	@$(GO) mod download
 	@$(GO) mod verify
@@ -48,6 +67,9 @@ out:
 
 internal/connect/version.txt:
 	@echo -n "$(VERSION)" > internal/connect/version.txt
+
+vet: internal/connect/version.txt
+	$(GO) vet ./...
 
 build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
@@ -71,8 +93,27 @@ build-s390: clean out internal/connect/version.txt
 build-ppc64le: clean out internal/connect/version.txt
 	GOOS=linux GOARCH=ppc64le $(GO) build $(GOFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect
 
-test: internal/connect/version.txt
-	$(GO) test ./internal/* ./cmd/suseconnect ./pkg/*
+coverage-dirs:
+	@mkdir -p $(COVERAGE_UNIT)
+
+coverage-check-enabled:
+	@if [ -z "$(filter true,$(strip $(COVERAGE)))" ]; then \
+		echo "WARNING: Coverage generation and collection not enabled."; \
+		echo "To enable it either add COVERAGE=true on the make command line arguments or set COVERAGE=true in the environment."; \
+		exit 1; \
+	fi
+
+coverage-func: coverage-check-enabled coverage-dirs
+	$(call go-tool-covdata,func)
+
+coverage-percent: coverage-check-enabled coverage-dirs
+	$(call go-tool-covdata,percent)
+
+coverage: coverage-func
+
+test: internal/connect/version.txt coverage-dirs
+	$(GO) test ./internal/* ./cmd/suseconnect ./pkg/* $(call cover-test-flags)
+	$(call go-tool-covdata,func)
 
 ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
