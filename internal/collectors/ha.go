@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
@@ -36,7 +35,6 @@ func isPacemakerRunning(systemdClient util.SystemdClient) (bool, error) {
 	// first try to use ListUnitsByPatterns, failing back to ListUnits if not available
 	units, err := systemdClient.ListUnitsByPatterns("pacemaker.service")
 	if err != nil {
-		fmt.Printf("!!!!!!!!!!systemdClient.ListUnitsByPatterns() failed: %s %t\n", err, errors.Is(err, util.SystemdMethodNotAvailable))
 		if !errors.Is(err, util.SystemdMethodNotAvailable) {
 			util.Debug.Printf("systemdClient.ListUnitsByPatterns() failed: %s\n", err)
 			return false, err

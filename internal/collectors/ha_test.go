@@ -135,52 +135,28 @@ func TestPacemakerActiveErrorUnits(t *testing.T) {
 	assert.Equal(false, res, "isPacemakerRunning() returned unexpected result")
 }
 
-func TestGetPacemakerVersionPass(t *testing.T) {
+func TestGetPacemakerVersion(t *testing.T) {
 	// general setup
 	assert := assert.New(t)
+	var tests = []struct {
+		input  string
+		result string
+	}{
+		{"Pacemaker 2.1.10+20250718.fdf796ebc8-150700.3.3.1", "2.1.10+20250718.fdf796ebc8-150700.3.3.1"},
+		{"Pacemaker", ""},
+		{"Test Data", ""},
+	}
 
-	pacemakerVersion := "2.1.10+20250718.fdf796ebc8-150700.3.3.1"
-	paceMakerName := "Pacemaker"
+	for _, v := range tests {
+		// setup execute for pacemakerd --version
+		mockUtilExecute(v.input, nil)
+		// run test case
+		res, err := getPacemakerVersion()
 
-	// setup execute for pacemakerd --version
-	mockUtilExecute(strings.Join([]string{paceMakerName, pacemakerVersion}, " "), nil)
-
-	// run test case
-	res, err := getPacemakerVersion()
-
-	// check returned values
-	assert.NoError(err, "getPacemakerVersion() returned expected error")
-	assert.Equal(pacemakerVersion, res, "getPacemakerVersion() returned unexpected result")
-}
-
-func TestGetPacemakerVersionNoPacemaker(t *testing.T) {
-	// general setup
-	assert := assert.New(t)
-
-	// setup execute for pacemakerd --version
-	mockUtilExecute("test data", nil)
-
-	// run test case
-	res, err := getPacemakerVersion()
-
-	// check returned values
-	assert.NoError(err, "getPacemakerVersionNoPacemaker() returned expected error")
-	assert.Equal("", res, "getPacemakerVersionNoPacemker() returned unexpected result")
-}
-
-func TestGetPacemakerVersionNoVersion(t *testing.T) {
-	// general setup
-	assert := assert.New(t)
-
-	// setup execute for pacemakerd --version
-	mockUtilExecute("Pacemaker", nil)
-
-	// run test case
-	res, err := getPacemakerVersion()
-
-	// check returned values
-	assert.NoError(err, "getPacemakerVersionNoVersion() returned expected error")
-	assert.Equal("", res, "getPacemakerVersionNoVersion() returned unexpected result")
+		// check returned values
+		assert.NoError(err, "getPacemakerVersion() returned expected error")
+		assert.Equal(v.result, res, "getPacemakerVersion() returned unexpected result")
+	}
 }
 
 func TestGetPacemakerVersionExecuteError(t *testing.T) {
