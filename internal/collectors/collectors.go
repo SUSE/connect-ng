@@ -13,6 +13,7 @@ Example:
 		collectors.Memory{},
 		collectors.UUID{},
 		collectors.Vendor{},
+		collectors.HA{},
 	}
 
 result, error := collectors.CollectInformation("x86_64", MandatoryCollectors)
