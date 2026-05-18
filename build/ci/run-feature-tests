@@ -7,6 +7,8 @@ SOURCE=${SOURCE:-/usr/src/connect-ng}
 # exported variables we expect to exist to run the tests
 KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE HA_REGCODE)
 
+REMOVE_PRODUCTS="sle-module-python3 sle-module-server-applications sle-module-basesystem"
+
 group() { echo "::group::$1"; }
 groupend() { echo "::groupend::"; }
 fail() { echo "::error::$1"; exit 1; }
@@ -24,8 +26,17 @@ group "cleanup test system"
   [ -f /etc/SUSEConnect ] && rm /etc/SUSEConnect
 groupend
 
+# Remove products so container in a clean state
+group "Clean Container"
+for product in ${REMOVE_PRODUCTS}; do
+    if zypper --no-refresh se --installed-only -t product ${product} | grep -q ${product}; then
+	   zypper --no-refresh --non-interactive remove -t product ${product}
+    fi
+done
+groupend
+
 group "run feature tests"
 pushd "$SOURCE"
- go test -timeout 15m -v features/suseconnect/*
+go test -timeout 15m -v features/suseconnect/*.go
 popd
 groupend

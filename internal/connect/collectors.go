@@ -22,6 +22,7 @@ func FetchSystemInformation(arch string) (collectors.Result, error) {
 		collectors.SAP{},
 		collectors.Vendor{},
 		collectors.K8S{},
+		collectors.HA{},
 	}
 
 	var err error

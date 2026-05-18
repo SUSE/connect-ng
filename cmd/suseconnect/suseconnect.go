@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -198,6 +199,11 @@ func main() {
 		opts.InstanceDataFile = instanceDataFile
 	}
 	if email != "" {
+		_, err := mail.ParseAddress(email)
+		if err != nil {
+			fmt.Printf("SUSEConnect warning: ignoring malformed email address: %s\n", email)
+			email = ""
+		}
 		opts.Email = email
 	}
 	if lang, ok := os.LookupEnv("LANG"); ok {
