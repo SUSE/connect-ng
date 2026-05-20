@@ -16,35 +16,70 @@ date: December 2025
 
 The file is in [YAML][yaml-spec] format.
 
+## Basic Configuration
+
 Example:
 
-**---**
+```yaml
+---
+url: https://scc.suse.com
+language: en
+insecure: false
+auto_agree_with_licenses: false
+enable_system_uptime_tracking: false
+no_zypper_refs: false
 
-**url: https://scc.suse.com**
+collectors:
+  pci_devices:
+    state: disabled
+  kernel_modules:
+    state: disabled
+```
 
-**language: en**
+The top-level fields are as follows:
 
-**insecure: false**
-
-**debug: false**
-
-**no_zypper_refs: false**
-
-**auto_agree_with_licenses: false**
-
-**enable_system_uptime_tracking: false**
-
-
-Each line of the file specifies a single parameter.  The fields are as follows:
-
-  * url: (optional) URL of the registration server.  Corresponds to the --url argument to SUSEConnect. Defaults to https://scc.suse.com
+  * url: (optional) URL of the registration server. Corresponds to the --url argument to SUSEConnect. Defaults to https://scc.suse.com
   * language: (optional) Language code to use for error messages
   * insecure: (optional) Do not verify SSL certificates when using https (default: false)
   * debug: (optional) Enable additional debugging output (default: false)
+  * namespace: (optional) Namespace for the registration proxy
+  * email: (optional) Email address for registration
   * no_zypper_refs: (optional) Do not refresh zypper service when registering (default: false)
   * auto_agree_with_licenses: (optional) Automatically agree to extension and module license confirmation prompts (default: false)
   * enable_system_uptime_tracking: (optional) Enable system uptime tracking. The system uptime log will be sent to SCC/RMT as part of keepalive (default: false)
 
+## Collector Configuration
+
+SUSEConnect collects data about your system for registration and support purposes. Certain collectors are mandatory and cannot be disabled, while optional collectors can be configured.
+
+### Mandatory Collectors
+
+The following collectors are always enabled and cannot be disabled:
+
+  * architecture: System CPU architecture (x86_64, aarch64, s390x, ppc64le)
+  * virtualization: Hypervisor type (KVM, Xen, VMware, etc.)
+  * cloud_provider: Cloud platform (AWS, Azure, GCP, etc.)
+  * container_runtime: Container platform (Docker, Podman, etc.)
+  * cpu: CPU count, sockets, and thread information
+  * memory: Total system memory
+  * vendor: Hardware vendor (HP, Dell, Lenovo, etc.)
+  * uname: Kernel version and OS details
+  * hostname: System hostname
+  * uuid: System UUID for unique identification
+  * sap: SAP workload detection
+  * k8s: Kubernetes/RKE2/K3s cluster detection
+  * ha: High-availability cluster detection
+
+### Optional Collectors
+
+The following collectors are enabled by default but can be disabled:
+
+  * pci_devices: PCI device information (state: enabled/disabled)
+  * kernel_modules: Loaded kernel modules (state: enabled/disabled)
+
+Valid state values are:
+  * `enabled`: Enable the collector
+  * `disabled`: Disable the collector
 
 # AUTHOR
 
