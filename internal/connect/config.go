@@ -1,16 +1,14 @@
 package connect
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
 	"github.com/SUSE/connect-ng/pkg/registration"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -44,22 +42,23 @@ const (
 
 type Options struct {
 	Path                       string
-	BaseURL                    string `json:"url"`
-	Language                   string `json:"language"`
-	Insecure                   bool   `json:"insecure"`
-	Namespace                  string `json:"namespace"`
+	BaseURL                    string `json:"url" yaml:"url"`
+	Language                   string `json:"language" yaml:"language"`
+	Insecure                   bool   `json:"insecure" yaml:"insecure"`
+	Namespace                  string `json:"namespace" yaml:"namespace"`
 	FsRoot                     string
 	Token                      string
 	Product                    registration.Product
 	InstanceDataFile           string
-	Email                      string `json:"email"`
-	AutoAgreeEULA              bool
-	EnableSystemUptimeTracking bool
+	Email                      string `json:"email" yaml:"email"`
+	AutoAgreeEULA              bool   `yaml:"auto_agree_with_licenses"`
+	EnableSystemUptimeTracking bool   `yaml:"enable_system_uptime_tracking"`
 	ServerType                 ServerType
-	NoZypperRefresh            bool
+	NoZypperRefresh            bool `yaml:"no_zypper_refs"`
 	AutoImportRepoKeys         bool
 	SkipServiceInstall         bool
 	OutputKind                 OutputKind
+	CollectorsRaw              map[string]map[string]string `yaml:"collectors,omitempty"`
 }
 
 // Returns the Options suitable for targeting the SCC reference server without a
@@ -108,60 +107,33 @@ func ReadFromConfiguration(path string) (*Options, error) {
 	util.Debug.Printf("Reading configuration from: %s\n", path)
 	if f, err := os.Open(path); err == nil {
 		defer f.Close()
-		return parseFromConfiguration(f, cfg)
+
+		content, err := io.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg, err = parseConfiguration(content, cfg)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return cfg, nil
 }
 
-// Parse the configuration from the reader `r` and set the corresponding values
-// into the given `cfg`. On success it will return the modified configuration,
-// otherwise it will return an empty configuration and an error object.
-func parseFromConfiguration(r io.Reader, cfg *Options) (*Options, error) {
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		key, val := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-		if strings.HasPrefix(key, "#") {
-			continue
-		}
-		switch key {
-		case "url":
-			cfg.BaseURL = val
-		case "language":
-			cfg.Language = val
-		case "namespace":
-			cfg.Namespace = val
-		case "insecure":
-			v, err := strconv.ParseBool(val)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
-			}
-			cfg.Insecure = v
-		case "no_zypper_refs":
-			v, err := strconv.ParseBool(val)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
-			}
-			cfg.NoZypperRefresh = v
-		case "auto_agree_with_licenses":
-			v, err := strconv.ParseBool(val)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
-			}
-			cfg.AutoAgreeEULA = v
-		case "enable_system_uptime_tracking":
-			v, err := strconv.ParseBool(val)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse line \"%s\": %v", line, err)
-			}
-			cfg.EnableSystemUptimeTracking = v
-		default:
-			return nil, fmt.Errorf("cannot parse line \"%s\" from %s", line, cfg.Path)
-		}
+// parseConfiguration parses the YAML configuration file and populates the Options struct.
+// Unknown fields are silently ignored to maintain backwards compatibility with configuration files
+// that may contain fields from newer versions.
+func parseConfiguration(content []byte, cfg *Options) (*Options, error) {
+	if len(content) == 0 {
+		return cfg, nil
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(content))
+
+	if err := decoder.Decode(cfg); err != nil {
+		return nil, fmt.Errorf("error parsing configuration: %w", err)
 	}
 	return cfg, nil
 }

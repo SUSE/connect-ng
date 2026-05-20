@@ -3,8 +3,10 @@ package connect
 import (
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var cfg1 = `---
@@ -15,52 +17,17 @@ no_zypper_refs: true
 auto_agree_with_licenses: true
 enable_system_uptime_tracking: false`
 
-var cfg2 = `---
- insecure: true
-url :	http://example.com
- language : en_US.UTF-8
-# comment
-  # indented comment
-  # comment with: colon
-:
-badkey: badval
-
-`
-
 func TestParseConfig(t *testing.T) {
-	r := strings.NewReader(cfg1)
+	content := []byte(cfg1)
 
 	opts := DefaultOptions()
-	parseFromConfiguration(r, opts)
+	opts, err := parseConfiguration(content, opts)
+	require.NoError(t, err, "Failed to parse configuration")
 
-	expectedURL := "https://smt-azure.susecloud.net"
-	if opts.BaseURL != expectedURL {
-		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.BaseURL, expectedURL)
-	}
-	expectedLanguage := "en_US.UTF-8"
-	if opts.Language != expectedLanguage {
-		t.Fatalf("Unexpected '%v'; expecting '%v'", opts.Language, expectedLanguage)
-	}
-	if !opts.NoZypperRefresh {
-		t.Fatalf("NoZypperRefresh should be true")
-	}
-	if !opts.AutoAgreeEULA {
-		t.Fatalf("AutoAgreeEULA should be true")
-	}
-}
-
-func TestParseConfig2(t *testing.T) {
-	r := strings.NewReader(cfg2)
-	expect := DefaultOptions()
-	expect.BaseURL = "http://example.com"
-	expect.Language = "en_US.UTF-8"
-	expect.Insecure = true
-
-	opts := DefaultOptions()
-	parseFromConfiguration(r, opts)
-	if !reflect.DeepEqual(opts, expect) {
-		t.Errorf("got %+v, expected %+v", opts, expect)
-	}
+	assert.Equal(t, "https://smt-azure.susecloud.net", opts.BaseURL)
+	assert.Equal(t, "en_US.UTF-8", opts.Language)
+	assert.True(t, opts.NoZypperRefresh)
+	assert.True(t, opts.AutoAgreeEULA)
 }
 
 func TestSaveLoad(t *testing.T) {
@@ -69,14 +36,99 @@ func TestSaveLoad(t *testing.T) {
 	c1.Path = path
 	c1.AutoAgreeEULA = true
 	c1.ServerType = UnknownProvider
-	if err := c1.SaveAsConfiguration(); err != nil {
-		t.Fatalf("Unable to write config: %s", err)
-	}
+	require.NoError(t, c1.SaveAsConfiguration())
+
 	c2, err := ReadFromConfiguration(path)
-	if err != nil {
-		t.Fatalf("Got an error: %v", err)
+	require.NoError(t, err)
+	assert.True(t, reflect.DeepEqual(c1, c2))
+}
+
+func TestMinimalAndNonExistingConfiguration(t *testing.T) {
+	// Test empty file - should use defaults
+	emptyContent := []byte("")
+	opts := DefaultOptions()
+	result, err := parseConfiguration(emptyContent, opts)
+	require.NoError(t, err, "Empty configuration should not error")
+	assert.Equal(t, defaultBaseURL, result.BaseURL)
+	assert.Equal(t, defaultInsecure, result.Insecure)
+
+	// Test minimal YAML file - should use defaults
+	minimalContent := []byte("---\n")
+	opts2 := DefaultOptions()
+	result2, err := parseConfiguration(minimalContent, opts2)
+	require.NoError(t, err, "Minimal configuration should not error")
+	assert.Equal(t, defaultBaseURL, result2.BaseURL)
+	assert.Equal(t, defaultInsecure, result2.Insecure)
+
+	// Test non-existing file - should use defaults
+	nonExistentPath := filepath.Join(t.TempDir(), "does_not_exist")
+	result3, err := ReadFromConfiguration(nonExistentPath)
+	require.NoError(t, err, "Non-existing configuration file should not error")
+	assert.Equal(t, defaultBaseURL, result3.BaseURL)
+	assert.Equal(t, nonExistentPath, result3.Path)
+}
+
+func TestParseValidConfig(t *testing.T) {
+	config := `---
+url: https://example.com
+insecure: true
+language: de_DE.UTF-8
+namespace: test-namespace
+email: user@example.com
+auto_agree_with_licenses: true
+enable_system_uptime_tracking: true
+no_zypper_refs: true`
+
+	opts := DefaultOptions()
+	result, err := parseConfiguration([]byte(config), opts)
+	require.NoError(t, err)
+
+	assert.Equal(t, "https://example.com", result.BaseURL)
+	assert.True(t, result.Insecure)
+	assert.Equal(t, "de_DE.UTF-8", result.Language)
+	assert.Equal(t, "test-namespace", result.Namespace)
+	assert.Equal(t, "user@example.com", result.Email)
+	assert.True(t, result.AutoAgreeEULA)
+	assert.True(t, result.EnableSystemUptimeTracking)
+	assert.True(t, result.NoZypperRefresh)
+}
+
+func TestParseInvalidConfigurations(t *testing.T) {
+	tests := []struct {
+		name   string
+		config string
+	}{
+		{
+			name:   "unclosed quote",
+			config: `url: "https://example.com`,
+		},
+		{
+			name:   "invalid map structure",
+			config: "invalid\n  - list\n  - items",
+		},
+		{
+			name:   "duplicate keys",
+			config: "url: https://one.com\nurl: https://two.com",
+		},
+		{
+			name:   "insecure as string",
+			config: "insecure: \"not a boolean\"",
+		},
+		{
+			name:   "insecure as number",
+			config: "insecure: 123",
+		},
+		{
+			name:   "no_zypper_refs as string",
+			config: "no_zypper_refs: \"true\"",
+		},
 	}
-	if !reflect.DeepEqual(c1, c2) {
-		t.Errorf("got %+v, expected %+v", c2, c1)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := DefaultOptions()
+			_, err := parseConfiguration([]byte(tt.config), opts)
+			assert.Error(t, err)
+		})
 	}
 }
