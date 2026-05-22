@@ -126,6 +126,7 @@ func setupHTTPClient() {
 }
 
 func callHTTP(verb, path string, body []byte, query map[string]string, auth authType) ([]byte, error) {
+fmt.Printf("in callHTTP: verb: %s path: %s body %s, query: %+v auth: %+v\n", verb,string(body), path,query,auth)
 	setupHTTPClient()
 	req, err := http.NewRequest(verb, CFG.BaseURL, bytes.NewReader(body))
 	if err != nil {
@@ -150,6 +151,7 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 
 	resp, err := httpclient.Do(req)
+fmt.Printf("in callHTTP: resp%s \n err:%+v\n", resp,err)
 	if err != nil {
 		return nil, err
 	}
@@ -180,13 +182,16 @@ func callHTTP(verb, path string, body []byte, query map[string]string, auth auth
 	}
 
 	if !successCode(resp.StatusCode) {
+fmt.Printf("in callHTTP: !successCode(resp.StatusCode: %s %s \n", resp.Body, resp.StatusCode)
 		errMsg := parseError(resp.Body)
 		return nil, APIError{Message: errMsg, Code: resp.StatusCode}
 	}
 	resBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+fmt.Printf("in callHTTP: read resBody error:%+v \n", err)
 		return nil, err
 	}
+fmt.Printf("in callHTTP: return resBody:%s \n", string(resBody))
 	return resBody, nil
 }
 
