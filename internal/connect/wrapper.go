@@ -146,11 +146,13 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 }
 
 func (w Wrapper) Register(opts *Options) error {
+	fmt.Printf("in wrapped.Register\n")
 	arch, _ := collectors.DetectArchitecture()
 	hwinfo, err := FetchSystemInformation(arch)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
+	fmt.Printf("in wrapped.Register1\n")
 	hostname := collectors.FromResult(hwinfo, "hostname", "")
 
 	// If an instance-data file was provided, try to read it and attach it as
@@ -172,11 +174,14 @@ func (w Wrapper) Register(opts *Options) error {
 
 	// add distro_target to extra data
 	extraData["distro_target"] = opts.Product.DistroTarget()
+	fmt.Printf("in wrapped.Register2\n")
 
 	_, err = registration.Register(w.Connection, opts.Token, hostname, hwinfo, extraData)
+	fmt.Printf("in wrapped.Register3\n")
 	if err != nil {
 		profiles.DeleteProfileCache("*-profile-id")
 	}
+	fmt.Printf("in wrapped.Register4 %+v\n",err)
 	return err
 }
 

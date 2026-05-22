@@ -10,6 +10,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"errors"
 	"net"
 	"net/url"
@@ -66,12 +67,15 @@ func free_string(str *C.char) {
 
 //export announce_system
 func announce_system(clientParams, distroTarget *C.char) *C.char {
+	fmt.Printf("in announce_system\n")
 	opts := loadConfig(C.GoString(clientParams))
 	api := connect.NewWrappedAPI(opts)
+	fmt.Printf("in announce_system1\n")
 
 	if err := api.Register(opts); err != nil {
 		return C.CString(errorToJSON(err))
 	}
+	fmt.Printf("in announce_system2\n")
 
 	creds, err := cred.ReadCredentials(cred.SystemCredentialsPath(opts.FsRoot))
 	if err != nil {
@@ -91,6 +95,7 @@ func announce_system(clientParams, distroTarget *C.char) *C.char {
 
 //export update_system
 func update_system(clientParams, distroTarget *C.char) *C.char {
+	fmt.Printf("in update_system\n")
 	opts := loadConfig(C.GoString(clientParams))
 
 	api := connect.NewWrappedAPI(opts)
@@ -115,6 +120,7 @@ func deactivate_system(clientParams *C.char) *C.char {
 
 //export credentials
 func credentials(path *C.char) *C.char {
+	fmt.Printf("in creds\n")
 	creds, err := cred.ReadCredentials(C.GoString(path))
 	if err != nil {
 		return C.CString(errorToJSON(err))
@@ -125,6 +131,7 @@ func credentials(path *C.char) *C.char {
 
 //export create_credentials_file
 func create_credentials_file(login, password, token, path *C.char) *C.char {
+	fmt.Printf("in creat_creds\n")
 	credPath := C.GoString(path)
 
 	if !filepath.IsAbs(credPath) {
@@ -149,6 +156,7 @@ func curlrc_credentials() *C.char {
 
 //export show_product
 func show_product(clientParams, product *C.char) *C.char {
+	fmt.Printf("in show_product\n")
 	opts := loadConfig(C.GoString(clientParams))
 
 	var productQuery registration.Product
@@ -171,6 +179,7 @@ func show_product(clientParams, product *C.char) *C.char {
 
 //export activate_product
 func activate_product(clientParams, product, email *C.char) *C.char {
+	fmt.Printf("in activate_product\n")
 	opts := loadConfig(C.GoString(clientParams))
 	api := connect.NewWrappedAPI(opts)
 
@@ -192,6 +201,7 @@ func activate_product(clientParams, product, email *C.char) *C.char {
 
 //export activated_products
 func activated_products(clientParams *C.char) *C.char {
+	fmt.Printf("in activated_products\n")
 	opts := loadConfig(C.GoString(clientParams))
 	api := connect.NewWrappedAPI(opts)
 
@@ -270,8 +280,10 @@ func loadConfig(clientParams string) *connect.Options {
 	// Read the options from the default configuration path and merge the
 	// provided clientParams into as well.
 	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if opts == nil {
+		opts = connect.DefaultOptions()
+	}
 	_ = json.Unmarshal([]byte(clientParams), opts)
-
 	return opts
 }
 

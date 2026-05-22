@@ -2,6 +2,7 @@ package registration
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
 )
@@ -28,7 +29,7 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 	payload := announceRequest{
 		Hostname: hostname,
 	}
-
+	fmt.Printf("in register.Register\n")
 	// distro_target may be data in extra data, but only needed for smt
 	// and it must be at the same level in the payload as hostname
 	// so, if it is present add to payload and remove from extraData
@@ -43,21 +44,26 @@ func Register(conn connection.Connection, regcode, hostname string, systemInform
 		return 0, enrichErr
 	}
 
+	fmt.Printf("in register.Register1\n")
 	creds := conn.GetCredentials()
 	request, buildErr := conn.BuildRequest("POST", "/connect/subscriptions/systems", payload)
 	if buildErr != nil {
 		return 0, buildErr
 	}
+	fmt.Printf("in register.Register2\n")
 
 	connection.AddRegcodeAuth(request, regcode)
 	response, doErr := conn.Do(request)
+	fmt.Printf("in register.Register3 %+v\n %+v\n",doErr,request)
 	if doErr != nil {
 		return 0, doErr
 	}
+	fmt.Printf("in register.Register3\n")
 
 	if err := json.Unmarshal(response, &reg); err != nil {
 		return 0, err
 	}
+	fmt.Printf("in register.Register4\n")
 
 	credErr := creds.SetLogin(reg.Login, reg.Password)
 
