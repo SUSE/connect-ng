@@ -9,8 +9,10 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
   - Add collector support for gathering RKE2 & K3s kubernetes provider
     info if enabled on a system (jsc#TEL-317)
   - Add email address validation to SUSEConnect -e/--email option. (bsc#1197231)
-  - Add collector support for detecting if systen is running pacemaker
+  - Add collector support for detecting if system is running pacemaker
     (jsc#SCC-693)
+  - Avoid double slash at start of request URL path component.
+    (jsc#SCC-775)
 
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
