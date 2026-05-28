@@ -49,11 +49,11 @@ type CollectorRegistryEntry struct {
 // then add an entry here with appropriate metadata.
 var collectorsRegistry = map[string]CollectorRegistryEntry{
 	// Mandatory collectors
-	"architecture": {
+	"arch": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: Architecture{},
 	},
-	"virtualization": {
+	"hypervisor": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: Virtualization{},
 	},
@@ -65,11 +65,11 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: ContainerRuntime{},
 	},
-	"cpu": {
+	"cpus": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: CPU{},
 	},
-	"memory": {
+	"mem_total": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: Memory{},
 	},
@@ -93,21 +93,21 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: SAP{},
 	},
-	"k8s": {
+	"kubernetes_provider": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: K8S{},
 	},
-	"ha": {
+	"ha_active": {
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: HA{},
 	},
 
 	// Optional collectors
-	"pci_devices": {
+	"pci_data": {
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return PCI{UpdateDataIDs: updateDataIDs} },
 	},
-	"kernel_modules": {
+	"mod_list": {
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return LSMOD{UpdateDataIDs: updateDataIDs} },
 	},

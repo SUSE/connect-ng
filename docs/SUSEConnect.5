@@ -45,9 +45,9 @@ enable_system_uptime_tracking: false
 no_zypper_refs: false
 
 collectors:
-  pci_devices:
+  pci_data:
     state: disabled
-  kernel_modules:
+  mod_list:
     state: disabled
 \f[R]
 .fi
@@ -88,17 +88,17 @@ collectors can be configured.
 .PP
 The following collectors are always enabled and cannot be disabled:
 .IP \[bu] 2
-architecture: System CPU architecture (x86_64, aarch64, s390x, ppc64le)
+arch: System CPU architecture (x86_64, aarch64, s390x, ppc64le)
 .IP \[bu] 2
-virtualization: Hypervisor type (KVM, Xen, VMware, etc.)
+hypervisor: Hypervisor type (KVM, Xen, VMware, etc.)
 .IP \[bu] 2
 cloud_provider: Cloud platform (AWS, Azure, GCP, etc.)
 .IP \[bu] 2
 container_runtime: Container platform (Docker, Podman, etc.)
 .IP \[bu] 2
-cpu: CPU count, sockets, and thread information
+cpus: CPU count, sockets, and thread information
 .IP \[bu] 2
-memory: Total system memory
+mem_total: Total system memory
 .IP \[bu] 2
 vendor: Hardware vendor (HP, Dell, Lenovo, etc.)
 .IP \[bu] 2
@@ -110,16 +110,16 @@ uuid: System UUID for unique identification
 .IP \[bu] 2
 sap: SAP workload detection
 .IP \[bu] 2
-k8s: Kubernetes/RKE2/K3s cluster detection
+kubernetes_provider: Kubernetes/RKE2/K3s cluster detection
 .IP \[bu] 2
-ha: High-availability cluster detection
+ha_active: High-availability cluster detection
 .SS Optional Collectors
 .PP
 The following collectors are enabled by default but can be disabled:
 .IP \[bu] 2
-pci_devices: PCI device information (state: enabled/disabled)
+pci_data: PCI device information (state: enabled/disabled)
 .IP \[bu] 2
-kernel_modules: Loaded kernel modules (state: enabled/disabled)
+mod_list: Loaded kernel modules (state: enabled/disabled)
 .PP
 Valid state values are: * \f[V]enabled\f[R]: Enable the collector *
 \f[V]disabled\f[R]: Disable the collector

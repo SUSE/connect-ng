@@ -30,9 +30,9 @@ enable_system_uptime_tracking: false
 no_zypper_refs: false
 
 collectors:
-  pci_devices:
+  pci_data:
     state: disabled
-  kernel_modules:
+  mod_list:
     state: disabled
 ```
 
@@ -56,26 +56,26 @@ SUSEConnect collects data about your system for registration and support purpose
 
 The following collectors are always enabled and cannot be disabled:
 
-  * architecture: System CPU architecture (x86_64, aarch64, s390x, ppc64le)
-  * virtualization: Hypervisor type (KVM, Xen, VMware, etc.)
+  * arch: System CPU architecture (x86_64, aarch64, s390x, ppc64le)
+  * hypervisor: Hypervisor type (KVM, Xen, VMware, etc.)
   * cloud_provider: Cloud platform (AWS, Azure, GCP, etc.)
   * container_runtime: Container platform (Docker, Podman, etc.)
-  * cpu: CPU count, sockets, and thread information
-  * memory: Total system memory
+  * cpus: CPU count, sockets, and thread information
+  * mem_total: Total system memory
   * vendor: Hardware vendor (HP, Dell, Lenovo, etc.)
   * uname: Kernel version and OS details
   * hostname: System hostname
   * uuid: System UUID for unique identification
   * sap: SAP workload detection
-  * k8s: Kubernetes/RKE2/K3s cluster detection
-  * ha: High-availability cluster detection
+  * kubernetes_provider: Kubernetes/RKE2/K3s cluster detection
+  * ha_active: High-availability cluster detection
 
 ### Optional Collectors
 
 The following collectors are enabled by default but can be disabled:
 
-  * pci_devices: PCI device information (state: enabled/disabled)
-  * kernel_modules: Loaded kernel modules (state: enabled/disabled)
+  * pci_data: PCI device information (state: enabled/disabled)
+  * mod_list: Loaded kernel modules (state: enabled/disabled)
 
 Valid state values are:
   * `enabled`: Enable the collector

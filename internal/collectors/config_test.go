@@ -16,7 +16,7 @@ func TestGetCollectorsByType(t *testing.T) {
 	_, ok := systemInfoCollectors["cpu"]
 	assert.True(ok)
 
-	_, ok = profileCollectors["pci_devices"]
+	_, ok = profileCollectors["pci_data"]
 	assert.True(ok)
 }
 
@@ -76,14 +76,14 @@ func TestCollectorOptionsIsCollectorEnabled(t *testing.T) {
 
 	// Test user configuration for optional collectors
 	config2 := map[string]collectorsconfig.CollectorConfig{
-		"pci_devices": {State: StateDisabled},
+		"pci_data": {State: StateDisabled},
 	}
 	opts2 := NewCollectorOptions(config2)
 
-	assert.False(opts2.IsCollectorEnabled("pci_devices"))
+	assert.False(opts2.IsCollectorEnabled("pci_data"))
 
 	// Test default behavior when not in config
-	assert.True(opts2.IsCollectorEnabled("kernel_modules"))
+	assert.True(opts2.IsCollectorEnabled("mod_list"))
 }
 
 func TestCollectorRegistryMetadata(t *testing.T) {
@@ -107,22 +107,22 @@ func TestStateValidation(t *testing.T) {
 
 	// Test valid states return their correct enabled status
 	validConfig := map[string]collectorsconfig.CollectorConfig{
-		"pci_devices": {State: StateEnabled},
+		"pci_data": {State: StateEnabled},
 	}
 	opts := NewCollectorOptions(validConfig)
-	assert.True(opts.IsCollectorEnabled("pci_devices"))
+	assert.True(opts.IsCollectorEnabled("pci_data"))
 
 	// Test disabled state
 	disabledConfig := map[string]collectorsconfig.CollectorConfig{
-		"pci_devices": {State: StateDisabled},
+		"pci_data": {State: StateDisabled},
 	}
 	opts2 := NewCollectorOptions(disabledConfig)
-	assert.False(opts2.IsCollectorEnabled("pci_devices"))
+	assert.False(opts2.IsCollectorEnabled("pci_data"))
 
 	// Test invalid state falls back to defaults
 	invalidConfig := map[string]collectorsconfig.CollectorConfig{
-		"pci_devices": {State: "invalid_state"},
+		"pci_data": {State: "invalid_state"},
 	}
 	opts3 := NewCollectorOptions(invalidConfig)
-	assert.True(opts3.IsCollectorEnabled("pci_devices")) // Falls back to default (enabled)
+	assert.True(opts3.IsCollectorEnabled("pci_data")) // Falls back to default (enabled)
 }

@@ -220,7 +220,7 @@ func TestFetchSystemProfilesCollectorConfig(t *testing.T) {
 		},
 		{
 			name:   "disable profile collector",
-			config: map[string]collectorsconfig.CollectorConfig{"pci_devices": {State: collectors.StateDisabled}},
+			config: map[string]collectorsconfig.CollectorConfig{"pci_data": {State: collectors.StateDisabled}},
 			checkFields: map[string]bool{
 				"pci_data": false,
 				"mod_list": true,
@@ -229,8 +229,8 @@ func TestFetchSystemProfilesCollectorConfig(t *testing.T) {
 		{
 			name: "disable all profile collectors",
 			config: map[string]collectorsconfig.CollectorConfig{
-				"pci_devices":    {State: collectors.StateDisabled},
-				"kernel_modules": {State: collectors.StateDisabled},
+				"pci_data": {State: collectors.StateDisabled},
+				"mod_list": {State: collectors.StateDisabled},
 			},
 			checkFields: map[string]bool{
 				"pci_data": false,
