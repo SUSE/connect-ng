@@ -39,6 +39,23 @@ func TestConnectionBuildRequest(t *testing.T) {
 	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
 }
 
+func TestConnectionBuildRequestDoubleSlashHandling(t *testing.T) {
+	assert := assert.New(t)
+
+	opts := DefaultOptions("testApp", "1.0", "en_US")
+	opts.URL = opts.URL + "/" // append a trailing slash to url
+	creds := NoCredentials{}
+	conn := New(opts, creds)
+
+	request, err := conn.BuildRequest("GET", "/test/api", nil)
+
+	assert.NoError(err)
+	assert.Equal(request.URL.String(), "https://scc.suse.com/test/api")
+	assert.Contains(request.Header.Get("User-Agent"), "testApp/1.0")
+	assert.Equal(request.Header.Get("Accept"), DefaultAPIVersion)
+	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
+}
+
 func TestConnectionBuildRequestNoHTMLEscaping(t *testing.T) {
 	assert := assert.New(t)
 
