@@ -13,7 +13,7 @@ func TestGetCollectorsByType(t *testing.T) {
 	profileCollectors := GetCollectorsByType(ProfileCollector)
 
 	// Verify specific collectors are in the right category
-	_, ok := systemInfoCollectors["cpu"]
+	_, ok := systemInfoCollectors["cpus"]
 	assert.True(ok)
 
 	_, ok = profileCollectors["pci_data"]
@@ -68,11 +68,11 @@ func TestCollectorOptionsIsCollectorEnabled(t *testing.T) {
 
 	// Test mandatory enforcement
 	config := map[string]collectorsconfig.CollectorConfig{
-		"cpu": {State: StateDisabled}, // Try to disable a mandatory collector
+		"cpus": {State: StateDisabled}, // Try to disable a mandatory collector
 	}
 	opts := NewCollectorOptions(config)
 
-	assert.True(opts.IsCollectorEnabled("cpu"))
+	assert.True(opts.IsCollectorEnabled("cpus"))
 
 	// Test user configuration for optional collectors
 	config2 := map[string]collectorsconfig.CollectorConfig{
