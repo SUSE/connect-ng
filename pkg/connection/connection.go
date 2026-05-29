@@ -74,7 +74,7 @@ func (conn ApiConnection) BuildRequest(verb string, path string, body any) (*htt
 }
 
 func (conn ApiConnection) BuildRequestRaw(verb string, path string, body io.Reader) (*http.Request, error) {
-	fullUrl := fmt.Sprintf("%s/%s", strings.TrimSuffix(conn.Options.URL, "/"), strings.TrimPrefix(path, "/"))
+	fullUrl := fmt.Sprintf("%s/%s", strings.TrimRight(conn.Options.URL, "/"), strings.TrimLeft(path, "/"))
 	request, err := http.NewRequest(verb, fullUrl, body)
 	if err != nil {
 		return nil, err

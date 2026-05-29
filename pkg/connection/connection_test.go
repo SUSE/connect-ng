@@ -39,21 +39,73 @@ func TestConnectionBuildRequest(t *testing.T) {
 	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
 }
 
-func TestConnectionBuildRequestDoubleSlashHandling(t *testing.T) {
+func TestConnectionBuildRequestRawSlashHandling(t *testing.T) {
 	assert := assert.New(t)
 
-	opts := DefaultOptions("testApp", "1.0", "en_US")
-	opts.URL = opts.URL + "/" // append a trailing slash to url
-	creds := NoCredentials{}
-	conn := New(opts, creds)
+	testCases := []struct {
+		name        string
+		baseURL     string
+		path        string
+		expectedURL string
+	}{
+		{
+			name:        "No trailing baseURL slash",
+			baseURL:     "https://scc.suse.com",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Trailing baseURL slash",
+			baseURL:     "https://scc.suse.com/",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "No loading path slash",
+			baseURL:     "https://scc.suse.com/",
+			path:        "test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "No trailing baseURL or loading path slash",
+			baseURL:     "https://scc.suse.com",
+			path:        "test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple trailing baseURL slashes",
+			baseURL:     "https://scc.suse.com//",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple leading path slashes",
+			baseURL:     "https://scc.suse.com",
+			path:        "//test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple trailing baseURL and leading path slashes",
+			baseURL:     "https://scc.suse.com//",
+			path:        "//test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+	}
 
-	request, err := conn.BuildRequest("GET", "/test/api", nil)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var reader io.Reader
+			opts := DefaultOptions("testApp", "1.0", "en_US")
+			opts.URL = tc.baseURL
+			creds := NoCredentials{}
+			conn := New(opts, creds)
 
-	assert.NoError(err)
-	assert.Equal(request.URL.String(), "https://scc.suse.com/test/api")
-	assert.Contains(request.Header.Get("User-Agent"), "testApp/1.0")
-	assert.Equal(request.Header.Get("Accept"), DefaultAPIVersion)
-	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
+			request, err := conn.BuildRequestRaw("GET", tc.path, reader)
+
+			assert.NoError(err, "BuildRequestRaw returned an unexpected error")
+			assert.Equal(tc.expectedURL, request.URL.String(), "request URL doesn't match expected URL")
+		})
+	}
 }
 
 func TestConnectionBuildRequestNoHTMLEscaping(t *testing.T) {
