@@ -1,0 +1,113 @@
+#!/bin/bash
+
+set -eu
+
+script_args=( "${@}" )
+
+REQ_PKGS=(
+  gawk
+  git
+  go1.24-openssl
+  go1.24-openssl-race
+  make
+  tar
+  vim
+)
+
+SOURCE_DIR=/usr/src
+
+CONNECT_SOURCE=/usr/src/connect-ng
+CONNECT_OUT=${CONNECT_SOURCE}/out
+
+LEGACY_REPO=https://github.com/SUSE/connect-ng
+LEGACY_REVISION=v1.13.0
+LEGACY_SOURCE=/usr/src/legacy-connect-ng
+LEGACY_OUT=${LEGACY_SOURCE}/out
+
+LIB64_DIR=/usr/lib64
+
+# exported variables we expect to exist to run the tests
+KEYS_TO_CHECK=(REGCODE HA_REGCODE)
+
+# products to remove when cleaning up container state
+REMOVE_PRODUCTS=(sle-module-python3 sle-module-server-applications sle-module-basesystem)
+
+group() { echo "::group::$1"; }
+groupend() { echo "::groupend::"; }
+fail() { echo "::error::$1"; exit 1; }
+
+group "verify required environment variables defined"
+for name in ${KEYS_TO_CHECK[@]}; do
+if [ "${!name}" == "" ]; then
+  echo "Expect the environment variables to be set:"
+  echo "${KEYS_TO_CHECK[*]}"
+  fail "ENV variable not found: $name is not set."
+fi
+done
+groupend
+
+group "cleanup container release package state"
+for product in ${REMOVE_PRODUCTS[@]}; do
+  if zypper --no-refresh se --installed-only -t product ${product} | grep -q ${product}; then
+    zypper --no-refresh --non-interactive remove -t product ${product}
+  fi
+done
+groupend
+
+group "install required packages"
+zypper in -y ${REQ_PKGS[@]}
+groupend
+
+group "clone legacy connect-ng sources"
+git clone -b ${LEGACY_REVISION} ${LEGACY_REPO} ${LEGACY_SOURCE}
+groupend
+cd ${LEGACY_SOURCE}
+
+group "build connect-ng if not already available"
+if [[ ! -d ${LEGACY_OUT} ]]; then
+  make vendor build
+fi
+groupend
+
+group "install libsuseconnect.so"
+mkdir -p ${LIB64_DIR}
+cp ${LEGACY_OUT}/libsuseconnect ${LIB64_DIR}/libsuseconnect.so
+groupend
+
+group "determine SLE release HA product"
+if ! grep -q "^VERSION_ID=" /etc/os-release; then
+  fail "Unable to determine SLE release VERSION_ID"
+fi
+eval "$(grep -o '^VERSION_ID=".*"' /etc/os-release)"
+HA_PRODUCT=sle-ha/${VERSION_ID}/x86_64
+groupend
+
+group "show suseconnect version"
+${LEGACY_OUT}/suseconnect --version
+groupend
+
+group "register the system and HA product"
+if ! ${LEGACY_OUT}/suseconnect --list-extensions >/dev/null 2>&1; then
+  ${LEGACY_OUT}/suseconnect -r ${REGCODE}
+fi
+if ${LEGACY_OUT}/suseconnect --list-extensions | grep -q "Activate with: suseconnect -p ${HA_PRODUCT}"; then
+  ${LEGACY_OUT}/suseconnect -p ${HA_PRODUCT} -r ${HA_REGCODE}
+fi
+groupend
+
+group "show system registration status before migration"
+${LEGACY_OUT}/suseconnect --status-text
+groupend
+
+group "run specified migration action: ${script_args[@]}"
+${LEGACY_OUT}/zypper-migration "${script_args[@]}"
+groupend
+
+group "show system registration status after migration"
+${LEGACY_OUT}/suseconnect --status-text
+groupend
+
+group "deregister the system and cleanup registration state"
+${LEGACY_OUT}/suseconnect -d
+${LEGACY_OUT}/suseconnect --clean
+groupend

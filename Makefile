@@ -13,6 +13,8 @@ BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
 
 CONTAINER     = registry.suse.com/bci/golang:1.24-openssl
+SLE15SP6CONTAINER = registry.suse.com/bci/bci-base:15.6
+SLE16CONTAINER = registry.suse.com/bci/bci-base:16.0
 CRM           = docker run --rm -it --privileged
 ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
@@ -120,6 +122,36 @@ test: internal/connect/version.txt coverage-dirs
 
 ci-env:
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
+
+sle15sp6-env:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE15SP6CONTAINER) bash
+
+sle15sp6-migration-check:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE15SP6CONTAINER) bash -c 'build/ci/run-sle-migration --query'
+
+sle15sp6-migration-choice-1:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE15SP6CONTAINER) bash -c 'build/ci/run-sle-migration --migration 1'
+
+sle15sp6-legacy-migration-check:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE15SP6CONTAINER) bash -c 'build/ci/run-legacy-sle-migration --query'
+
+sle15sp6-legacy-migration-choice-1:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE15SP6CONTAINER) bash -c 'build/ci/run-legacy-sle-migration --migration 1'
+
+sle16-env:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE16CONTAINER) bash
+
+sle16-migration-check:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE16CONTAINER) bash -c 'build/ci/run-sle-migration --query'
+
+sle16-migration-choice-1:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE16CONTAINER) bash -c 'build/ci/run-sle-migration --migration 1'
+
+sle16-legacy-migration-check:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE16CONTAINER) bash -c 'build/ci/run-legacy-sle-migration --query'
+
+sle16-legacy-migration-choice-1:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(SLE16CONTAINER) bash -c 'build/ci/run-legacy-sle-migration --migration 1'
 
 check-format:
 	@test -z $(shell gofmt -l internal/* cmd/* pkg/* | tee /dev/stderr)
