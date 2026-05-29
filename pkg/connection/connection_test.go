@@ -39,6 +39,75 @@ func TestConnectionBuildRequest(t *testing.T) {
 	assert.Equal(request.Header.Get("Accept-Language"), "en_US")
 }
 
+func TestConnectionBuildRequestRawSlashHandling(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := []struct {
+		name        string
+		baseURL     string
+		path        string
+		expectedURL string
+	}{
+		{
+			name:        "No trailing baseURL slash",
+			baseURL:     "https://scc.suse.com",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Trailing baseURL slash",
+			baseURL:     "https://scc.suse.com/",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "No loading path slash",
+			baseURL:     "https://scc.suse.com/",
+			path:        "test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "No trailing baseURL or loading path slash",
+			baseURL:     "https://scc.suse.com",
+			path:        "test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple trailing baseURL slashes",
+			baseURL:     "https://scc.suse.com//",
+			path:        "/test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple leading path slashes",
+			baseURL:     "https://scc.suse.com",
+			path:        "//test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+		{
+			name:        "Multiple trailing baseURL and leading path slashes",
+			baseURL:     "https://scc.suse.com//",
+			path:        "//test/api",
+			expectedURL: "https://scc.suse.com/test/api",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var reader io.Reader
+			opts := DefaultOptions("testApp", "1.0", "en_US")
+			opts.URL = tc.baseURL
+			creds := NoCredentials{}
+			conn := New(opts, creds)
+
+			request, err := conn.BuildRequestRaw("GET", tc.path, reader)
+
+			assert.NoError(err, "BuildRequestRaw returned an unexpected error")
+			assert.Equal(tc.expectedURL, request.URL.String(), "request URL doesn't match expected URL")
+		})
+	}
+}
+
 func TestConnectionBuildRequestNoHTMLEscaping(t *testing.T) {
 	assert := assert.New(t)
 
