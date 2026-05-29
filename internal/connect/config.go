@@ -6,7 +6,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/util"
+	collectorsconfig "github.com/SUSE/connect-ng/pkg/collectors"
 	"github.com/SUSE/connect-ng/pkg/registration"
 	"gopkg.in/yaml.v3"
 )
@@ -58,7 +60,8 @@ type Options struct {
 	AutoImportRepoKeys         bool
 	SkipServiceInstall         bool
 	OutputKind                 OutputKind
-	CollectorsRaw              map[string]map[string]string `yaml:"collectors,omitempty"`
+	Collectors                 collectorsconfig.CollectorOptions `yaml:"-"`
+	CollectorsRaw              map[string]map[string]string      `yaml:"collectors,omitempty"`
 }
 
 // Returns the Options suitable for targeting the SCC reference server without a
@@ -71,6 +74,7 @@ func DefaultOptions() *Options {
 		SkipServiceInstall:         defaultSkip,
 		EnableSystemUptimeTracking: defaultEnableSystemUptimeTracking,
 		ServerType:                 UnknownProvider,
+		Collectors:                 collectors.NewCollectorOptions(map[string]collectorsconfig.CollectorConfig{}),
 	}
 }
 

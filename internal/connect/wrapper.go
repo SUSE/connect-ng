@@ -10,6 +10,7 @@ import (
 	"github.com/SUSE/connect-ng/internal/collectors"
 	"github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
+	collectorsconfig "github.com/SUSE/connect-ng/pkg/collectors"
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/labels"
 	"github.com/SUSE/connect-ng/pkg/profiles"
@@ -39,6 +40,9 @@ type Wrapper struct {
 
 	// Whether the current system is registered or not. Set after calling `New.`
 	Registered bool
+
+	// options stores the configuration options including collector configuration
+	options *Options
 }
 
 // Returns true if proxy setup is enabled at the system level. This is specific
@@ -71,10 +75,39 @@ func proxyWithAuth(req *http.Request) (*url.URL, error) {
 	return proxyURL, nil
 }
 
+// buildCollectorOptions converts raw collector config to CollectorOptions.
+func buildCollectorOptions(rawConfig map[string]map[string]string) collectorsconfig.CollectorOptions {
+	config := make(map[string]collectorsconfig.CollectorConfig)
+
+	for collectorName, entry := range rawConfig {
+		state, ok := entry["state"]
+		if !ok {
+			continue
+		}
+
+		// Warn on unknown configuration keys
+		for key := range entry {
+			if key != "state" {
+				util.Info.Printf("Warning: Unknown configuration key '%s' for collector '%s'\n", key, collectorName)
+			}
+		}
+
+		config[collectorName] = collectorsconfig.CollectorConfig{
+			State: state,
+		}
+	}
+
+	return collectors.NewCollectorOptions(config)
+}
+
 // Returns a new Wrapper object by taking the given Options into account. Note
 // that it will also make an attempt to read any available credentials, and set
 // Wrapper.Registered accordingly.
 func NewWrappedAPI(opts *Options) WrappedAPI {
+	if len(opts.CollectorsRaw) > 0 {
+		opts.Collectors = buildCollectorOptions(opts.CollectorsRaw)
+	}
+
 	connectionOpts := connection.Options{
 		URL:              opts.BaseURL,
 		Secure:           !opts.Insecure,
@@ -104,6 +137,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 			ProfileCache: &profiles.ProfileCache{},
 		},
 		Registered: registered,
+		options:    opts,
 	}
 }
 
@@ -111,7 +145,7 @@ func NewWrappedAPI(opts *Options) WrappedAPI {
 // connection.
 func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 	arch, _ := collectors.DetectArchitecture()
-	hwinfo, err := FetchSystemInformation(arch)
+	hwinfo, err := FetchSystemInformation(arch, w.options.Collectors)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -128,7 +162,7 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 		extraData["online_at"] = data
 	}
 
-	profileData, err := FetchSystemProfiles(arch, true)
+	profileData, err := FetchSystemProfiles(arch, true, w.options.Collectors)
 	if err != nil {
 		profiles.DeleteProfileCache("*-profile-id")
 		return fmt.Errorf("could not fetch system's profiles: %v", err)
@@ -147,7 +181,7 @@ func (w Wrapper) KeepAlive(uptimeTracking bool) error {
 
 func (w Wrapper) Register(opts *Options) error {
 	arch, _ := collectors.DetectArchitecture()
-	hwinfo, err := FetchSystemInformation(arch)
+	hwinfo, err := FetchSystemInformation(arch, opts.Collectors)
 	if err != nil {
 		return fmt.Errorf("could not fetch system's information: %v", err)
 	}
@@ -167,7 +201,7 @@ func (w Wrapper) Register(opts *Options) error {
 
 	// Clear profile data before registration
 	profiles.DeleteProfileCache("*")
-	profileData, err := FetchSystemProfiles(arch, true)
+	profileData, err := FetchSystemProfiles(arch, true, opts.Collectors)
 	extraData["system_profiles"] = profileData
 
 	// add distro_target to extra data

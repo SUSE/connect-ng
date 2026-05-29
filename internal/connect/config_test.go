@@ -132,3 +132,17 @@ func TestParseInvalidConfigurations(t *testing.T) {
 		})
 	}
 }
+
+func TestParseConfigUnknownFieldsIgnored(t *testing.T) {
+	config := `---
+url: https://example.com
+insecure: false
+unknown_field: ignored`
+
+	opts := DefaultOptions()
+	result, err := parseConfiguration([]byte(config), opts)
+	require.NoError(t, err)
+
+	assert.Equal(t, "https://example.com", result.BaseURL)
+	assert.False(t, result.Insecure)
+}
