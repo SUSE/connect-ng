@@ -9,3 +9,4 @@ bin
 *.env*
 .mise.toml
 coverage/
+testdata/agama_srcs/

@@ -270,6 +270,9 @@ func loadConfig(clientParams string) *connect.Options {
 	// Read the options from the default configuration path and merge the
 	// provided clientParams into as well.
 	opts, _ := connect.ReadFromConfiguration(connect.DefaultConfigPath)
+	if opts == nil {
+		opts = connect.DefaultOptions()
+	}
 	_ = json.Unmarshal([]byte(clientParams), opts)
 
 	return opts

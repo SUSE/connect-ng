@@ -1,0 +1,101 @@
+#!/bin/bash
+
+set -eu
+
+REQ_PKGS=(
+	clang7-devel
+	dbus-1-devel
+	gcc
+	gcc-c++
+	git
+	glib2-devel
+	libopenssl-devel
+	libudev-devel
+	libzypp-devel
+	make
+	pkgconfig
+	systemd-devel
+)
+
+SOURCE_DIR=/usr/src
+
+CONNECT_SOURCE=/usr/src/connect-ng
+CONNECT_OUT=${CONNECT_SOURCE}/out
+
+AGAMA_REPO=https://github.com/agama-project/agama.git
+AGAMA_SOURCE=${SOURCE_DIR}/agama
+AGAMA_RUST=${AGAMA_SOURCE}/rust
+
+LIB64_DIR=/usr/lib64
+
+# exported variables we expect to exist to run the tests
+KEYS_TO_CHECK=(REGCODE)
+
+# products to remove when cleaning up container state
+REMOVE_PRODUCTS=(sle-module-python3 sle-module-server-applications sle-module-basesystem)
+
+group() { echo "::group::$1"; }
+groupend() { echo "::groupend::"; }
+fail() { echo "::error::$1"; exit 1; }
+
+group "verify required environment variables defined"
+for name in ${KEYS_TO_CHECK[@]}; do
+if [ "${!name}" == "" ]; then
+  echo "Expect the environment variables to be set:"
+  echo "${KEYS_TO_CHECK[*]}"
+  fail "ENV variable not found: $name is not set."
+fi
+done
+groupend
+
+group "cleanup container release package state"
+for product in ${REMOVE_PRODUCTS[@]}; do
+  if zypper --no-refresh se --installed-only -t product ${product} | grep -q ${product}; then
+    zypper --no-refresh --non-interactive remove -t product ${product}
+  fi
+done
+groupend
+
+group "install required packages"
+zypper in -y ${REQ_PKGS[@]}
+groupend
+
+group "clone the agama repo if needed"
+if [[ ! -d ${AGAMA_RUST} ]]; then
+	git clone ${AGAMA_REPO} ${AGAMA_SOURCE}
+fi
+groupend
+
+group "build libsuseconnect if not already available"
+if [[ ! -d ${CONNECT_OUT} ]]; then
+	cd ${CONNECT_SOURCE}
+	make vendor build
+fi
+groupend
+
+group "install libsuseconnect.so"
+mkdir -p ${LIB64_DIR}
+cp ${CONNECT_OUT}/libsuseconnect ${LIB64_DIR}/libsuseconnect.so
+groupend
+
+group "build agama/rust activation example"
+# determine where libstdc++ is located and ensure rust linking looks there
+STDCXX_DIR=$(dirname $(gcc -print-file-name=libstdc++.so))
+
+# append the GCC C++ path to RUSTFLAGS
+export RUSTFLAGS="-L ${STDCXX_DIR}"
+
+# build the rust activation example
+cd ${AGAMA_RUST}
+cargo clean -p suseconnect-agama
+cargo build -p suseconnect-agama --example activation
+groupend
+
+group "run the rmt example"
+${AGAMA_RUST}/target/debug/examples/activation ${REGCODE}
+groupend
+
+group "deregister the system and cleanup registration state"
+${CONNECT_OUT}/suseconnect -d
+${CONNECT_OUT}/suseconnect --clean
+groupend
