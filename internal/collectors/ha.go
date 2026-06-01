@@ -9,11 +9,16 @@ import (
 	"github.com/SUSE/connect-ng/internal/util"
 )
 
+const (
+	// Pacemaker constants
+	pacemakerCmdPath = "/usr/sbin/pacemakerd"
+)
+
 type HA struct{}
 
 // Get Pacemaker version
 func getPacemakerVersion() (string, error) {
-	pacemakerdOut, err := util.Execute([]string{"pacemakerd", "--version"}, nil)
+	pacemakerdOut, err := util.Execute([]string{pacemakerCmdPath, "--version"}, []int{0})
 	if err != nil {
 		return "", err
 	}
