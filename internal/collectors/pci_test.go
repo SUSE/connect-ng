@@ -13,7 +13,8 @@ var pciDataBlob profiles.Profile
 var pciTestData string
 
 func setupPciTestData() {
-	testProfilePath, _ := os.MkdirTemp("/tmp/", "__suseconnect")
+	tmpdir := os.TempDir()
+	testProfilePath, _ := os.MkdirTemp(tmpdir, "__suseconnect")
 	profiles.SetProfileFilePath(testProfilePath + "/")
 
 	pciDataBlob.Id = "8912df9878ef02c80c33dd530cb0005768fcc7606d37def01e27f1f5b20ba1da"

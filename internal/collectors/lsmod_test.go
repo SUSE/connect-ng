@@ -13,7 +13,8 @@ var lsmodDataBlob profiles.Profile
 var kernModTestData string
 
 func setupLSMODTestData() {
-	testProfilePath, _ := os.MkdirTemp("/tmp/", "__suseconnect")
+	tmpdir := os.TempDir()
+	testProfilePath, _ := os.MkdirTemp(tmpdir, "__suseconnect")
 	profiles.SetProfileFilePath(testProfilePath + "/")
 
 	lsmodDataBlob.Id = "8d572ea32675c21bc31351ed015d8d71dddc4a0cacd5d904de5279b4e86121c0"
