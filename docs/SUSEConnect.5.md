@@ -34,6 +34,8 @@ collectors:
     state: disabled
   mod_list:
     state: disabled
+  installed_pkgs:
+    state: disabled
 ```
 
 The top-level fields are as follows:
@@ -76,6 +78,7 @@ The following collectors are enabled by default but can be disabled:
 
   * pci_data: PCI device information (state: enabled/disabled)
   * mod_list: Loaded kernel modules (state: enabled/disabled)
+  * installed_pkgs: System installed packages (state: enabled/disabled)
 
 Valid state values are:
   * `enabled`: Enable the collector

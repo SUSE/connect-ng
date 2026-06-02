@@ -17,7 +17,7 @@ type InstalledPackages struct {
 }
 
 const PkgsChecksumFile = "pkgs.txt"
-const PackagesTag = "suse_pkgs"
+const PackagesTag = "installed_pkgs"
 
 func (p InstalledPackages) run(arch string) (Result, error) {
 	util.Debug.Print("InstalledPackages.UpdateDataIds", p.UpdateDataIDs)

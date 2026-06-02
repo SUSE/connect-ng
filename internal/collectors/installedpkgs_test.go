@@ -11,10 +11,10 @@ import (
 )
 
 type pkgsEnvelope struct {
-	SUSEPkgs struct {
+	InstalledPkgs struct {
 		Id   string `json:"identifier"`
 		Data any    `json:"data"`
-	} `json:"suse_pkgs"`
+	} `json:"installed_pkgs"`
 }
 
 var pkgsTestData string
@@ -48,14 +48,14 @@ func TestRunSuccessNoUpdate(t *testing.T) {
 	var pkgs pkgsEnvelope
 	assert.NoError(json.Unmarshal(raw, &pkgs))
 
-	assert.NotEmpty(pkgs.SUSEPkgs.Id)
-	assert.NotNil(pkgs.SUSEPkgs.Data)
+	assert.NotEmpty(pkgs.InstalledPkgs.Id)
+	assert.NotNil(pkgs.InstalledPkgs.Data)
 
 	expectedData := []any{
 		[]any{"glibc", "2.31", "150300.63.1", "x86_64"},
 		[]any{"zypper", "1.14.70", "150400.3.15.1", "x86_64"},
 	}
-	assert.Equal(expectedData, pkgs.SUSEPkgs.Data)
+	assert.Equal(expectedData, pkgs.InstalledPkgs.Data)
 }
 
 func TestRunSuccessUpdate_SendsOnlyIdOnSecondRun(t *testing.T) {
@@ -71,16 +71,16 @@ func TestRunSuccessUpdate_SendsOnlyIdOnSecondRun(t *testing.T) {
 	raw1, _ := json.Marshal(first)
 	var pkgs1 pkgsEnvelope
 	assert.NoError(json.Unmarshal(raw1, &pkgs1))
-	assert.NotEmpty(pkgs1.SUSEPkgs.Id)
-	assert.NotNil(pkgs1.SUSEPkgs.Data)
+	assert.NotEmpty(pkgs1.InstalledPkgs.Id)
+	assert.NotNil(pkgs1.InstalledPkgs.Data)
 
 	second, err := collector.run(ARCHITECTURE_X86_64)
 	assert.NoError(err)
 	raw2, _ := json.Marshal(second)
 	var pkgs2 pkgsEnvelope
 	assert.NoError(json.Unmarshal(raw2, &pkgs2))
-	assert.NotEmpty(pkgs2.SUSEPkgs.Id)
-	assert.Nil(pkgs2.SUSEPkgs.Data)
+	assert.NotEmpty(pkgs2.InstalledPkgs.Id)
+	assert.Nil(pkgs2.InstalledPkgs.Data)
 }
 
 func TestRunFail(t *testing.T) {
