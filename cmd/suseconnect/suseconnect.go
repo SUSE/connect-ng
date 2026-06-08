@@ -302,10 +302,10 @@ func main() {
 		err := connect.Rollback(api.GetConnection(), opts)
 		exitOnError(err, api, opts)
 	} else if info {
-		sysInfo, err := connect.FetchSystemInformation("")
+		sysInfo, err := connect.FetchSystemInformation("", opts.Collectors)
 		exitOnError(err, api, opts)
 
-		profileInfo, err := connect.FetchSystemProfiles("", false)
+		profileInfo, err := connect.FetchSystemProfiles("", false, opts.Collectors)
 		exitOnError(err, api, opts)
 
 		// -i/--info outputs json data and is expected to be a single
