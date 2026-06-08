@@ -1,7 +1,7 @@
 -------------------------------------------------------------------
 Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
 
-- Update version to 1.22 (pre):
+- Update version to 1.22:
   - InstallReleasePackage should consider zypperFilesystemRoot
     (jsc#SCC-630).
   - Restore exit code 71 handling when attempting keepalive and not
@@ -15,6 +15,8 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
     (jsc#SCC-775)
   - Use product identifier when finding product packages during
     migrations. (jsc#SCC=758 bsc#1265410)
+  - Add opt in/out support for collectors (jsc#TEL-312)
+  - Update config parser for suseconnect to be YAML based (jsc#SCC-730)
 
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
