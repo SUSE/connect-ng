@@ -13,6 +13,8 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
     (jsc#SCC-693)
   - Avoid double slash at start of request URL path component.
     (jsc#SCC-775)
+  - Use product identifier when finding product packages during
+    migrations. (jsc#SCC=758 bsc#1265410)
 
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>

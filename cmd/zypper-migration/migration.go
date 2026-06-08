@@ -515,7 +515,7 @@ func compareEditions(left, right string) int {
 }
 
 func cleanupProductRepos(p registration.Product, force, autoImportRepoKeys bool) error {
-	productPackages, err := zypper.FindProductPackages(p.Name, autoImportRepoKeys)
+	productPackages, err := zypper.FindProductPackages(p.Identifier, autoImportRepoKeys)
 	if err != nil {
 		return err
 	}
