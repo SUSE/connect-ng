@@ -56,14 +56,15 @@ for product in ${REMOVE_PRODUCTS[@]}; do
 done
 groupend
 
-group "install required packages"
-zypper in -y ${REQ_PKGS[@]}
+group "fail if the agama repo is not available"
+ls -l ${AGAMA_SOURCE}
+if [[ ! -d ${AGAMA_RUST} ]]; then
+	fail "Ensure that ${AGAMA_REPO} is cloned and available at ${AGAMA_SOURCE}"
+fi
 groupend
 
-group "clone the agama repo if needed"
-if [[ ! -d ${AGAMA_RUST} ]]; then
-	git clone ${AGAMA_REPO} ${AGAMA_SOURCE}
-fi
+group "install required packages"
+zypper in -y ${REQ_PKGS[@]}
 groupend
 
 group "build libsuseconnect if not already available"

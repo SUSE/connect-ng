@@ -91,7 +91,7 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 bci-build:
-	$(CRM) $(MOUNT) -w $(WORKDIR) $(GOCONTAINER) bash -c 'make vendor build'
+	$(CRM) $(MOUNT) -w $(WORKDIR) $(GOCONTAINER) bash -c 'git config --global --add safe.directory $(WORKDIR); make vendor build'
 
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
 # OBS.
@@ -136,7 +136,7 @@ agama-sources:
 	fi
 
 agama-tests: agama-sources bci-build
-	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(RUSTCONTAINER) bash -c 'build/ci/run-agama-rust-tests'
+	$(CRM) $(MOUNT) $(AGAMA_MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(RUSTCONTAINER) bash -c 'build/ci/run-agama-rust-tests'
 
 
 rust-env: agama-sources
