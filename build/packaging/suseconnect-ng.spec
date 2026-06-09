@@ -100,12 +100,12 @@ Provides:       rubygem(ruby:2.5.0:suse-connect)
 %description -n suseconnect-ruby-bindings
 This package provides bindings needed to use libsuseconnect from Ruby scripts.
 
-%package -n suseconnect-mcp
+%package -n mcp-server-suseconnect
 Summary:        MCP server for suseconnect
 Group:          System/Management
 Requires:       suseconnect-ng = %version
 
-%description -n suseconnect-mcp
+%description -n mcp-server-suseconnect
 This package provides an MCP server for suseconnect to enable integration into the agentic SLES framework.
 
 %prep
@@ -259,7 +259,7 @@ fi
 %doc third_party/yast/README.md
 %{_libdir}/ruby/vendor_ruby/%rb_ver/suse
 
-%files -n suseconnect-mcp
+%files -n mcp-server-suseconnect
 %{_bindir}/suseconnect-mcp
 
 %changelog
