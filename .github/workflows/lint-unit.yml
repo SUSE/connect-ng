@@ -16,9 +16,6 @@ name: lint + unit tests
 # See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on: [pull_request]
 
-env:
-  SOURCE: /usr/src/connect-ng
-
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
@@ -27,11 +24,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: move source to /usr/src/connect-ng
-        run: |
-          [ -d $SOURCE ] && rm -r $SOURCE
-          cp -r $GITHUB_WORKSPACE $SOURCE
 
       - name: run golang linting
         run: make check-format
@@ -42,5 +34,6 @@ jobs:
       - name: build the binary
         run: |
           # We need to make sure git trusts us here. mark the directory as safe playground
-          git config --global --add safe.directory /__w/connect-ng/connect-ng
+          # if it is a git clone; skip if using a git worktree with nektos/act
+          [ -d .git ] && git config --global --add safe.directory $GITHUB_WORKSPACE
           make vendor build
