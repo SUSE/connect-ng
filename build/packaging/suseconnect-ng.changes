@@ -17,6 +17,7 @@ Mon Apr  6 15:40:58 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
     migrations. (jsc#SCC=758 bsc#1265410)
   - Add opt in/out support for collectors (jsc#TEL-312)
   - Update config parser for suseconnect to be YAML based (jsc#SCC-730)
+  - library: Allow clients to disable the token handling mechanism (jsc#SCC-801)
 
 -------------------------------------------------------------------
 Wed Apr  1 16:43:26 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
