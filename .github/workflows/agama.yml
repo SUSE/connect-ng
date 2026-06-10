@@ -23,6 +23,7 @@ env:
   CONNECTNG_ARTIFACT: suseconnect-build-out
   CONNECTNG_TARBALL: /usr/src/suseconnect-build-out.tar.gz
   REGCODE: ${{ secrets.REGCODE }}
+  RMT_HOST: ${{ secrets.RMT_HOST }}
 
 jobs:
 
