@@ -42,6 +42,10 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 		isProxy = true
 	}
 
+	if disableTokens := os.Getenv("DISABLE_TOKEN_HANDLING"); disableTokens != "" {
+		opts.DisableTokenHandling = true
+	}
+
 	if credentialTracing := os.Getenv("TRACE_CREDENTIAL_UPDATES"); credentialTracing != "" {
 		creds.ShowTraces = true
 	}

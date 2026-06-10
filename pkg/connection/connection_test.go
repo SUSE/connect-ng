@@ -228,6 +228,34 @@ func TestConnectionUpdateToken(t *testing.T) {
 	creds.AssertExpectations(t)
 }
 
+func TestConnectionTokenDisabled(t *testing.T) {
+	assert := assert.New(t)
+
+	handler := func(response http.ResponseWriter) {
+		response.WriteHeader(http.StatusOK)
+	}
+
+	server := NewTestServerSetupWith(t, "GET", "/test/api", handler)
+	defer server.Close()
+
+	opts := DefaultOptions("testApp", "1.0", "en_US")
+	opts.URL = server.URL
+	opts.DisableTokenHandling = true
+
+	creds := &MockCredentials{}
+	conn := New(opts, creds)
+
+	request, buildErr := conn.BuildRequest("GET", "/test/api", "")
+	assert.NoError(buildErr)
+
+	_, doErr := conn.Do(request)
+	assert.NoError(doErr)
+
+	creds.AssertNotCalled(t, "Token")
+	creds.AssertNotCalled(t, "UpdateToken")
+	creds.AssertExpectations(t)
+}
+
 func TestCustomCertificateSuccess(t *testing.T) {
 	assert := assert.New(t)
 
