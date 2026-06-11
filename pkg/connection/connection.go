@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 const (
@@ -159,12 +161,30 @@ func (conn ApiConnection) setupHTTPClient() *http.Client {
 		transport.Proxy = conn.Options.Proxy
 	}
 
-	if conn.Options.Certificate != nil {
-		pool := x509.NewCertPool()
-		pool.AddCert(conn.Options.Certificate)
+	// retrieve current system root certs pool; this ensures any new certs
+	// added since x509.SystemCertPool() was first initialised are included
+	// TODO: rework if https://github.com/golang/go/issues/41888 is resolved
+	pool := systemRootsPool()
 
-		transport.TLSClientConfig.RootCAs = pool
+	// if we fail to retrieve the latest systemRootsPoll fall back on using
+	// a clone of the x509.SystemCertPool(), otherwise use a new empty pool.
+	if pool == nil {
+		systemPool, err := x509.SystemCertPool()
+		if err == nil {
+			pool = systemPool.Clone()
+		} else {
+			util.Debug.Printf("Failed to retrieve x509.SystemCertPool(): %s", err.Error())
+			pool = x509.NewCertPool()
+		}
 	}
+
+	// if a cert has been provided add it to the pool
+	if conn.Options.Certificate != nil {
+		pool.AddCert(conn.Options.Certificate)
+	}
+
+	// use the pool for handling TLS certs
+	transport.TLSClientConfig.RootCAs = pool
 
 	return &http.Client{Transport: transport, Timeout: conn.Options.Timeout}
 }
