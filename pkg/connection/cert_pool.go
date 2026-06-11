@@ -1,7 +1,7 @@
 // TODO: remove when https://github.com/golang/go/issues/41888 is fixed
 // code copied from standard library crypto/x509/root.go to enable system certs reloading
 
-package connect
+package connection
 
 import (
 	"crypto/x509"
@@ -9,11 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/SUSE/connect-ng/internal/util"
 )
 
 func systemRootsPool() *x509.CertPool {
 	systemRoots, systemRootsErr := _loadSystemRoots()
 	if systemRootsErr != nil {
+		util.Debug.Printf("Failed to load system roots: %s", systemRootsErr.Error())
 		return nil
 	}
 	return systemRoots
