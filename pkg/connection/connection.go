@@ -86,11 +86,19 @@ func (conn ApiConnection) BuildRequestRaw(verb string, path string, body io.Read
 }
 
 func (conn ApiConnection) Do(request *http.Request) ([]byte, error) {
-	token, tokenErr := conn.Credentials.Token()
-	if tokenErr != nil {
-		return []byte{}, tokenErr
+
+	// Allow clients to disable token handling completely if they
+	// do not need duplicate detection. This is the case for the
+	// scc-operator (https://github.com/rancher/scc-operator/)
+	rotateToken := conn.Options.DisableTokenHandling == false
+
+	if rotateToken == true {
+		token, tokenErr := conn.Credentials.Token()
+		if tokenErr != nil {
+			return []byte{}, tokenErr
+		}
+		request.Header.Set("System-Token", token)
 	}
-	request.Header.Set("System-Token", token)
 
 	response, doErr := conn.setupHTTPClient().Do(request)
 	if doErr != nil {
@@ -99,9 +107,11 @@ func (conn ApiConnection) Do(request *http.Request) ([]byte, error) {
 	defer response.Body.Close()
 
 	// Update the credentials from the new system token.
-	token = response.Header.Get("System-Token")
-	if err := conn.Credentials.UpdateToken(token); err != nil {
-		return nil, err
+	if rotateToken == true {
+		token := response.Header.Get("System-Token")
+		if err := conn.Credentials.UpdateToken(token); err != nil {
+			return nil, err
+		}
 	}
 
 	// Check if there was an error from the given API response.

@@ -49,16 +49,20 @@ type Options struct {
 
 	// Timeout on how long to wait for an API response
 	Timeout time.Duration
+
+	// Disable Token handling
+	DisableTokenHandling bool
 }
 
 // Returns the Options suitable for targeting the SCC reference server.
 func DefaultOptions(appName, version, language string) Options {
 	return Options{
-		URL:              DefaultBaseURL,
-		Secure:           true,
-		AppName:          appName,
-		Version:          version,
-		PreferedLanguage: language,
-		Timeout:          DefaultTimeout,
+		URL:                  DefaultBaseURL,
+		Secure:               true,
+		AppName:              appName,
+		Version:              version,
+		PreferedLanguage:     language,
+		Timeout:              DefaultTimeout,
+		DisableTokenHandling: false,
 	}
 }
