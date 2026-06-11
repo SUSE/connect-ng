@@ -15,6 +15,60 @@ Please visit https://scc.suse.com to see and manage your subscriptions.
 
 SUSEConnect-ng communicates with SCC over this [REST API](https://github.com/SUSE/connect/blob/master/doc/SCC-API-%28Implemented%29.md).
 
+### Prerequisites
+The following tools should be available and verified as working:
+
+  * A Golang v1.24 or later environment
+    * needed to run certain go commands locally for testing and
+      validation.
+  * `git`
+  * `make`
+  * `docker`
+
+### Quick Start
+
+  * Clone the repo
+      ```
+      git clone https://github.com/SUSE/connect-ng
+      cd connect-ng
+      ```
+
+  * When building for the first time, execute 
+      ```
+      make vendor
+      ```
+
+  * Run build which will create `out/suseconnect` binary.
+      ```
+      make build
+      ```
+
+  * Setup .env file to run tests
+    * Copy .env-example file to .env file and fill following values
+        ```
+        REGCODE="<regcode>"
+        EXPIRED_REGCODE="<regcode>"
+        HA_REGCODE="<ha regcode>"
+        ```
+
+        These regcodes can be your personal regcodes attached to your organization. Please refer [Activating-and-Managing-Subscriptions](https://scc.suse.com/docs/userguide#UG-Activating-and-Managing-Subscriptions)
+
+  * To run the unit tests
+      ```
+      make test
+      ```
+
+  * To run the feature tests   
+    Run the feature tests within a container by using the registration codes as provided by the .env file.
+       ```
+       make feature-tests
+       ```
+
+  * To run the YAST2 registration tests
+      ```
+      make test-yast
+      ```  
+
 ### Build
 Requires Go >= 1.24
 
@@ -47,6 +101,7 @@ project, for example: `go test ./internal/collectors/`.
 
 For feature tests you first need to create an `.env` file in the root directory
 of the project with the following contents:
+For that copy .env-example file to .env file and fill following values
 
 ``` sh
 REGCODE="<regcode>"
