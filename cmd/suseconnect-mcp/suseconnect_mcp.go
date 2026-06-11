@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/SUSE/connect-ng/internal/connect"
@@ -171,9 +169,6 @@ func DeactivateProduct(ctx context.Context, req *mcp.CallToolRequest, input Deac
 }
 
 func main() {
-	listenAddr := flag.String("http", "", "address for http transport, defaults to stdio")
-	flag.Parse()
-
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "Root privileges are required to run the MCP server.")
 		os.Exit(1)
@@ -181,46 +176,68 @@ func main() {
 
 	server := mcp.NewServer(&mcp.Implementation{Name: "suseconnect", Version: "v0.0.1"}, nil)
 
+	// DestructiveHint is *bool (unset defaults to true); Go won't let us take &false.
+	ptr := func(b bool) *bool { return &b }
+
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "RegistrationStatus",
 		Description: "Tool to output the registration status of the system and activated/non-activated installed products",
+		Annotations: &mcp.ToolAnnotations{
+			Title:        "Show registration status",
+			ReadOnlyHint: true,
+		},
 	}, RegistrationStatus)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ListExtensions",
 		Description: "List available extension products for your SUSE system. Your system's base product must be activated first.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:        "List available extensions",
+			ReadOnlyHint: true,
+		},
 	}, ListExtensions)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "RegisterSystem",
 		Description: "Registers and activates your SUSE system. This will enable access to online repositories and additional extensions and modules.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:           "Register system",
+			ReadOnlyHint:    false,
+			DestructiveHint: ptr(false),
+			IdempotentHint:  false,
+		},
 	}, RegisterSystem)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ActivateProduct",
 		Description: "Activates and additional extension product or module on your SUSE system. Available extensions can get queried with the ListExtensions tool.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:           "Activate product",
+			ReadOnlyHint:    false,
+			DestructiveHint: ptr(false),
+			IdempotentHint:  false,
+		},
 	}, ActivateProduct)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "DeregisterSystem",
 		Description: "Deregisters your SUSE system. This will remove the system's registration and disable access to online repositories.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:           "Deregister system (destructive)",
+			ReadOnlyHint:    false,
+			DestructiveHint: ptr(true),
+			IdempotentHint:  true,
+		},
 	}, DeregisterSystem)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "DeactivateProduct",
 		Description: "Deactivates an extension product or module on your SUSE system.",
+		Annotations: &mcp.ToolAnnotations{
+			Title:           "Deactivate product (destructive)",
+			ReadOnlyHint:    false,
+			DestructiveHint: ptr(true),
+			IdempotentHint:  true,
+		},
 	}, DeactivateProduct)
 
-	if *listenAddr == "" {
-		// Run the server on the stdio transport.
-		if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
-			slog.Error("Server failed", "error", err)
-		}
-	} else {
-		// Create a streamable HTTP handler.
-		handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
-			return server
-		}, nil)
-
-		// Run the server on the HTTP transport.
-		slog.Info("Server listening", "address", *listenAddr)
-		if err := http.ListenAndServe(*listenAddr, handler); err != nil {
-			slog.Error("Server failed", "error", err)
-		}
+	// Run the server on the stdio transport.
+	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
+		slog.Error("Server failed", "error", err)
 	}
 }

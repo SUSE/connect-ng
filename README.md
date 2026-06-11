@@ -24,7 +24,7 @@ make build
 This will create a `out/suseconnect` binary.
 
 ### Build in container
-If you don't have a go compiler installed, you can run the build in a container: 
+If you don't have a go compiler installed, you can run the build in a container:
 ```
 docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make build"
 ```
@@ -49,9 +49,9 @@ For feature tests you first need to create an `.env` file in the root directory
 of the project with the following contents:
 
 ``` sh
-VALID_REGCODE="<regcode>"
+REGCODE="<regcode>"
 EXPIRED_REGCODE="<regcode>"
-NOT_ACTIVATED_REGCODE="<regcode>"
+HA_REGCODE="<regcode>"
 ```
 
 These values can be picked up from Glue's production environment. Once that is
