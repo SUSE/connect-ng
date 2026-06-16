@@ -9,12 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	pacemakerName          = "Pacemaker"
+	pacemakerDesc          = pacemakerName + " " + "High Availability Cluster Manager"
+	pacemakerVersion       = "2.1.10+20250718.fdf796ebc8-150700.3.3.1"
+	pacemakerVersionOutput = pacemakerName + " " + pacemakerVersion
+)
+
 func TestPacemakerActiveNoPacemaker(t *testing.T) {
 	// general setup
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
+	testEnv := NewSystemdTestEnv(t)
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
@@ -33,10 +40,10 @@ func TestPacemakerActiveRunning(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
-	testEnv.AddK8sUnit("dummy1.service", "dummy1 service", "server", "enabled")
-	testEnv.AddK8sUnit("pacemaker.service", "Pacemaker High Availability Cluster Manager", "server", "enabled")
-	testEnv.AddK8sUnit("dummy2.service", "dummy2 service", "server", "enabled")
+	testEnv := NewSystemdTestEnv(t)
+	testEnv.AddDummyUnit("dummy1.service", "enabled")
+	testEnv.AddServiceUnit("pacemaker.service", pacemakerDesc, "enabled", pacemakerCmdPath, pacemakerVersionOutput)
+	testEnv.AddDummyUnit("dummy2.service", "enabled")
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
@@ -55,10 +62,11 @@ func TestPacemakerActiveRunningNoPattern(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
-	testEnv.AddK8sUnit("dummy1.service", "dummy1 service", "server", "enabled")
-	testEnv.AddK8sUnit("pacemaker.service", "Pacemaker High Availability Cluster Manager", "server", "enabled")
-	testEnv.AddK8sUnit("dummy2.service", "dummy2 service", "server", "enabled")
+	testEnv := NewSystemdTestEnv(t)
+	testEnv.AddDummyUnit("dummy1.service", "enabled")
+	testEnv.AddServiceUnit("pacemaker.service", pacemakerDesc, "enabled", pacemakerCmdPath, pacemakerVersionOutput)
+	testEnv.AddDummyUnit("dummy2.service", "enabled")
+
 	// test using ListUnits
 	testEnv.listUnitsByPatternsError = util.SystemdMethodNotAvailable
 
@@ -79,8 +87,8 @@ func TestPacemakerActiveNotRunning(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
-	testEnv.AddK8sUnit("pacemaker.service", "Pacemaker High Availability Cluster Manager", "server", "disabled")
+	testEnv := NewSystemdTestEnv(t)
+	testEnv.AddServiceUnit("pacemaker.service", pacemakerDesc, "disabled", pacemakerCmdPath, pacemakerVersionOutput)
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
@@ -99,7 +107,7 @@ func TestPacemakerActiveErrorPattern(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
+	testEnv := NewSystemdTestEnv(t)
 	testEnv.listUnitsByPatternsError = fmt.Errorf("test error")
 
 	// create a mock systemd client
@@ -119,7 +127,7 @@ func TestPacemakerActiveErrorUnits(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
+	testEnv := NewSystemdTestEnv(t)
 	testEnv.listUnitsByPatternsError = util.SystemdMethodNotAvailable
 	testEnv.listUnitsError = fmt.Errorf("test error")
 
@@ -138,40 +146,68 @@ func TestPacemakerActiveErrorUnits(t *testing.T) {
 func TestGetPacemakerVersion(t *testing.T) {
 	// general setup
 	assert := assert.New(t)
-	var tests = []struct {
+
+	// define test cases
+	var testCases = []struct {
+		name   string
 		input  string
 		result string
 	}{
-		{"Pacemaker 2.1.10+20250718.fdf796ebc8-150700.3.3.1", "2.1.10+20250718.fdf796ebc8-150700.3.3.1"},
-		{"Pacemaker", ""},
-		{"Test Data", ""},
+		{
+			"Valid Version",
+			pacemakerName + " " + pacemakerVersion,
+			pacemakerVersion,
+		},
+		{
+			"Empty Version",
+			pacemakerName,
+			"",
+		},
+		{
+			"Invalid Version",
+			"Test Data",
+			"",
+		},
 	}
 
-	for _, v := range tests {
-		// setup execute for pacemakerd --version
-		mockUtilExecute(v.input, nil)
-		// run test case
-		res, err := getPacemakerVersion()
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 
-		// check returned values
-		assert.NoError(err, "getPacemakerVersion() returned expected error")
-		assert.Equal(v.result, res, "getPacemakerVersion() returned unexpected result")
+			// create an Execute() mocker
+			mockExecutor := util.NewMockExecutor()
+			teardown := mockExecutor.Setup(t)
+			defer teardown()
+
+			// setup execute for pacemakerd --version
+			mockExecutor.OnExecuteReturn([]string{pacemakerCmdPath, "--version"}, []int{0}, []byte(tc.input), nil).Once()
+
+			// run test case
+			res, err := getPacemakerVersion()
+
+			// check returned values
+			assert.NoError(err, "getPacemakerVersion() returned expected error")
+			assert.Equal(tc.result, res, "getPacemakerVersion() returned unexpected result")
+		})
 	}
 }
 
 func TestGetPacemakerVersionExecuteError(t *testing.T) {
 	// general setup
 	assert := assert.New(t)
+	testErr := fmt.Errorf("test error")
 
 	// setup execute for pacemakerd --version
-	mockUtilExecute("", fmt.Errorf("forced error"))
+	mockExecutor := util.NewMockExecutor()
+	mockExecutor.OnExecuteReturn([]string{pacemakerCmdPath, "--version"}, []int{0}, []byte{}, testErr).Once()
+	teardown := mockExecutor.Setup(t)
+	defer teardown()
 
 	// run test case
 	res, err := getPacemakerVersion()
 
 	// check returned values
 	assert.Error(err, "isSystemHA() failed to returned unexpected error")
-	assert.ErrorContains(err, "forced error")
+	assert.ErrorIs(err, testErr, "isSystemHA() error is not the expected error")
 	assert.Equal("", res, "getPacemakerVersionNoInput() returned unexpected result")
 }
 
@@ -181,8 +217,13 @@ func TestGetPacemakerVersionScannerError(t *testing.T) {
 
 	// we want to force a scanner error, which requires
 	// execute returning a line > 64kb
-	// from execute for pacemakerd --version
-	mockUtilExecute(strings.Repeat("x", 65*1024), nil)
+	invalidOutput := strings.Repeat("x", 65*1024)
+
+	// setup execute for pacemakerd --version
+	mockExecutor := util.NewMockExecutor()
+	mockExecutor.OnExecuteReturn([]string{pacemakerCmdPath, "--version"}, []int{0}, []byte(invalidOutput), nil).Once()
+	teardown := mockExecutor.Setup(t)
+	defer teardown()
 
 	// run test case
 	res, err := getPacemakerVersion()
@@ -199,7 +240,7 @@ func TestIsPacemakerActiveNoPacemaker(t *testing.T) {
 	expectedRes := Result{}
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
+	testEnv := NewSystemdTestEnv(t)
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
@@ -219,22 +260,20 @@ func TestIsPacemakerActiveRunningError(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
-	testEnv.AddK8sUnit("pacemaker.service", "Pacemaker High Availability Cluster Manager", "server", "enabled")
+	testEnv := NewSystemdTestEnv(t)
+	testEnv.AddServiceUnit("pacemaker.service", pacemakerDesc, "enabled", pacemakerCmdPath, pacemakerVersionOutput)
+	testEnv.executeError = fmt.Errorf("test error")
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
 	defer testEnv.Cleanup()
-
-	// setup execute for pacemakerd --version
-	mockUtilExecute("", fmt.Errorf("forced error"))
 
 	// run test case
 	res, err := isSystemHA(systemdClient)
 
 	// check returned values
 	assert.Error(err, "isSystemHA() failed to returned unexpected error")
-	assert.ErrorContains(err, "forced error")
+	assert.ErrorIs(err, testEnv.executeError, "isSystemHA() error is not the expected error")
 	assert.Equal(expectedRes, res, "isSystemHA() returned unexpected result")
 }
 
@@ -243,20 +282,19 @@ func TestIsPacemakerActiveRunningSuccess(t *testing.T) {
 	assert := assert.New(t)
 
 	// test settings
-	testEnv := NewSystemdTestEnv()
-	testEnv.AddK8sUnit("pacemaker.service", "Pacemaker High Availability Cluster Manager", "server", "enabled")
+	testEnv := NewSystemdTestEnv(t)
+	testEnv.AddServiceUnit("pacemaker.service", pacemakerDesc, "enabled", pacemakerCmdPath, pacemakerVersionOutput)
 
 	// create a mock systemd client
 	systemdClient := testEnv.NewClient()
 	defer testEnv.Cleanup()
 
 	// setup execute for pacemakerd --version
-	pacemakerVersion := "2.1.10+20250718.fdf796ebc8-150700.3.3.1"
-	paceMakerName := "Pacemaker"
+	//paceMakerName := "Pacemaker"
 	expectedRes := Result{"ha_active": pacemakerVersion}
 
 	// setup execute for pacemakerd --version
-	mockUtilExecute(strings.Join([]string{paceMakerName, pacemakerVersion}, " "), nil)
+	//mockUtilExecute(strings.Join([]string{paceMakerName, pacemakerVersion}, " "), nil)
 
 	// run test case
 	res, err := isSystemHA(systemdClient)
