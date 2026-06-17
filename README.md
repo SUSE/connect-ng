@@ -91,6 +91,8 @@ There are three test suites available to run:
   * feature tests
   * YaST2 registration tests
 
+See also the [Running GitHub Actions Locally](#running-github-actions-locally) section below.
+
 #### Unit Tests
 
 You can run all unit tests by running `make test`. If you then want to run unit
@@ -150,3 +152,91 @@ the most recent unit test run's data using the the following coverage targets:
     basis as found in the tested codebase.
   * `coverage`
     This is currently an alias for `coverage-func`.
+
+### Running GitHub Actions Locally
+
+With the [nektos/act](github.com/nektos/act) tool installed, either directly
+or as a [GitHub CLI](https://cli.github.com/) extension, it can be used to run
+the [SUSE/connect-ng GitHub Action workflows](.github/workflows/) locally.
+
+`act` can also assist in the development and testing of new and existing
+workflows.
+
+#### Install and Setup `act`
+
+Follow the installation instruction for installing `act` in the preferred way,
+either as a local command `act` or via the `gh act` extension.
+
+##### SUSE/connect-ng specific act settings in `.actrc`
+
+The standard platform images used by `act` don't always support all of the features
+that may be needed by a GitHub Actions workflow. `act` provides a mechanism to
+specify alternate platform images via the `--platform` option.
+
+Additionally, enabling the emulation of the v4 artifact upload/download support
+also requires appropriate command line options to be set.
+
+Similarly, to ensure that `act` sets up the appropriate environment settings for
+jobs that run, the `--env-file .env` option should be set.
+
+The [.actrc](.actrc) file in the repo specifies appropriate values for these
+options.
+
+#### Running the workflows locally
+
+The available workflows, and their associated trigger events can be listed by
+running the `act --list` or `gh act --list` command, as follows:
+
+```bash
+% act --list   
+INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
+Stage  Job ID                Job name                                        Workflow name           Workflow file  Events      
+0      build-suseconnect     Build SUSE/connect-ng inputs required by Agama  agama tests             agama.yml      pull_request
+0      feature-tests         feature-tests                                   feature tests           features.yml   pull_request
+0      unit-tests            unit-tests                                      lint + unit tests       lint-unit.yml  pull_request
+0      yast                  yast                                            YaST integration tests  yast.yml       pull_request
+1      run-agama-rust-tests  Run agama rust tests                            agama tests             agama.yml      pull_request
+```
+
+The `act` command takes as argument the trigger event to simulate,
+defaulting to the `push` event if none is specified, or, if only one event
+is supported by the targeted workflows, it will default to that event.
+
+Since all of the SUSE/connect-ng workflows support just the `pull_request`
+event, running `act` without any arguments will attempt to run all of the
+workflows locally in parallel.
+
+To run a specific a specific workflow locally the full path to the workflow
+file, e.g. [.github/workflows/agama.yml](.github/workflows/agama.yml) can be
+specified with the `--workflows` (`-W`) option, e.g.
+
+```bash
+$ act -W .github/workflows/agama.yml pull_request
+INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
+INFO[0000] Start server on http://192.168.0.100:34567   
+[agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
+[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
+...
+[agama tests/Run agama rust tests                          ] Cleaning up container for job Run agama rust tests
+[agama tests/Run agama rust tests                          ]   ✅  Success - Complete job
+[agama tests/Run agama rust tests                          ] 🏁  Job succeeded
+```
+
+Alternatively a specific job can be run by specifing its job id using the
+`--job` (`-j`) option.  If the specified job depends on other jobsi, via
+a `needs` attribute, they will also be run.  For example, the job id of
+the final stage of the `agama.yml` workflow is `run-agama-rust-tests`,
+and specifying it will also run the `build-suseconnect` job that it
+depends upon, as follows:
+
+```bash
+$ gh act -j run-agama-rust-tests
+INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
+INFO[0000] Start server on http://192.168.0.100:34567   
+[agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
+[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
+...
+[agama tests/Run agama rust tests                          ] Cleaning up container for job Run agama rust tests
+[agama tests/Run agama rust tests                          ]   ✅  Success - Complete job
+[agama tests/Run agama rust tests                          ] 🏁  Job succeeded
+```

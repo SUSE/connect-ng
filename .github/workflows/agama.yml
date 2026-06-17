@@ -1,0 +1,112 @@
+---
+name: agama tests
+
+# About security when running the tests and NOT exposing
+# the secrets to externals. Currently Github Actions does
+# NOT expose the secrets if the branch is coming from a forked
+# repository.
+# See: https://github.blog/2020-08-03-github-actions-improvements-for-fork-and-pull-request-workflows/
+# See: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
+#
+# An alternate would be to set, pull_request_target but this takes the CI code
+# from master removing the ability to change the code in a PR easily.
+#
+# Aditionally, since 2021 pull requests from new contributors will not
+# trigger workflows automatically but will wait for approval from somebody
+# with write access.
+# See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
+on: [pull_request]
+
+env:
+  CONNECTNG_SOURCE: /usr/src/connect-ng
+  AGAMA_SOURCE: /usr/src/agama
+  CONNECTNG_ARTIFACT: suseconnect-build-out
+  CONNECTNG_TARBALL: /usr/src/suseconnect-build-out.tar.gz
+  REGCODE: ${{ secrets.REGCODE }}
+
+jobs:
+
+  build-suseconnect:
+    name: Build SUSE/connect-ng inputs required by Agama
+    runs-on: ubuntu-latest
+    container:
+      image: registry.suse.com/bci/golang:1.24-openssl
+      options: --user root --privileged
+
+    steps:
+      - name: Install dependencies for artifact upload/download
+        run: |
+          zypper --non-interactive in nodejs-default
+
+      - name: Checkout SUSE/connect-ng
+        uses: actions/checkout@v4
+        with:
+          path: connect-ng
+
+      - name: Move checked out connect-ng to /usr/src
+        run: |
+          mv connect-ng ${{ env.CONNECTNG_SOURCE }}
+
+      - name: Build SUSE/connect-ng
+        working-directory: ${{ env.CONNECTNG_SOURCE }}
+        run: |
+          make vendor build
+
+      - name: Create a tarball of the build output
+        working-directory: ${{ env.CONNECTNG_SOURCE }}
+        run: |
+          tar -czf ${CONNECTNG_TARBALL} out/
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CONNECTNG_ARTIFACT }}
+          path: ${{ env.CONNECTNG_TARBALL }}
+          retention-days: 1 # no need to retain this for long
+
+  run-agama-rust-tests:
+    name: Run agama rust tests
+    needs: build-suseconnect
+    runs-on: ubuntu-latest
+    container:
+      image: registry.suse.com/bci/rust:1.95
+      options: --user root --privileged
+
+    steps:
+      - name: Install dependencies for artifact upload/download
+        run: |
+          zypper --non-interactive in nodejs-default
+
+      - name: Checkout SUSE/connect-ng
+        uses: actions/checkout@v4
+        with:
+          path: connect-ng
+
+      - name: Move checked out connect-ng to /usr/src
+        run: |
+          mv connect-ng ${CONNECTNG_SOURCE}
+
+      - name: Download suseconnect-build-out tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CONNECTNG_ARTIFACT }}
+          path: /usr/src  # dirname of env.CONNECTNG_TARBALL
+
+      - name: Extract tarball contents to expected location
+        run: |
+          tar -C ${CONNECTNG_SOURCE} -xzf ${CONNECTNG_TARBALL}
+
+      - name: Checkout agama-project/agama
+        uses: actions/checkout@v4
+        with:
+          repository: agama-project/agama
+          path: agama
+
+      - name: Move checked out agama code to /usr/src
+        run: |
+          mv agama ${AGAMA_SOURCE}
+
+      - name: Run agama rust tests
+        working-directory: ${{ env.CONNECTNG_SOURCE }}
+        run: |
+          build/ci/run-agama-rust-tests

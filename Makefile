@@ -12,11 +12,15 @@ GOFLAGS       = -v -mod=vendor
 BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
 
-CONTAINER     = registry.suse.com/bci/golang:1.24-openssl
+GOCONTAINER   = registry.suse.com/bci/golang:1.24-openssl
+RUSTCONTAINER = registry.suse.com/bci/rust:1.95
 CRM           = docker run --rm -it --privileged
 ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
+AGAMA_SOURCES = $(PWD)/testdata/agama_srcs
+AGAMA_REPO    = https://github.com/agama-project/agama
+AGAMA_MOUNT   = -v $(AGAMA_SOURCES):/usr/src/agama
 
 define go-tool-covdata
 	@if [ -z "$(strip $(1))" ]; then \
@@ -35,6 +39,7 @@ endef
 .PHONY: all build build-arm build-ppc64le build-rpm build-s390 check-format
 .PHONY: ci-env clean dist feature-tests out show-version test test-yast vendor vet
 .PHONY: coverage coverage-check-enabled coverage-dirs coverage-func coverage-percent
+.PHONY: agama-sources agama-tests bci-build go-env rust-env
 
 all: clean build test
 
@@ -85,6 +90,9 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect-mcp
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(OUT) github.com/SUSE/connect-ng/third_party/libsuseconnect
 
+bci-build:
+	$(CRM) $(MOUNT) -w $(WORKDIR) $(GOCONTAINER) bash -c 'git config --global --add safe.directory $(WORKDIR); make vendor build'
+
 # This "arm" means ARM64v8 little endian, the one being delivered currently on
 # OBS.
 build-arm: clean out internal/connect/version.txt
@@ -118,17 +126,30 @@ test: internal/connect/version.txt coverage-dirs
 	$(GO) test ./internal/* ./cmd/suseconnect ./pkg/* $(call cover-test-flags)
 	$(call go-tool-covdata,func)
 
-ci-env:
-	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash
+ci-env go-env:
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(GOCONTAINER) bash
+
+agama-sources:
+	@if [ ! -d $(AGAMA_SOURCES) ]; then \
+		echo "Cloning $(AGAMA_REPO) under $(AGAMA_SOURCES) ..."; \
+		git clone $(AGAMA_REPO) $(AGAMA_SOURCES); \
+	fi
+
+agama-tests: agama-sources bci-build
+	$(CRM) $(MOUNT) $(AGAMA_MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(RUSTCONTAINER) bash -c 'build/ci/run-agama-rust-tests'
+
+
+rust-env: agama-sources
+	$(CRM) $(MOUNT) $(AGAMA_MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(RUSTCONTAINER) bash
 
 check-format:
 	@test -z $(shell gofmt -l internal/* cmd/* pkg/* | tee /dev/stderr)
 
 build-rpm:
-	$(CRM) $(MOUNT) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm'
+	$(CRM) $(MOUNT) -w $(WORKDIR) $(GOCONTAINER) bash -c 'build/ci/build-rpm'
 
 feature-tests:
-	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(CONTAINER) bash -c 'build/ci/build-rpm && build/ci/configure && build/ci/run-feature-tests'
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(GOCONTAINER) bash -c 'build/ci/build-rpm && build/ci/configure && build/ci/run-feature-tests'
 
 test-yast: build
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
