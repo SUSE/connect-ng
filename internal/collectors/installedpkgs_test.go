@@ -112,7 +112,7 @@ func TestFilterPackages(t *testing.T) {
 		"zypper\t1.14.70\t150400.3.15.1\tx86_64",
 	}
 
-	result, err := filterPackages(rawOutput, "SUSE")
+	result, err := filterPackages(rawOutput)
 	assert.NoError(err)
 	assert.Equal(expected, result)
 }
