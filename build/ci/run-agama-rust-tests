@@ -110,9 +110,10 @@ if [[ -n "${RMT_HOST}" ]]; then
 	rmt_cert=
 
 	if [[ ${RMT_HOST} =~ https://.* ]]; then
-		group "retrieve rmt cert"
+		rmt_cert_url=${RMT_HOST}/rmt.crt
+		group "retrieve rmt cert via ${rmt_cert_url}"
 		rmt_cert=/tmp/rmt_host.crt
-		curl -ks ${RMT_HOST}/rmt.crt > ${rmt_cert}
+		curl -ks ${rmt_cert_url} > ${rmt_cert}
 		groupend
 	fi
 

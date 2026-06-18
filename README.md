@@ -241,7 +241,6 @@ running the `act --list` or `gh act --list` command, as follows:
 
 ```bash
 % act --list
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'
 Stage  Job ID                Job name                                        Workflow name           Workflow file  Events
 0      build-suseconnect     Build SUSE/connect-ng inputs required by Agama  agama tests             agama.yml      pull_request
 0      feature-tests         feature-tests                                   feature tests           features.yml   pull_request
@@ -264,8 +263,6 @@ specified with the `--workflows` (`-W`) option, e.g.
 
 ```bash
 $ act -W .github/workflows/agama.yml pull_request
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'
-INFO[0000] Start server on http://192.168.0.100:34567
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
 [agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
 ...
@@ -283,8 +280,6 @@ depends upon, as follows:
 
 ```bash
 $ gh act -j run-agama-rust-tests
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'
-INFO[0000] Start server on http://192.168.0.100:34567
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
 [agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
 ...
