@@ -63,6 +63,10 @@ if [[ ! -d ${AGAMA_RUST} ]]; then
 fi
 groupend
 
+group "ensure RMT_HOST exists, set to empty if not defined"
+RMT_HOST=${RMT_HOST:-}
+groupend
+
 group "install required packages"
 zypper in -y ${REQ_PKGS[@]}
 groupend
@@ -89,10 +93,10 @@ export RUSTFLAGS="-L ${STDCXX_DIR}"
 # build the rust activation example
 cd ${AGAMA_RUST}
 cargo clean -p suseconnect-agama
-cargo build -p suseconnect-agama --example activation
+cargo build -p suseconnect-agama --example activation --example rmt
 groupend
 
-group "run the rmt example"
+group "run the activation example"
 ${AGAMA_RUST}/target/debug/examples/activation ${REGCODE}
 groupend
 
@@ -100,3 +104,30 @@ group "deregister the system and cleanup registration state"
 ${CONNECT_OUT}/suseconnect -d
 ${CONNECT_OUT}/suseconnect --clean
 groupend
+
+# optionally run RMT verification tests if RMT_HOST is non-empty
+if [[ -n "${RMT_HOST}" ]]; then
+	rmt_cert=
+
+	if [[ ${RMT_HOST} =~ https://.* ]]; then
+		rmt_cert_url=${RMT_HOST}/rmt.crt
+		group "retrieve rmt cert via ${rmt_cert_url}"
+		rmt_cert=/tmp/rmt_host.crt
+		curl -ks ${rmt_cert_url} > ${rmt_cert}
+		groupend
+	fi
+
+	group "run the rmt example"
+	${AGAMA_RUST}/target/debug/examples/rmt ${RMT_HOST} ${rmt_cert}
+	groupend
+
+	group "deregister the system from RMT and cleanup registration state"
+	${CONNECT_OUT}/suseconnect --url ${RMT_HOST} -d
+	${CONNECT_OUT}/suseconnect --clean
+	rm -f /etc/SUSEConnect
+	if [[ -n "${rmt_cert}" ]]; then
+		rm -f ${rmt_cert}
+		update-ca-certificates
+	fi
+	groupend
+fi

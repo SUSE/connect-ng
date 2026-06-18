@@ -33,7 +33,7 @@ The following tools should be available and verified as working:
       cd connect-ng
       ```
 
-  * When building for the first time, execute 
+  * When building for the first time, execute
       ```
       make vendor
       ```
@@ -43,31 +43,57 @@ The following tools should be available and verified as working:
       make build
       ```
 
-  * Setup .env file to run tests
-    * Copy .env-example file to .env file and fill following values
-        ```
-        REGCODE="<regcode>"
-        EXPIRED_REGCODE="<regcode>"
-        HA_REGCODE="<ha regcode>"
-        ```
+  * Setup `.env` file to run tests
 
-        These regcodes can be your personal regcodes attached to your organization. Please refer [Activating-and-Managing-Subscriptions](https://scc.suse.com/docs/userguide#UG-Activating-and-Managing-Subscriptions)
+      Copy the `.env-example` file to `.env` file and fill in the following
+      values appropriately:
+      ```
+      REGCODE="<regcode>"
+      EXPIRED_REGCODE="<regcode>"
+      HA_REGCODE="<ha regcode>"
+
+      # Optional RMT_HOST for Agama integration testing
+      # RMT_HOST=https://rmt.example.com
+      ```
+
+      These regcodes can be your personal regcodes attached to your organization.
+      Please refer to the
+      [Activating-and-Managing-Subscriptions](https://scc.suse.com/docs/userguide#UG-Activating-and-Managing-Subscriptions)
+      documentation if not familiar with the process.
+
+      The `RMT_HOST`, if specified, must be a valid url for an RMT that
+      supports registration of clients running the distro that backs
+      the `RUSTCONTAINER` image specified in the [Makefile](Makefile).
 
   * To run the unit tests
       ```
       make test
       ```
 
-  * To run the feature tests   
-    Run the feature tests within a container by using the registration codes as provided by the .env file.
-       ```
-       make feature-tests
-       ```
+      See [Unit Tests](#unit-tests) for details.
+
+  * To run the feature tests
+
+      Run the feature tests within a container by using the registration codes as provided by the .env file.
+      ```
+      make feature-tests
+      ```
+
+      See [Feature Tests](#feature-tests) for details.
 
   * To run the YAST2 registration tests
       ```
       make test-yast
-      ```  
+      ```
+
+      See [YaST2 Registration Tests](#yast2-registration-tests) for details.
+
+  * To run the Agama rust integration tests
+      ```
+      make agama-tests
+      ```
+
+      See [Agama Rust Integration Tests](#agama-rust-integration-tests) for details.
 
 ### Build
 Requires Go >= 1.24
@@ -77,12 +103,17 @@ make build
 ```
 This will create a `out/suseconnect` binary.
 
-### Build in container
+### Build in a container
 If you don't have a go compiler installed, you can run the build in a container:
 ```
-docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make build"
+docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make vendor build"
 ```
-This will create a `out/suseconnect` binary on the host.
+Or you can use the `bci-build` Makefile target:
+```
+make bci-build
+```
+
+Either of these actions will create an `out/` directory on the host containing the built binaries, such as `suseconnect`.
 
 ### Testing
 
@@ -90,6 +121,7 @@ There are three test suites available to run:
   * unit tests
   * feature tests
   * YaST2 registration tests
+  * Agama rust integration tests
 
 See also the [Running GitHub Actions Locally](#running-github-actions-locally) section below.
 
@@ -123,8 +155,28 @@ the `feature-tests` target; to delete it you may need to run `sudo rm -rf vendor
 
 You can run the YaST2 registration tests using `make test-yast`, which uses
 the [yast/yast-registration repo](https://github.com/yast/yast-registration)
-from within a customer container image, defined in [third_party/Dockerfile.yast](third_party/Dockerfile.yast),
+from within a custom container image, defined in [third_party/Dockerfile.yast](third_party/Dockerfile.yast),
 to exercise the `libsuseconnect.so` library via the suseconnect Ruby bindings.
+
+#### Agama Rust Integration Tests
+
+You can run the Agama Rust integration tests using `make agama-tests`, which
+uses the rust examples from the [agama-project/agama repo](https://github.com/agama-project/agama)
+to exercise the Agama Rust integration via the `libsuseconnect.so` library.
+
+These tests require that a valid `REGCODE` be specified via the `.env` file,
+and optionally support an `RMT_HOST` url being specified in the `.env` file,
+either `http` or `https` protocol.
+
+Specifically these tests exercise that:
+  * basic activation registrations works with the SCC, via the
+    [activation tool](https://github.com/agama-project/agama/blob/master/rust/suseconnect-agama/examples/activation.rs)
+  * optionally tests registration against an RMT using the
+    [rmt tool](https://github.com/agama-project/agama/blob/master/rust/suseconnect-agama/examples/rmt.rs)
+    if an `RMT_HOST` is specified via the .env file, or potentially via the GitHub Actions
+    secrets for CI runs. If the `RMT_HOST` is specified with a `https` protocol URL, it
+    will download the RMT's self-sigtned cert and provide it to the `rmt` example via
+    the optional second argument.
 
 #### Coverage Reporting for Unit Tests
 
@@ -188,9 +240,8 @@ The available workflows, and their associated trigger events can be listed by
 running the `act --list` or `gh act --list` command, as follows:
 
 ```bash
-% act --list   
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
-Stage  Job ID                Job name                                        Workflow name           Workflow file  Events      
+% act --list
+Stage  Job ID                Job name                                        Workflow name           Workflow file  Events
 0      build-suseconnect     Build SUSE/connect-ng inputs required by Agama  agama tests             agama.yml      pull_request
 0      feature-tests         feature-tests                                   feature tests           features.yml   pull_request
 0      unit-tests            unit-tests                                      lint + unit tests       lint-unit.yml  pull_request
@@ -212,8 +263,6 @@ specified with the `--workflows` (`-W`) option, e.g.
 
 ```bash
 $ act -W .github/workflows/agama.yml pull_request
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
-INFO[0000] Start server on http://192.168.0.100:34567   
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
 [agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
 ...
@@ -231,8 +280,6 @@ depends upon, as follows:
 
 ```bash
 $ gh act -j run-agama-rust-tests
-INFO[0000] Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock' 
-INFO[0000] Start server on http://192.168.0.100:34567   
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
 [agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
 ...
