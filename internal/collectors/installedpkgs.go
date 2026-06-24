@@ -4,8 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/SUSE/connect-ng/internal/util"
@@ -36,34 +35,17 @@ func (p InstalledPackages) run(arch string) (Result, error) {
 		return Result{}, err
 	}
 
-	packagesPayload := formatPackagesPayload(filteredPkgs)
-
-	result, _ := profiles.BuildProfile(p.UpdateDataIDs, packagesTag, pkgsChecksumFile, packagesPayload)
+	result, _ := profiles.BuildProfile(p.UpdateDataIDs, packagesTag, pkgsChecksumFile, filteredPkgs)
 	return result, nil
 }
 
-// formatPackagesPayload converts the raw package strings into the positional array payload format
-func formatPackagesPayload(pkgs []string) [][]string {
-	payload := make([][]string, 0, len(pkgs))
-	for _, p := range pkgs {
-		fields := strings.Split(p, "\t")
-		payload = append(payload, fields)
-	}
-	return payload
-}
-
 // filterPackages returns a sorted list of packages filtered by vendor
-func filterPackages(pkgs []byte) ([]string, error) {
+func filterPackages(pkgs []byte) ([][]string, error) {
 	reader := bytes.NewReader(pkgs)
 	sc := bufio.NewScanner(reader)
 
-	vendorRegex, err := regexp.Compile(`(?i)` + regexp.QuoteMeta(filterVendor))
-	if err != nil {
-		return nil, fmt.Errorf("error compiling vendorRegex: %v", err)
-	}
-
 	pkgSet := make(map[string]struct{})
-	var pkgList []string
+	var pkgList [][]string
 
 	for sc.Scan() {
 		pkg := sc.Text()
@@ -76,20 +58,18 @@ func filterPackages(pkgs []byte) ([]string, error) {
 		vendor := fields[0]
 
 		// Apply vendor filter
-		if !vendorRegex.MatchString(vendor) {
+		if !strings.Contains(strings.ToUpper(vendor), filterVendor) {
 			continue
 		}
 
-		name := fields[1]
-		version := fields[2]
-		release := fields[3]
-		arch := fields[4]
-		setKey := fmt.Sprintf("%s\t%s\t%s\t%s", name, version, release, arch)
+		// fields[1:5] includes Name, Version, Release, Arch
+		packageFields := fields[1:5]
+		setKey := strings.Join(packageFields, "\t")
 
 		// Remove duplicates
 		if _, ok := pkgSet[setKey]; !ok {
 			pkgSet[setKey] = struct{}{}
-			pkgList = append(pkgList, setKey)
+			pkgList = append(pkgList, packageFields)
 		}
 	}
 
@@ -97,7 +77,9 @@ func filterPackages(pkgs []byte) ([]string, error) {
 		return nil, fmt.Errorf("error reading rpm query output: %v", err)
 	}
 
-	sort.Strings(pkgList)
+	slices.SortFunc(pkgList, func(a, b []string) int {
+		return slices.Compare(a, b)
+	})
 
 	return pkgList, nil
 }

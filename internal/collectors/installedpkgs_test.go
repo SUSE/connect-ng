@@ -37,7 +37,6 @@ func TestRunSuccessNoUpdate(t *testing.T) {
 
 	mockUtilExecute(pkgsTestData, nil)
 
-	// No Parameters provided - should default to filtering SUSE vendor
 	collector := InstalledPackages{UpdateDataIDs: false}
 	result, err := collector.run(ARCHITECTURE_X86_64)
 	assert.NoError(err)
@@ -107,29 +106,12 @@ func TestFilterPackages(t *testing.T) {
 			"SUSE LLC\tglibc\t2.31\t150300.63.1\tx86_64\n",
 	)
 
-	expected := []string{
-		"glibc\t2.31\t150300.63.1\tx86_64",
-		"zypper\t1.14.70\t150400.3.15.1\tx86_64",
-	}
-
-	result, err := filterPackages(rawOutput)
-	assert.NoError(err)
-	assert.Equal(expected, result)
-}
-
-func TestFormatPackagesPayload(t *testing.T) {
-	assert := assert.New(t)
-
-	pkgs := []string{
-		"glibc\t2.31\t150300.63.1\tx86_64",
-		"zypper\t1.14.70\t150400.3.15.1\tx86_64",
-	}
-
 	expected := [][]string{
 		{"glibc", "2.31", "150300.63.1", "x86_64"},
 		{"zypper", "1.14.70", "150400.3.15.1", "x86_64"},
 	}
 
-	result := formatPackagesPayload(pkgs)
+	result, err := filterPackages(rawOutput)
+	assert.NoError(err)
 	assert.Equal(expected, result)
 }
