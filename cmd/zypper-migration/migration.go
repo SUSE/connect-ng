@@ -400,7 +400,7 @@ func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRe
 	releasePackageMissing := false
 	for _, p := range systemProducts {
 		// if a release package for registered product is missing -> try install it
-		err := zypper.InstallReleasePackage(p.Name, autoImportRepoKeys)
+		err := zypper.InstallReleasePackage(p.Identifier, autoImportRepoKeys)
 		if err != nil {
 			releasePackageMissing = true
 			QuietOut.Printf("Can't install release package for registered product %s\n", p.Name)
@@ -643,7 +643,7 @@ func migrateSystem(opts *connect.Options, migration connect.MigrationPath, baseU
 // containsProduct returns true if given slice of products contains one with given name.
 func containsProduct(products []registration.Product, name string) bool {
 	for _, p := range products {
-		if p.Name == name {
+		if p.Identifier == name {
 			return true
 		}
 	}

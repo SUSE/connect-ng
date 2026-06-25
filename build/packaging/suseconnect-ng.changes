@@ -2,7 +2,7 @@
 Mon Jun 15 16:29:05 UTC 2026 - Earl Sampson <esampson@suse.com>
 
 - Update version to 1.23.0 (pre):
-
+  - Use product identifier for product migrations. (bsc#1268596)
 -------------------------------------------------------------------
 Wed Jun 10 18:43:58 UTC 2026 - Earl Sampson <esampson@suse.com>
 
