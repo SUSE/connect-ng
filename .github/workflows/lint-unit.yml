@@ -33,7 +33,12 @@ jobs:
 
       - name: build the binary
         run: |
+          set -e
           # We need to make sure git trusts us here. mark the directory as safe playground
           # if it is a git clone; skip if using a git worktree with nektos/act
           [ -d .git ] && git config --global --add safe.directory $GITHUB_WORKSPACE
           make vendor build
+
+      - name: show unit tests coverage reports
+        run: |
+          make unit-test-coverage

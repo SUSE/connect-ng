@@ -1,39 +1,24 @@
 #!/bin/bash
 set -e
 
+# pull in scripting library definitions
+source "$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")/lib.bash"
+
 # Where the connect-ng source is located within the container
 SOURCE=${SOURCE:-/usr/src/connect-ng}
 
+# Setup GOCOVERDIR
+export GOCOVERDIR="${SOURCE}/coverage/feature"
+
 # exported variables we expect to exist to run the tests
-KEYS_TO_CHECK=(REGCODE EXPIRED_REGCODE HA_REGCODE)
-
-REMOVE_PRODUCTS="sle-module-python3 sle-module-server-applications sle-module-basesystem"
-
-group() { echo "::group::$1"; }
-groupend() { echo "::groupend::"; }
-fail() { echo "::error::$1"; exit 1; }
-
-for name in ${KEYS_TO_CHECK[@]}; do
-if [ "${!name}" == "" ]; then
-  echo "Expect the environment variables to be set:"
-  echo "${KEYS_TO_CHECK[*]}"
-  fail "ENV variable not found: $name is not set."
-fi
-done
-
-group "cleanup test system"
-  SUSEConnect --clean
-  [ -f /etc/SUSEConnect ] && rm /etc/SUSEConnect
-groupend
+check_required_env_vars_defined REGCODE EXPIRED_REGCODE HA_REGCODE
 
 # Remove products so container in a clean state
-group "Clean Container"
-for product in ${REMOVE_PRODUCTS}; do
-    if zypper --no-refresh se --installed-only -t product ${product} | grep -q ${product}; then
-	   zypper --no-refresh --non-interactive remove -t product ${product}
-    fi
-done
-groupend
+cleanup_orphaned_products
+
+install_locally_built_suseconnect "${SOURCE}/out"
+
+cleanup_testing_environment
 
 group "run feature tests"
 pushd "$SOURCE"

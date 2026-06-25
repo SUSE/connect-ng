@@ -1,5 +1,5 @@
 ---
-name: feature tests
+name: build and install rpm
 
 # About security when running the tests and NOT exposing
 # the secrets to externals. Currently Github Actions does
@@ -20,13 +20,10 @@ on: [pull_request]
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
-  COVERAGE_BIN: true
   REGCODE: ${{ secrets.REGCODE }}
-  HA_REGCODE: ${{ secrets.HA_REGCODE }}
-  EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
 
 jobs:
-  feature-tests:
+  build-rpm:
     runs-on: ubuntu-latest
     container:
       image: registry.suse.com/bci/golang:1.24-openssl
@@ -40,22 +37,14 @@ jobs:
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
 
-      - name: build suseconnect binaries
-        run: |
-          set -e
-          cd $SOURCE
-          make vendor
-          make build
+      - name: build RPM package
+        run: bash build/ci/build-rpm
 
-      - name: run feature tests
-        run: |
-          set -e
-          cd $SOURCE
-          make coverage-dirs
-          bash build/ci/run-feature-tests
+      # - name: gather RPM build artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: connect-rpms
+      #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
 
-      - name: show feature tests coverage reports
-        run: |
-          set -e
-          cd $SOURCE
-          make feature-tests-coverage
+      - name: configure Connect to run feature tests
+        run: bash build/ci/configure

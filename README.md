@@ -95,6 +95,14 @@ The following tools should be available and verified as working:
 
       See [Agama Rust Integration Tests](#agama-rust-integration-tests) for details.
 
+  * To run all of the above test suites in sequence
+      ```
+      make run-tests
+      ```
+
+      See [Running All Test Suites](#running-all-test-suites) for details.
+
+
 ### Build
 Requires Go >= 1.24
 
@@ -113,7 +121,13 @@ Or you can use the `bci-build` Makefile target:
 make bci-build
 ```
 
-Either of these actions will create an `out/` directory on the host containing the built binaries, such as `suseconnect`.
+Either of these actions will create an `out/` directory on the host
+containing the built binaries, such as `suseconnect`.
+
+**NOTE**: Actions that build the code base within a container runtime
+can result in some of the files and directories being owned by root;
+the `fix-owenership` Makefile target can help with restoring correct
+ownership.
 
 ### Testing
 
@@ -178,7 +192,55 @@ Specifically these tests exercise that:
     will download the RMT's self-sigtned cert and provide it to the `rmt` example via
     the optional second argument.
 
-#### Coverage Reporting for Unit Tests
+#### Running All Test Suites
+
+You can run all of the test suites in sequence using `make run-tests`.
+
+This will clear any existing coverage data then run through each of the
+test suites in sequence, and, if all were successful, will finally report
+unified coverage reports in both the package and function level styles,
+similar to the `coverage-percent` and `coverage-func` targets as described
+[below](#reviewing-recent-unified-coverage-data).
+
+#### Coverage Reporting
+
+Currently the unit and feeature test suites are enabled to collect coverage
+reporting counters; running the test suites will generate a suite specific
+coverage report detailing the coverage on a per function basis.
+
+Running a specific test suite will generate a coverage report on completion
+of a successful test run.
+
+Additionally Makefile targets are available to generated unified coverage
+reports for all recently collected test suite runs.
+
+**NOTE**: Support for generating coverage testing for the YaST2 registration
+and Agama tests is under development and will be available at a later date;
+while coverage data can be collected by these test suites, `libsuseconnect.so`
+currently lacks the support to trigger writing out the coverage data at the
+end of a test run.
+
+##### Building with coverage collection enabled
+While the Makefile `COVERAGE` variable can be used to manage whether coverage
+reporting is enabled in general, as well as whether the unit tests are run with
+coverage enabled, there are two additional flags that control whether the tools
+and libraries are built with coverage collection enabled:
+
+  * `COVERAGE_BIN` - if this is `true` then the locally built binary tools that
+    are published in the `out/` directory will have coverage collection support
+    enabled.
+  * `COVERAGE_LIB` - if this is `true` then the locally built `libsuseconnect.so`
+    library will have coverage collection support enabled.
+
+##### Clearing old coverage data
+
+The `make coverage-clean` target can be used to clear out all existing coverage
+data so that only the results from subsequent runs will be available.
+
+**NOTE**: The `run-tests` target clears old test data using this target before
+running all of the test suites.
+
+##### Coverage Reporting for Unit Tests
 
 Coverage reporting for unit tests has been added, and is enabled by default.
 To disable it you can add `COVERAGE=false` to your `make test` command line,
@@ -189,13 +251,31 @@ on a per package basis as they are tested (similar to the `coverage-percent`
 target described below), and will then generate the same detailed coverage
 report as the `coverage-func` target described below.
 
-**NOTE**: Support for generating coverage testing for the feature and YaST2
-registratoon tests is under development and will be available at a later date.
+The `unit-test-coverage` target can be used to review the most coverage
+results collected by the most recent unit test run.
 
-##### Reviewing the most recent coverage data
+##### Coverage Reporting for Feature Tests
 
-Coverage data will be saved under the `coverage` directory, and you can review
-the most recent unit test run's data using the the following coverage targets:
+Coverage reporting for the feature tests has been added, and is enabled by
+default. To disable it you can add `COVERAGE=false` to your `make feature-tests`
+command line, or set it in your environment.
+
+After the feature tests have completed successfully a detailed per function
+coverage report will be generated for the functions that were exercised by
+the feature tests, similar to the `coverage-func` target described below.
+
+The `feature-tests-coverage` target can be used to review the most coverage
+results collected by the most recent feature test run.
+
+**NOTE**: The `COVERAGE_BIN` variable is set to `true` when building the tools
+that are used to run the feature tests.
+
+##### Reviewing Recent Unified Coverage Data
+
+Coverage data will be saved under the `coverage` directory, in test suite
+specific subdirectories, and you can review the most recent unified testing
+coverage data using the the following coverage targets:
+
   * `coverage-func`
     This will report detail coverage stats for each function, with the overall
     summary coverage percentage for all functions in the code base at the end.
@@ -243,6 +323,7 @@ running the `act --list` or `gh act --list` command, as follows:
 % act --list
 Stage  Job ID                Job name                                        Workflow name           Workflow file  Events
 0      build-suseconnect     Build SUSE/connect-ng inputs required by Agama  agama tests             agama.yml      pull_request
+0      build-rpm             build-rpm                                       build and install rpm   build-rpm.yml  pull_request
 0      feature-tests         feature-tests                                   feature tests           features.yml   pull_request
 0      unit-tests            unit-tests                                      lint + unit tests       lint-unit.yml  pull_request
 0      yast                  yast                                            YaST integration tests  yast.yml       pull_request
