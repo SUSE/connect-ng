@@ -2,6 +2,7 @@ NAME          = suseconnect-ng
 VERSION       = $(shell bash -c "cat build/packaging/suseconnect-ng.spec | sed -n 's/^Version:\s*\(.*\)/\1/p'")
 DIST          = $(NAME)-$(VERSION)
 PWD           = $(shell pwd)
+INTERACTIVE  ?= $(shell if [ -t 0 ]; then echo true; else echo false; fi)
 GO            = go
 OUT           = -o out/
 # coverage testing enabled by default
@@ -14,7 +15,7 @@ SOFLAGS       = -buildmode=c-shared
 
 GOCONTAINER   = registry.suse.com/bci/golang:1.24-openssl
 RUSTCONTAINER = registry.suse.com/bci/rust:1.95
-CRM           = docker run --rm -it --privileged
+CRM           = docker run --rm $(if $(filter true,$(strip $(INTERACTIVE))),-it) --privileged
 ENVFILE       = .env
 WORKDIR       = /usr/src/connect-ng
 MOUNT         = -v $(PWD):$(WORKDIR)
@@ -208,7 +209,7 @@ real-clean: clean coverage-clean
 	@rm -rf out/
 
 clean:
-	go clean
+	$(GO) clean
 	@rm -f internal/connect/version.txt
 	@rm -rf $(DIST)/
 	@rm -f vendor.tar.xz
