@@ -111,9 +111,9 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return LSMOD{UpdateDataIDs: updateDataIDs} },
 	},
-	"installed_pkgs": {
+	"rpm_packages": {
 		Metadata:         CollectorMetadata{DefaultEnabled: false, Mandatory: false, Type: ProfileCollector},
-		CollectorFactory: func(updateDataIDs bool) Collector { return InstalledPackages{UpdateDataIDs: updateDataIDs} },
+		CollectorFactory: func(updateDataIDs bool) Collector { return RPMPackages{UpdateDataIDs: updateDataIDs} },
 	},
 }
 

@@ -11,18 +11,18 @@ import (
 	"github.com/SUSE/connect-ng/pkg/profiles"
 )
 
-type InstalledPackages struct {
+type RPMPackages struct {
 	UpdateDataIDs bool
 }
 
 const (
 	pkgsChecksumFile = "pkgs.txt"
-	packagesTag      = "installed_pkgs"
+	packagesTag      = "rpm_packages"
 	filterVendor     = "SUSE"
 )
 
-func (p InstalledPackages) run(arch string) (Result, error) {
-	util.Debug.Print("InstalledPackages.UpdateDataIds", p.UpdateDataIDs)
+func (p RPMPackages) run(arch string) (Result, error) {
+	util.Debug.Print("RPMPackages.UpdateDataIds", p.UpdateDataIDs)
 
 	queryFormat := "%{VENDOR}\\t%{NAME}\\t%{VERSION}\\t%{RELEASE}\\t%{ARCH}\n"
 	pkgs, err := util.Execute([]string{"rpm", "-qa", "--queryformat", queryFormat}, nil)
