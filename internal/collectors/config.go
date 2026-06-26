@@ -111,6 +111,10 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return LSMOD{UpdateDataIDs: updateDataIDs} },
 	},
+	"rpm_packages": {
+		Metadata:         CollectorMetadata{DefaultEnabled: false, Mandatory: false, Type: ProfileCollector},
+		CollectorFactory: func(updateDataIDs bool) Collector { return RPMPackages{UpdateDataIDs: updateDataIDs} },
+	},
 }
 
 // GetCollectorsByType returns all collectors of a specific type
