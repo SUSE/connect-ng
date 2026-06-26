@@ -198,7 +198,7 @@ feature-tests-coverage: coverage-dirs
 	$(call go-tool-covdata-report,percent,$(COVERAGE_FEATURE))
 	$(call go-tool-covdata-report,func,$(COVERAGE_FEATURE))
 
-test-yast: bci-build
+test-yast: vendor build
 	docker build -t go-connect-test-yast -f third_party/Dockerfile.yast . && docker run -t go-connect-test-yast
 
 coverage-clean:
