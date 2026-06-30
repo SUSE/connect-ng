@@ -396,11 +396,16 @@ func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRe
 	if err != nil {
 		return systemProducts, err
 	}
-
+	replaceFiles := false
+	flag.Visit(func(f *flag.Flag) {
+		if strings.Contains(f.Name, "replacefiles") {
+			replaceFiles = true
+		}
+	})
 	releasePackageMissing := false
 	for _, p := range systemProducts {
 		// if a release package for registered product is missing -> try install it
-		err := zypper.InstallReleasePackage(p.Identifier, autoImportRepoKeys)
+		err := zypper.InstallReleasePackage(p.Identifier, autoImportRepoKeys, replaceFiles)
 		if err != nil {
 			releasePackageMissing = true
 			QuietOut.Printf("Can't install release package for registered product %s\n", p.Name)

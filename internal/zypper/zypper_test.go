@@ -169,7 +169,7 @@ func TestInstallReleasePakage(t *testing.T) {
 		return nil, nil
 	}
 
-	err := InstallReleasePackage(identifier, false)
+	err := InstallReleasePackage(identifier, false, true)
 
 	assert.NoError(t, err)
 }
@@ -190,7 +190,7 @@ func TestInstallReleasePakageRpmFails(t *testing.T) {
 		return nil, nil
 	}
 
-	err := InstallReleasePackage(identifier, true)
+	err := InstallReleasePackage(identifier, true, false)
 
 	assert.NoError(t, err)
 }
@@ -210,7 +210,7 @@ func TestInstallReleasePakageZypperFails(t *testing.T) {
 		return nil, nil
 	}
 
-	err := InstallReleasePackage(identifier, true)
+	err := InstallReleasePackage(identifier, true, true)
 
 	assert.Error(t, err)
 }

@@ -132,7 +132,7 @@ func registerProduct(conn connection.Connection, opts *Options, product registra
 	if installReleasePkg && !opts.SkipServiceInstall {
 		opts.Print("-> Installing release package ...")
 
-		if err := localInstallReleasePackage(product.Identifier, opts.AutoImportRepoKeys); err != nil {
+		if err := localInstallReleasePackage(product.Identifier, opts.AutoImportRepoKeys, false); err != nil {
 			return registration.Service{}, err
 		}
 	}
