@@ -35,6 +35,29 @@ check_required_env_vars_defined()
     groupend
 }
 
+system_ruby_version()
+{
+    local VERSION_ID ruby_version
+
+    # determine distro version from /etc/os-release
+    eval "$(grep VERSION_ID= /etc/os-release || echo 'VERSION_ID="Unknown"')"
+
+    case "${VERSION_ID:-16.0}" in
+    (15.*) # SLE 15 stream
+        ruby_version=2.5.0
+        ;;
+    (16.*) # SLE 16 stream
+        ruby_version=3.4.0
+        ;;
+    (*)
+        # Tumbleweed/Factory
+        ruby_version=4.0.0
+        ;;
+    esac
+
+    echo "${ruby_version}"
+}
+
 install_locally_built_suseconnect()
 {
     local out_dir="$(readlink -e ${1})" src_dir bin_tools zypp_cmds rc_links systemd_libdir ruby_libdir
@@ -44,7 +67,7 @@ install_locally_built_suseconnect()
     zypp_cmds=( zypper-migration zypper-search-packages )
     svc_cmds=( suseconnect-keepalive suse-uptime-tracker )
     systemd_libdir=/usr/lib/systemd/system
-    ruby_libdir=/usr/lib64/ruby/vendor_ruby/3.4.0
+    ruby_libdir=/usr/lib64/ruby/vendor_ruby/$(system_ruby_version)
 
     # install binary tools
     group "Install binary tools"

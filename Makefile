@@ -27,14 +27,15 @@ COVERAGE_DIR     = $(PWD)/coverage
 COVERAGE_MERGED  = $(COVERAGE_DIR)/merged
 COVERAGE_UNIT    = $(COVERAGE_DIR)/unit
 COVERAGE_FEATURE = $(COVERAGE_DIR)/feature
-# these directories aren't being used yet
-COVERAGE_YAST    = $(COVERAGE_DIR)/yast
-COVERAGE_AGAMA   = $(COVERAGE_DIR)/agama
 
+# NOTE: If adding additional coverage groups to be aggregated into the
+# merged coverage results, remember to include the in the comma separated
+# list of directories in the -i=... argument to go tool covdata merge in
+# this routine.
 define go-tool-covdata-merge
 @if $(if $(filter true,$(strip $(COVERAGE))),true,false); then \
 	mkdir -p $(COVERAGE_MERGED); \
-	$(GO) tool covdata merge -i=$(COVERAGE_UNIT),$(COVERAGE_FEATURE),$(COVERAGE_YAST),$(COVERAGE_AGAMA) -o $(COVERAGE_MERGED); \
+	$(GO) tool covdata merge -i=$(COVERAGE_UNIT),$(COVERAGE_FEATURE) -o $(COVERAGE_MERGED); \
 fi
 endef
 
@@ -73,7 +74,7 @@ endef
 
 all: clean build test
 
-run-tests: coverage-clean test feature-tests test-yast agama-tests
+run-tests: coverage-clean check-format test build-rpm feature-tests test-yast agama-tests
 	$(call go-tool-covdata-merge)
 	$(call go-tool-covdata-report,percent,$(COVERAGE_MERGED))
 	$(call go-tool-covdata-report,func,$(COVERAGE_MERGED))
@@ -178,6 +179,7 @@ agama-sources:
 
 agama-tests: agama-sources bci-build
 	$(CRM) $(MOUNT) $(AGAMA_MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(RUSTCONTAINER) bash -c 'build/ci/run-agama-rust-tests'
+	$(MAKE) fix-ownership
 
 
 rust-env: agama-sources
@@ -191,6 +193,7 @@ build-rpm:
 
 feature-tests: coverage-dirs
 	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(GOCONTAINER) bash -c 'make vendor build COVERAGE_BIN=true && build/ci/run-feature-tests'
+	$(MAKE) fix-ownership
 	$(call go-tool-covdata-report,percent,$(COVERAGE_FEATURE))
 	$(call go-tool-covdata-report,func,$(COVERAGE_FEATURE))
 
@@ -205,18 +208,17 @@ coverage-clean:
 	@rm -rf $(COVERAGE_DIR)
 
 real-clean: clean coverage-clean
+	@rm -f internal/connect/version.txt
 	@rm -rf vendor/
 	@rm -rf out/
 
 clean:
 	$(GO) clean
-	@rm -f internal/connect/version.txt
 	@rm -rf $(DIST)/
 	@rm -f vendor.tar.xz
 	@rm -f $(DIST).tar.xz
 
 fix-ownership:
-	@sudo chown -R $$(id -u):$$(id -g) artifacts coverage out vendor internal/connect/version.txt testdata/agama_srcs
 	@for o in artifacts coverage internal/connect/version.txt out testdata/agama_srcs vendor; do \
 		[ -e $${o} ] || continue; \
 		sudo chown -R $$(id -u):$$(id -g) $${o}; \
