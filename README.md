@@ -314,6 +314,27 @@ jobs that run, the `--env-file .env` option should be set.
 The [.actrc](.actrc) file in the repo specifies appropriate values for these
 options.
 
+##### Leap 16.x specific `act` settings
+
+On Leap 16.x systems the ownership and permissions for `/var/run/docker.sock`
+on the host,
+which is mapped into the `act` testing container runtime environments,
+may not be compatible with the runtime environment within the `act` testing
+container runtime environment,
+
+On Leap 16.x systems `act` runs may encounter permissions issues when trying
+to perform "docker-in-docker" actions; this occurrs because the ownership and
+permissions for `/var/run/docker.sock`, which is mapped into the `act` runner
+container instances, are not compatible with the `act` runner docker setup.
+
+To workaround this you can either:
+
+  * add `--container-options "--user root --privileged"` to the `act` (or
+    `gh act`) command line, or
+
+  * add `--container-options --user root --privileged` to `${HOME}/.actrc`
+    to enable this for all subsequent `act` runs.
+
 #### Running the workflows locally
 
 The available workflows, and their associated trigger events can be listed by
