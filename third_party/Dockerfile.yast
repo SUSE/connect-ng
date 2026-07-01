@@ -1,3 +1,13 @@
+# build suseconnect in a SLE BCI golang container
+FROM registry.suse.com/bci/golang:1.24-openssl AS builder
+
+COPY . /connect-ng
+
+WORKDIR /connect-ng
+
+RUN make vendor build
+
+# build a customized yast-ruby container
 FROM registry.opensuse.org/yast/head/containers/yast-ruby:latest
 
 RUN zypper rm -y suseconnect-ng libsuseconnect suseconnect-ruby-bindings
@@ -9,6 +19,7 @@ WORKDIR /yast-registration
 
 RUN git clone --depth 1 https://github.com/yast/yast-registration.git /yast-registration
 
-COPY out/libsuseconnect.so /usr/lib64/libsuseconnect.so
+# copy built libsuseconnect.so from builder image
+COPY --from=builder /connect-ng/out/libsuseconnect.so /usr/lib64/libsuseconnect.so
 COPY third_party/yast/lib /usr/lib64/ruby/vendor_ruby/4.0.0
 CMD ["rake", "test:unit"]
