@@ -7,8 +7,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Go
-        run: go mod vendor
-
       - name: Run test-yast
         run: make test-yast

@@ -1,52 +1,87 @@
-## connect-ng CI setup
+# connect-ng CI setup
 
 Our CI setup runs the following steps:
 
-### Lint and unit tests
+* [Lint and Unit Tests](#lint-and-unit-tests)
+* [Build RPM](#build-rpm)
+* [CLI Feature Tests](#cli-feature-tests)
+* [YaST2 Registration Tests](#yast2-registration-tests)
+* [Agama Rust Integration Tests](#agama-rust-integration-tests)
 
-workflow definition: [.github/workflows/lint-unit.yml](https://github.com/SUSE/connect-ng/blob/main/.github/workflows/lint-unit.yml)
+## Lint and Unit Tests
 
-This workflow runs our unit tests + the usual `gofmt` to insure we have a broad coverage in functionality and good code style.
+workflow definition: [.github/workflows/lint-unit.yml](../../.github/workflows/lint-unit.yml)
+
+This workflow runs the usual `gofmt` check to ensure that our coding style
+is consistent, followed by running our unit tests to ensure we have a broad
+coverage in functionality, and then verifies that the code base builds.
 
 **Running unit tests locally**
 
-There is no special mechanism needed to run these steps locally. Check the workflow for hints how to run unit tests
+This is equivalent to running the following [Makefile](../../Makefile)
+targets locally:
 
-### CLI feature tests
+* check-format
+* test
+* vendor
+* build
 
-workflow definition: [.github/workflows/features.yml](https://github.com/SUSE/connect-ng/blob/main/.github/workflows/features.yml)
+## Build RPM
 
-This workflow runs our simple CLI feature tests and build the rpm beforehand and runs feature test we imported from the deprecated
-ruby connect version. Check [features/](https://github.com/SUSE/connect-ng/tree/main/features) for more information.
+workflow definition: [.github/workflows/build-rpm.yml](../../.github/workflows/build-rpm.yml)
 
-**Requirements to run feature tests locally**
+This workflow verifies that we can successfully build and install the RPM
+packages defined by the [suseconnect-ng.spec](../packaging/suseconnect-ng.spec) file.
 
-To run feature tests locally, you need:
+**Running build rpm tests locally**
 
-- A checkout of connect-ng
-- You need multiple secrets to run the actual feature tests, since they register and deregister with SCC in the feature tests
+This is equivalent to running `make build-rpm` locally.
 
-```
-# Add this to your .env file
-BETA_VALID_REGCODE=
-VALID_REGCODE=
-EXPIRED_REGCODE=
-NOT_ACTIVATED_REGCODE=
-BETA_NOT_ACTIVATED_REGCODE=
-```
+## CLI Feature Tests
 
-**Running tasks in the container**
+workflow definition: [.github/workflows/features.yml](../../.github/workflows/features.yml)
 
-We use the official SUSE Golang container, providing all we need to run the tests:
+This workflow builds the suseconnect-ng components, installs them similarly to
+how the associated RPMs would install them and then runs our CLI feature test
+suite to help catch errors and help avoid regressions with respect to existing
+functionality and the legacy ruby connect version.
 
-```
-export IMAGE="registry.suse.com/bci/golang:1.24-openssl"
-# Run the required container:
-$ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE
+Check [features/](../../features) for more information.
 
-# To build the connect-ng rpms within the container use:
-$ docker run --rm -it -v $(pwd):/usr/src/connect-ng $IMAGE 'build/ci/build-rpm'
+**Run feature tests locally using containers**
 
-# Run feature tests in the container
-$ docker run --rm -it --env-file .env -v $(pwd):/usr/src/connect-ng $IMAGE bash -c 'build/ci/build-rpm && build/ci/configure && build/ci/run-feature-tests'
-```
+To run these tests you will need to ensure your local [.env](../../.env-example) file is
+setup appropriately and run `make feature-tests` to build and test the feature tests
+within a container. For more details see [Feature Tests](../../README.md#feature-tests).
+
+## YaST2 Registration Tests
+
+workflow definition: [.github/workflows/yast.yml](../../.github/workflows/yast.yml)
+
+This workflow builds the suseconnect-ng components and then uses them as part of a
+container image build based upon the [third_party/Dockerfile.yast](../../third_party/Dockerfile.yast)
+which is used to create a customised container image to run the
+[YaST2 Registration Test Suite](https://github.com/yast/yast-registration)
+
+**Running YaST2 Registrationbuild rpm tests locally**
+
+This is equivalent to running `make test-yast` locally.
+
+## Agama Rust Integration Tests
+
+workflow definition: [.github/workflows/agama.yml](../../.github/workflows/agama.yml)
+
+This workflow builds the suseconnect-ng components using a SUSE BCI Golang
+container and then pulls those components into a SUSE BCI Rust container
+to build the rust based [Agama suseconnect integration testing examples](https://github.com/agama-project/agama/tree/master/rust/suseconnect-agama/examples)
+and run them to verify basic Agama registration.
+
+**Running Agama Rust Integration Tests locally**
+
+This is equivalent to running `make agama-tests` locally.
+
+**NOTE**: You can optionally define a valid RMT url using the `RMT_HOST`
+setting in the [.env](../../.env-example) file for local testing to
+additionally test Agama registrations against an RMT, using either http
+or https protocol. See [Agama Rust Integration Tests](../../README.md#agama-rust-integration-tests)
+for more details.

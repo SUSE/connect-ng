@@ -1,0 +1,36 @@
+---
+name: build and install rpm
+
+on: [pull_request]
+
+env:
+  SOURCE: /usr/src/connect-ng
+  ARTIFACT_SOURCE: artifacts
+  REGCODE: ${{ secrets.REGCODE }}
+
+jobs:
+  build-rpm:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.suse.com/bci/golang:1.24-openssl
+      options: --user root --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: move source to /usr/src/connect-ng
+        run: |
+          [ -d $SOURCE ] && rm -r $SOURCE
+          cp -r $GITHUB_WORKSPACE $SOURCE
+
+      - name: build RPM package
+        run: bash build/ci/build-rpm
+
+      # - name: gather RPM build artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: connect-rpms
+      #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
+
+      - name: configure Connect to run feature tests
+        run: bash build/ci/configure

@@ -1,25 +1,12 @@
 ---
 name: feature tests
 
-# About security when running the tests and NOT exposing
-# the secrets to externals. Currently Github Actions does
-# NOT expose the secrets if the branch is coming from a forked
-# repository.
-# See: https://github.blog/2020-08-03-github-actions-improvements-for-fork-and-pull-request-workflows/
-# See: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
-#
-# An alternate would be to set, pull_request_target but this takes the CI code
-# from master removing the ability to change the code in a PR easily.
-#
-# Aditionally, since 2021 pull requests from new contributors will not
-# trigger workflows automatically but will wait for approval from somebody
-# with write access.
-# See: https://docs.github.com/en/actions/managing-workflow-runs/approving-workflow-runs-from-public-forks
 on: [pull_request]
 
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
+  COVERAGE_BIN: true
   REGCODE: ${{ secrets.REGCODE }}
   HA_REGCODE: ${{ secrets.HA_REGCODE }}
   EXPIRED_REGCODE: ${{ secrets.EXPIRED_REGCODE }}
@@ -39,17 +26,22 @@ jobs:
           [ -d $SOURCE ] && rm -r $SOURCE
           cp -r $GITHUB_WORKSPACE $SOURCE
 
-      - name: build RPM package
-        run: bash build/ci/build-rpm
-
-      # - name: gather RPM build artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: connect-rpms
-      #     path: ${{ env.SOURCE }}/${{ env.ARTIFACT_SOURCE }}/*.rpm
-
-      - name: configure Connect to run feature tests
-        run: bash build/ci/configure
+      - name: build suseconnect binaries
+        run: |
+          set -e
+          cd $SOURCE
+          make vendor
+          make build
 
       - name: run feature tests
-        run: bash build/ci/run-feature-tests
+        run: |
+          set -e
+          cd $SOURCE
+          make coverage-dirs
+          bash build/ci/run-feature-tests
+
+      - name: show feature tests coverage reports
+        run: |
+          set -e
+          cd $SOURCE
+          make feature-tests-coverage

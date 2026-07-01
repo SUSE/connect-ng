@@ -1,4 +1,7 @@
 #!/bin/bash
+set -e
+
+source "$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")/lib.bash"
 
 # Explicitly setting the architecture to use
 ARCH=${ARCH:-x86_64}
@@ -9,11 +12,7 @@ SOURCE=${SOURCE:-/usr/src/connect-ng}
 # Where is the rpm build environment to be found
 BUILD_DIR=${BUILD_DIR:-/usr/src/packages}
 
-group() { echo "::group::$1"; }
-groupend() { echo "::groupend::"; }
-fail() { echo "::error::$1"; exit 1; }
-
-group "install suseconnect"
+group "install suseconnect from rpms"
 pushd "$BUILD_DIR/RPMS/${ARCH}"
   zypper --non-interactive --no-refresh install --allow-unsigned-rpm *.rpm
   zypper --non-interactive --no-refresh install systemd
