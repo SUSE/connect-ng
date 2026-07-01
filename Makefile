@@ -192,7 +192,7 @@ build-rpm:
 	$(CRM) $(MOUNT) -w $(WORKDIR) $(GOCONTAINER) bash -c 'build/ci/build-rpm'
 
 feature-tests: coverage-dirs
-	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(GOCONTAINER) bash -c 'make vendor build COVERAGE_BIN=true && build/ci/run-feature-tests'
+	$(CRM) $(MOUNT) --env-file $(ENVFILE) -w $(WORKDIR) $(GOCONTAINER) bash -c 'git config --global --add safe.directory $(WORKDIR); make vendor build COVERAGE_BIN=true && build/ci/run-feature-tests'
 	$(MAKE) fix-ownership
 	$(call go-tool-covdata-report,percent,$(COVERAGE_FEATURE))
 	$(call go-tool-covdata-report,func,$(COVERAGE_FEATURE))
