@@ -18,7 +18,7 @@ If you do not want to run a full RPM build process you can do the following:
 ```
  # Make sure your .env is populated!
  $ cp .env-example .env
- $ docker run --rm --privileged --env-file .env -ti -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl
+ $ docker run --rm --privileged --env-file .env -ti -v $(pwd):/connect registry.suse.com/bci/golang:1.26-openssl
  > git config --global --add safe.directory /connect
  > cd /connect
  > make build
@@ -70,7 +70,7 @@ You will need a customised container image which has systemd installed which
 can be accomplished using a Dockerfile like the following:
 
 ```dockerfile
-FROM registry.suse.com/bci/golang:1.24-openssl
+FROM registry.suse.com/bci/golang:1.26-openssl
 
 # Install systemd and make
 RUN zypper -n install \

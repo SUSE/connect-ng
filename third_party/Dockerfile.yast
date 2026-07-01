@@ -1,5 +1,5 @@
 # build suseconnect in a SLE BCI golang container
-FROM registry.suse.com/bci/golang:1.24-openssl AS builder
+FROM registry.suse.com/bci/golang:1.26-openssl AS builder
 
 COPY . /connect-ng
 
