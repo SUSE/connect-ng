@@ -114,7 +114,7 @@ This will create a `out/suseconnect` binary.
 ### Build in a container
 If you don't have a go compiler installed, you can run the build in a container:
 ```
-docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.24-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make vendor build"
+docker run --rm -v $(pwd):/connect registry.suse.com/bci/golang:1.26-openssl sh -c "git config --global --add safe.directory /connect; cd /connect; make vendor build"
 ```
 Or you can use the `bci-build` Makefile target:
 ```
@@ -366,7 +366,7 @@ specified with the `--workflows` (`-W`) option, e.g.
 ```bash
 $ act -W .github/workflows/agama.yml pull_request
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
-[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
+[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.26-openssl
 ...
 [agama tests/Run agama rust tests                          ] Cleaning up container for job Run agama rust tests
 [agama tests/Run agama rust tests                          ]   ✅  Success - Complete job
@@ -383,7 +383,7 @@ depends upon, as follows:
 ```bash
 $ gh act -j run-agama-rust-tests
 [agama tests/Build SUSE/connect-ng inputs required by Agama] ⭐ Run Set up job
-[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.24-openssl
+[agama tests/Build SUSE/connect-ng inputs required by Agama] 🚀  Start image=registry.suse.com/bci/golang:1.26-openssl
 ...
 [agama tests/Run agama rust tests                          ] Cleaning up container for job Run agama rust tests
 [agama tests/Run agama rust tests                          ]   ✅  Success - Complete job

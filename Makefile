@@ -13,7 +13,7 @@ GOFLAGS       = -v -mod=vendor
 BINFLAGS      = -buildmode=pie
 SOFLAGS       = -buildmode=c-shared
 
-GOCONTAINER   = registry.suse.com/bci/golang:1.24-openssl
+GOCONTAINER   = registry.suse.com/bci/golang:1.26-openssl
 RUSTCONTAINER = registry.suse.com/bci/rust:1.95
 CRM           = docker run --rm $(if $(filter true,$(strip $(INTERACTIVE))),-it) --privileged
 ENVFILE       = .env

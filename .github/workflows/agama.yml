@@ -17,7 +17,7 @@ jobs:
     name: Build SUSE/connect-ng inputs required by Agama
     runs-on: ubuntu-latest
     container:
-      image: registry.suse.com/bci/golang:1.24-openssl
+      image: registry.suse.com/bci/golang:1.26-openssl
       options: --user root --privileged
 
     steps:
