@@ -1,0 +1,200 @@
+[
+  {
+    "id": 756,
+    "identifier": "SUSE_SLES-SP2-migration",
+    "name": "SUSE Linux Enterprise Server",
+    "version": "11.1",
+    "arch": "i686",
+    "isbase": true,
+    "friendly_name": "SUSE Linux Enterprise Server 11 SP1 i686 (Migration)",
+    "available": true,
+    "free": false,
+    "recommended": false,
+    "extensions": [
+      {
+        "id": 1192,
+        "identifier": "sle-smt",
+        "name": "SUSE Linux Enterprise Subscription Management Tool",
+        "version": "11.1",
+        "arch": "",
+        "isbase": false,
+        "friendly_name": "SUSE Linux Enterprise Subscription Management Tool 11 SP1",
+        "available": true,
+        "free": true,
+        "recommended": false,
+        "former_identifier": "sle-smt",
+        "product_type": "extension",
+        "ProductLine": "",
+        "release_stage": "released",
+        "repositories": [
+          {
+            "name": "SLE11-SP1-SMT-Updates",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Updates/sle-11-x86_64/?credentials",
+            "distro_target": "sle-11-x86_64",
+            "description": "SLE11-SP1-SMT-Updates for sle-11-x86_64",
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "name": "SLE11-SP1-SMT-Pool",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Pool/sle-11-s390x/?credentials",
+            "distro_target": "sle-11-s390x",
+            "description": "SLE11-SP1-SMT-Pool for sle-11-s390x",
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "name": "SLE11-SP1-SMT-Pool",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Pool/sle-11-x86_64/?credentials",
+            "distro_target": "sle-11-x86_64",
+            "description": "SLE11-SP1-SMT-Pool for sle-11-x86_64",
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "name": "SLE11-SP1-SMT-Updates",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Updates/sle-11-i586/?credentials",
+            "distro_target": "sle-11-i586",
+            "description": "SLE11-SP1-SMT-Updates for sle-11-i586",
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "name": "SLE11-SP1-SMT-Pool",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Pool/sle-11-i586/?credentials",
+            "distro_target": "sle-11-i586",
+            "description": "SLE11-SP1-SMT-Pool for sle-11-i586",
+            "autorefresh": true,
+            "installer_updates": false
+          },
+          {
+            "name": "SLE11-SP1-SMT-Updates",
+            "enabled": true,
+            "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-SMT-Updates/sle-11-s390x/?credentials",
+            "distro_target": "sle-11-s390x",
+            "description": "SLE11-SP1-SMT-Updates for sle-11-s390x",
+            "autorefresh": true,
+            "installer_updates": false
+          }
+        ]
+      }
+    ],
+    "former_identifier": "SUSE_SLES-SP2-migration",
+    "product_type": "base",
+    "ProductLine": "",
+    "release_stage": "released",
+    "repositories": [
+      {
+        "name": "SLE11-SP1-Debuginfo-Pool",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-Debuginfo-Pool/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-SP1-Debuginfo-Pool for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLE11-SP1-Debuginfo-Updates",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-SP1-Debuginfo-Updates/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-SP1-Debuginfo-Updates for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLE11-SP2-Debuginfo-Core",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-SP2-Debuginfo-Core/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-SP2-Debuginfo-Core for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLE11-WebYaST-SP2-Pool",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-WebYaST-SP2-Pool/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-WebYaST-SP2-Pool for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLE11-SP2-Debuginfo-Updates",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-SP2-Debuginfo-Updates/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-SP2-Debuginfo-Updates for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLES11-SP2-Updates",
+        "enabled": true,
+        "url": "https://updates.suse.com/repo/$RCE/SLES11-SP2-Updates/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLES11-SP2-Updates for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLE11-WebYaST-SP2-Updates",
+        "enabled": false,
+        "url": "https://updates.suse.com/repo/$RCE/SLE11-WebYaST-SP2-Updates/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLE11-WebYaST-SP2-Updates for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      },
+      {
+        "name": "SLES11-SP2-Core",
+        "enabled": true,
+        "url": "https://updates.suse.com/repo/$RCE/SLES11-SP2-Core/sle-11-i586/?credentials",
+        "distro_target": "sle-11-i586",
+        "description": "SLES11-SP2-Core for sle-11-i586",
+        "autorefresh": true,
+        "installer_updates": false
+      }
+    ]
+  },
+  {
+    "id": 2722,
+    "identifier": "rancher",
+    "name": "SUSE Rancher",
+    "version": "2.8.1",
+    "arch": "",
+    "isbase": true,
+    "friendly_name": "SUSE Rancher 2.8.1",
+    "available": true,
+    "free": false,
+    "recommended": false,
+    "former_identifier": "rancher",
+    "product_type": "base",
+    "ProductLine": "",
+    "shortname": "Rancher",
+    "release_stage": "released"
+  },
+  {
+    "id": 3396,
+    "identifier": "rancher-prime",
+    "name": "SUSE Rancher Prime",
+    "version": "2.12.10",
+    "arch": "",
+    "isbase": true,
+    "friendly_name": "SUSE Rancher Prime 2.12.10",
+    "available": true,
+    "free": false,
+    "recommended": false,
+    "former_identifier": "rancher-prime",
+    "product_type": "base",
+    "ProductLine": "",
+    "shortname": "Rancher Prime",
+    "release_stage": "released"
+  }
+]

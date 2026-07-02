@@ -124,6 +124,7 @@ build: clean out internal/connect/version.txt
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(call cover-bin-flags) $(OUT) github.com/SUSE/connect-ng/cmd/validate-offline-certificate
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(call cover-bin-flags) $(OUT) github.com/SUSE/connect-ng/cmd/offline-register-api
 	$(GO) build $(GOFLAGS) $(BINFLAGS) $(call cover-bin-flags) $(OUT) github.com/SUSE/connect-ng/cmd/suseconnect-mcp
+	$(GO) build $(GOFLAGS) $(BINFLAGS) $(call cover-bin-flags) $(OUT) github.com/SUSE/connect-ng/cmd/subscription-info-demo
 	$(GO) build $(GOFLAGS) $(SOFLAGS) $(call cover-lib-flags) $(OUT)/libsuseconnect.so github.com/SUSE/connect-ng/third_party/libsuseconnect
 
 bci-build:
