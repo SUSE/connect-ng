@@ -211,11 +211,15 @@ Determine if there are any outstanding requests with
 ```bash
 $ osc request list
 ```
-If there are outstanding requests then it needs to be determined if they are active or not.
-The age and state should be used to to this. If there requests are more than a month old and in the
-declined state, then new submission which supercedes the existing ones is needed.
-If there are no requests, a submission is needed. If there is a request and it it very new, determine if
-it was automatically created from the commit above.
+If there is a recent request for the target stream that includes the intended
+updated package content, this may indicate an automatic devel project/branch
+submission was triggered, and there is no need to submit a new request; please
+review the active request carefully to confirm it does in fact include the
+intended content.
+
+Otherwise, if there is no active request containing the desired updated package
+content, a new request needs to be submitted for the target stream, it is OK to
+supersede any existing requests if prompted to confirm doing so.
 ```bash
 $ osc submitrequest systemsmanagement:SCC suseconnect-ng openSUSE:Factory
 ```
@@ -302,12 +306,12 @@ The following should be the complete list of requests done via osc,
 Please update this list as releases are added or removed:
 
 ```bash
-osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-12-SP2:Update # for  SLE 12 SP5
-osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP4:Update
-osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP5:Update
-osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP6:Update # also updates SLE 15 SP7
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-12-SP2:Update # for SLE 12 SP5
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP4:Update # and SLE Micro 5.3 & 5.4
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP5:Update # and SLE Micro 5.5
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP6:Update # and SLE 15 SP7
 
-osc -A https://api.suse.de sr Devel:SCC:suseconnect suseconnect-ng SUSE:ALP:Source:Standard:1.0 # for ALP and SL Micro 6.0
+osc -A https://api.suse.de sr Devel:SCC:suseconnect suseconnect-ng SUSE:ALP:Source:Standard:1.0 # for SL Micro 6.0
 osc -A https://api.suse.de sr Devel:SCC:suseconnect suseconnect-ng SUSE:SLFO:1.1 # for SL Micro 6.1
 ```
 
@@ -368,7 +372,7 @@ to the suseconnect-ng.changes file are replicated to the
 file.
 
 ## Step 10. Create the GitHub Release for the version tag
-This not be confused with "Step 4. Tagging the release". This step creates the release
+This not be confused with [Step 4. Tagging the release](#step-4-tagging-the-release). This step creates the release
 artifact in [SUSE/connect-ng](github.com/SUSE/connect-ng) repo on GitHub.
 
 
@@ -428,7 +432,7 @@ use `osc vc` to create the initial placeholder entry for a given version.
 ## Step 12. Tracking submissions
 
 The maintenance update requests created in Step 9, will result in a number of URLs that can be
-used for tacking the state of the requests. For example, for 1.22.1:
+used for tacking the state of the requests. For example, for `1.22.1`:
 
 | URL                                            | Stream                      |
 | -----------------------------------------------| ----------------------------|
@@ -458,7 +462,10 @@ Once package updates have been accepted/merged, the [SCC](https://scc.suse.com) 
 
 If [scc.suse.com package search](https://scc.suse.com/packages) does not show the desired version as released, then [search suseconnect-ng in smelt](https://smelt.suse.de/search/?q=suseconnect-ng) to find the
 expected release date. Click on "Created" until the "suseconnect-ng" submissions are in decending order by creation date. This
-should show number of "active" state suseconnect-ng packages. Clicking entry in the "ID" will show the "Planned release date".
+should show a number of "active" state suseconnect-ng packages. Clicking on an
+entry's `ID` link will bring up a page showing "Planned release date" and
+"Scheduled release date" fields providing useful information as to when the
+package update will be released.
 
 # Testing the package locally
 
