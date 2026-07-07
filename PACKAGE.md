@@ -172,7 +172,8 @@ $ osc build SLE_15_SP7 x86_64
       which should retrieve the latest versions of relevant signing keys.
     * ensure that the gpg tool is installed and available on your system.
     * the `--no-verify` option can be used to temporarily disable that check
-      if all else fails.
+      if all else fails. Should only be use if absolutly needed, since it also
+      disables rpmlint verification checks at the end of the local build run.
 
 The `osc build` command may complain about unreferenced files (such as dropped
 patches) being found; remove them and repeat as necessary until the package
