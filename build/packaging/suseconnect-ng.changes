@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jul 16 13:58:11 UTC 2026 - Gabriel Bueno <gabriel.bueno@suse.com>
+
+- Adds a new optional rpm_packages collector, disabled by default,
+  to collect information on installed RPM packages of SUSE vendor.
+
+-------------------------------------------------------------------
 Mon Jun 15 16:29:05 UTC 2026 - Earl Sampson <esampson@suse.com>
 
 - Update version to 1.23.0 (pre):

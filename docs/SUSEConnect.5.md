@@ -34,6 +34,8 @@ collectors:
     state: disabled
   mod_list:
     state: disabled
+  rpm_packages:
+    state: enabled
 ```
 
 The top-level fields are as follows:
@@ -72,10 +74,11 @@ The following collectors are always enabled and cannot be disabled:
 
 ### Optional Collectors
 
-The following collectors are enabled by default but can be disabled:
+The following collectors are optional and can be configured:
 
-  * pci_data: PCI device information (state: enabled/disabled)
-  * mod_list: Loaded kernel modules (state: enabled/disabled)
+  * pci_data: PCI device information (state: enabled/disabled, default: enabled)
+  * mod_list: Loaded kernel modules (state: enabled/disabled, default: enabled)
+  * rpm_packages: System rpm packages (state: enabled/disabled, default: disabled)
 
 Valid state values are:
   * `enabled`: Enable the collector
