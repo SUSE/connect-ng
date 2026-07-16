@@ -79,6 +79,7 @@ The Makefile target `show-version` will report the currently specified version.
 Ensure that the [suseconnect-ng.changes](build/packaging/suseconnect-ng.changes)
 file is up to date. If necessary create a new entry for the target version, and
 add appropriate changes entries to it.
+Make sure that "(pre)" is removed from the changes log.
 
 **Note**: Remember to include any relevant Bugzilla (bsc#xxxxxxx) and Jira
 (jsc#xxxxxxx) references in the changelog entries.
@@ -104,13 +105,15 @@ follows, using v1.22.0 as an example:
 ```bash
 $ git fetch origin
 $ git checkout origin/main
-$ git tag v1.22.0
-$ git push origin v1.22.0
+$ TAG=v$(make show-version)
+$ echo $TAG # make sure this is the one you want
+$ git tag $TAG
+$ git push origin $TAG
 ```
 
 Alternatively tags can be created in the GitHub web interface as part of creating
-a draft release, but please don't publish the release until later, as discussed
-in [Step 10 below](#step-10-create-the-github-release-for-the-version-tag).
+a draft release, but please don't create the release in GitHub until later. This is done in
+[Step 10 below](#step-10-create-the-github-release-for-the-version-tag).
 
 **Note**: Remember to push the tag to the repository if creating the tag locally.
 
@@ -141,10 +144,13 @@ Update the `revision` parameter in the `tar_scm` service definition in the
 *Remember to delete the tarball associated with the previous version.*
 
 Then run `osc service manualrun` to update the package. Note that `manualrun` can
-be abbrediated to `mr`.
+be abbrediated to `mr`. There should be only one suseconnect-ng-*.tar.xz file present.
+So the existing suseconnect-ng-*.tar.xz must be removed and the new one added.
 
 ```bash
+$ osc rm suseconnect-ng-*.tar.xz # remove the previous tar.xz
 $ osc service manualrun
+$ osc add suseconnect-ng-*.tar.xz
 ```
 
 This will perform the following:
@@ -166,7 +172,8 @@ $ osc build SLE_15_SP7 x86_64
       which should retrieve the latest versions of relevant signing keys.
     * ensure that the gpg tool is installed and available on your system.
     * the `--no-verify` option can be used to temporarily disable that check
-      if all else fails.
+      if all else fails. Should only be use if absolutly needed, since it also
+      disables rpmlint verification checks at the end of the local build run.
 
 The `osc build` command may complain about unreferenced files (such as dropped
 patches) being found; remove them and repeat as necessary until the package
@@ -176,13 +183,19 @@ Remember to add any new files and remove any that are no longer required,
 and update the package to reflect these changes using the `osc add <filename>`,
 `osc remove <filename>` or `osc addremove` commands.
 
-Then use `osc commit` to submit the updated package to the OBS project.
+Then submit the updated package to the OBS project like so:
+```bash
+$ osc commit
+```
 
 ## Step 6. Verify updated package builds in OBS for relevant code streams
 
-Check the status of the OBS package build one of:
-* [suseconnect-ng package in OBS](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng#build)
-* the `osc results` command from the command line
+Check the status of the OBS package build with one of the following:
+* Web UI [suseconnect-ng package in OBS](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng#build)
+* or from command line:
+```bash
+$ osc results
+```
 
 Verify that the package builds successfuly for the relevant code streams or
 that any build failures are for known reasons, e.g. go1.xx-openssl packages
@@ -195,11 +208,19 @@ on how to test downloaded package RPMs locally.
 
 ## Step 7. Submit the updated package to Factory
 
-If not triggered automatically, because
-[systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng)
-is the devel project for the `suseconnect-ng` package in openSUSE:Factory, submit
-the updated package to openSUSE:Factory.
+Determine if there are any outstanding requests with
+```bash
+$ osc request list
+```
+If there is a recent request for the target stream that includes the intended
+updated package content, this may indicate an automatic devel project/branch
+submission was triggered, and there is no need to submit a new request; please
+review the active request carefully to confirm it does in fact include the
+intended content.
 
+Otherwise, if there is no active request containing the desired updated package
+content, a new request needs to be submitted for the target stream, it is OK to
+supersede any existing requests if prompted to confirm doing so.
 ```bash
 $ osc submitrequest systemsmanagement:SCC suseconnect-ng openSUSE:Factory
 ```
@@ -221,7 +242,7 @@ file.
 
 Once the OBS openSUSE:Factory submission has been accepted the focus switches
 to IBS, where the
-[Devel:SCC:suseconnect/suseconnect-ng](https://build.suse.de/package/Devel:SCC:suseconnect/suseconnect-ng)
+[Devel:SCC:suseconnect/suseconnect-ng](https://build.suse.de/package/show/Devel:SCC:suseconnect/suseconnect-ng)
 package is a remote link to the
 [OBS systemsmanagement:SCC/suseconnect-ng](https://build.opensuse.org/package/show/systemsmanagement:SCC/suseconnect-ng).
 
@@ -282,10 +303,17 @@ or an equivalent src.suse.de submission for SLE 16 streams.
 
 #### SLE 12 and SLE 15 update requests
 
-For example to submit a maintenance update to SLE 15 SP6:
+The following should be the complete list of requests done via osc,
+Please update this list as releases are added or removed:
 
 ```bash
-osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP6:Update
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-12-SP2:Update # for SLE 12 SP5
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP4:Update # and SLE Micro 5.3 & 5.4
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP5:Update # and SLE Micro 5.5
+osc -A https://api.suse.de mr Devel:SCC:suseconnect suseconnect-ng SUSE:SLE-15-SP6:Update # and SLE 15 SP7
+
+osc -A https://api.suse.de sr Devel:SCC:suseconnect suseconnect-ng SUSE:ALP:Source:Standard:1.0 # for SL Micro 6.0
+osc -A https://api.suse.de sr Devel:SCC:suseconnect suseconnect-ng SUSE:SLFO:1.1 # for SL Micro 6.1
 ```
 
 **Notes:**
@@ -345,14 +373,31 @@ to the suseconnect-ng.changes file are replicated to the
 file.
 
 ## Step 10. Create the GitHub Release for the version tag
+This not be confused with [Step 4. Tagging the release](#step-4-tagging-the-release). This step creates the release
+artifact in [SUSE/connect-ng](github.com/SUSE/connect-ng) repo on GitHub.
+
 
 Once the new suseconnect-ng release has been successfully submitted, and any feedback
 issues have been addressed, create a GitHub release matching the version tag used for
-the maintenance updates, using the changes listed in the
-[suseconnect-ng.changes](build/packaging/suseconnect-ng.changes) file for the version
-as the release notes.
+the maintenance updates.
 
-See previous releases for examples of how to format the content.
+This done via the GitHub web UI. Navigate to the [SUSE/connect-ng/releases area](https://github.com/SUSE/connect-ng/releases) and
+look at one of the existing release tags such as:
+[v1.22.1](https://github.com/SUSE/connect-ng/releases#release-v1.22.1)
+to see the desired format and content.
+
+The release is created via the "Draft a new release" button or directly from:
+["Draft a new release" button](https://github.com/SUSE/connect-ng/releases/new)
+From "Tag: Select tag" pull down select the git tag created in Step 4 (i.e. 'v1.22.1')
+
+For Release Title: This is a text entry box and should be filled in with the git tag value for this release (i.e. 'v1.22.1')
+
+The contents of the "Release Notes" text box are created by copying the changes list from the [suseconnect-ng.changes entry associated with the tag](https://github.com/SUSE/connect-ng/blob/main/build/packaging/suseconnect-ng.changes)
+start the copy from "- Update version to.." and end before next release seperator in the changelog file.
+
+Change "- Update version" to "Version"
+
+Click "Preview" to view what the Release Tag will look like. If all looks good, click "Publish Release"
 
 ## Step 11. Update the version on the main branch
 
@@ -384,6 +429,44 @@ $ osc vc build/packaging/suseconnect-ng.changes
 
 Further updates to the changelog can handled via normal file editing; only
 use `osc vc` to create the initial placeholder entry for a given version.
+
+## Step 12. Tracking submissions
+
+The maintenance update requests created in Step 9, will result in a number of URLs that can be
+used for tacking the state of the requests. For example, for `1.22.1`:
+
+| URL                                            | Stream                      |
+| -----------------------------------------------| ----------------------------|
+| https://src.suse.de/pool/suseconnect-ng/pulls/4| slfo-1.2 (SLE 16, Micro 6.2)|
+| https://src.suse.de/pool/suseconnect-ng/pulls/3| slfo-main|
+| https://build.suse.de/request/show/414112| SUSE:SLFO:1.1 (Micro 6.1)|
+| https://build.suse.de/request/show/414111| SUSE:ALP:Source:Standard:1.0 (ALP, Micro 6.0)|
+| https://build.suse.de/request/show/414100| SUSE:SLE-15-SP6:Update|
+| https://build.suse.de/request/show/414110| SUSE:SLE-15-SP5:Update|
+| https://build.suse.de/request/show/414109| SUSE:SLE-15-SP4:Update|
+| https://build.suse.de/request/show/414107| SUSE:SLE-12-SP2:Update|
+
+Requests to src.suse.de will show as "Manually merged" and build.suse.de requests will show as "accepted".
+
+## Step 12. Released Status
+
+Once package updates have been accepted/merged, the [SCC](https://scc.suse.com) can be used to determine update package is available to users.
+| URL                                            | Stream                      |
+| --------------------------------------------------------------------------------------------------------------------------| -----|
+| [SLES 16.1](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=16.1&arch=x86_64&query=suseconnect-ng&module=)| 16.1|
+| [SLES 16.0](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=16.0&arch=x86_64&query=suseconnect-ng&module=)| 16.0|
+| [SLES 15.7](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=15.7&arch=x86_64&query=suseconnect-ng&module=)| 15.7|
+| [SLES 15.6](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=15.6&arch=x86_64&query=suseconnect-ng&module=)| 15.6|
+| [SLES 15.5](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=15.5&arch=x86_64&query=suseconnect-ng&module=)| 15.5|
+| [SLES 15.4](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=15.4&arch=x86_64&query=suseconnect-ng&module=)| 15.4|
+| [SLES 12.5](https://scc.suse.com/packages?name=SUSE%20Linux%20Enterprise%20Server&version=12.5&arch=x86_64&query=suseconnect-ng&module=)| 12.5|
+
+If [scc.suse.com package search](https://scc.suse.com/packages) does not show the desired version as released, then [search suseconnect-ng in smelt](https://smelt.suse.de/search/?q=suseconnect-ng) to find the
+expected release date. Click on "Created" until the "suseconnect-ng" submissions are in decending order by creation date. This
+should show a number of "active" state suseconnect-ng packages. Clicking on an
+entry's `ID` link will bring up a page showing "Planned release date" and
+"Scheduled release date" fields providing useful information as to when the
+package update will be released.
 
 # Testing the package locally
 
