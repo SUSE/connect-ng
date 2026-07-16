@@ -121,6 +121,11 @@ func main() {
 	flag.BoolVar(&info, "i", false, "")
 
 	flag.Parse()
+	if flag.NArg() > 0 {
+		fmt.Fprintf(os.Stderr, "Error: Unexpected argument '%s'\n\n", flag.Arg(0))
+		flag.Usage()
+		os.Exit(1) // Or use your custom exitOnError(err, nil, nil)
+	}
 
 	if version {
 		fmt.Println(connect.GetShortenedVersion())
