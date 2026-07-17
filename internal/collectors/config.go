@@ -101,11 +101,14 @@ var collectorsRegistry = map[string]CollectorRegistryEntry{
 		Metadata:  CollectorMetadata{DefaultEnabled: true, Mandatory: true, Type: SystemInfoCollector},
 		Collector: HA{},
 	},
-
 	// Optional collectors
 	"pci_data": {
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
 		CollectorFactory: func(updateDataIDs bool) Collector { return PCI{UpdateDataIDs: updateDataIDs} },
+	},
+	"mcp_stats": {
+		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},
+		CollectorFactory: func(updateDataIDs bool) Collector { return MCP{UpdateDataIDs: updateDataIDs} },
 	},
 	"mod_list": {
 		Metadata:         CollectorMetadata{DefaultEnabled: true, Mandatory: false, Type: ProfileCollector},

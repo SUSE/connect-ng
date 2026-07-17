@@ -162,7 +162,7 @@ coverage-percent: coverage-check-enabled coverage-dirs
 coverage: coverage-func
 
 test: internal/connect/version.txt coverage-dirs
-	$(GO) test ./internal/* ./cmd/suseconnect ./pkg/* $(call cover-test-flags)
+	$(GO) test ./internal/* ./cmd/suseconnect ./cmd/suseconnect-mcp ./pkg/* $(call cover-test-flags)
 	$(call go-tool-covdata-report,func,$(COVERAGE_UNIT))
 
 unit-test-coverage: coverage-dirs
