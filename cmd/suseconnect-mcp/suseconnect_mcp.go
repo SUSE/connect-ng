@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,36 @@ import (
 	"github.com/SUSE/connect-ng/pkg/registration"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// McpActions handles the file system operations for MCP actions.
+type McpActions struct {
+	actions     []Action
+	osStat      func(string) (os.FileInfo, error)
+	osMkdirAll  func(string, os.FileMode) error
+	osReadFile  func(string) ([]byte, error)
+	osWriteFile func(string, []byte, os.FileMode) error
+	osOpenFile  func(string, int, os.FileMode) (*os.File, error)
+	osRename    func(string, string) error
+	osRemove    func(string) error
+}
+
+// NewMcpActions creates a new McpActions with default file system functions.
+func NewMcpActions() *McpActions {
+	return &McpActions{
+		osStat:      os.Stat,
+		osMkdirAll:  os.MkdirAll,
+		osReadFile:  os.ReadFile,
+		osWriteFile: os.WriteFile,
+		osOpenFile:  os.OpenFile,
+		osRename:    os.Rename,
+		osRemove:    os.Remove,
+	}
+}
+
+type Action struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
 
 type ToolInput struct{}
 
@@ -43,9 +74,95 @@ var (
 	_ func(context.Context, *mcp.CallToolRequest, DeactivateInput) (*mcp.CallToolResult, JSONOutput, error) = DeactivateProduct
 )
 
+var mcpDir = "/var/lib/suseconnect-mcp"
+
+// incCount increments the count of a specific action.
+func (m *McpActions) incCount(actionName string) {
+	found := false
+	for i, action := range m.actions {
+		if action.Name == actionName {
+			m.actions[i].Count++
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		m.actions = append(m.actions, Action{Name: actionName, Count: 1})
+	}
+}
+
+func updateActionCountInit(actionName string) error {
+	m := NewMcpActions()
+	return updateActionCount(m, actionName)
+}
+
+func updateActionCount(m *McpActions, actionName string) error {
+	filePath := mcpDir + "/suseconnectmcp"
+
+	if _, err := m.osStat(mcpDir); os.IsNotExist(err) {
+		err = m.osMkdirAll(mcpDir, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+	}
+
+	// Ensure that the process has write access to the directory, otherwise fail early
+	testFile := mcpDir + "/.write_test"
+	f, openErr := m.osOpenFile(testFile, os.O_WRONLY|os.O_CREATE, 0664)
+	if openErr != nil {
+		return fmt.Errorf("no write access to %s: %w", mcpDir, openErr)
+	}
+	f.Close()
+
+	err := m.osRemove(testFile)
+	if err != nil {
+		// This shouldn't fail, but if it does, it's not critical
+		slog.Warn("failed to remove temporary file", "file", testFile, "error", err)
+	}
+
+	file, err := m.osReadFile(filePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to read file: %w", err)
+		}
+	} else {
+		err = json.Unmarshal(file, &m.actions)
+		if err != nil {
+			// Can be empty file
+		}
+	}
+
+	m.incCount(actionName)
+
+	data, err := json.Marshal(m.actions)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %w", err)
+	}
+
+	tempFilePath := fmt.Sprintf("%s.%d.tmp", filePath, os.Getpid())
+	err = m.osWriteFile(tempFilePath, data, 0664)
+	if err != nil {
+		return fmt.Errorf("failed to write to temporary file: %w", err)
+	}
+
+	err = m.osRename(tempFilePath, filePath)
+	if err != nil {
+		m.osRemove(tempFilePath)
+		return fmt.Errorf("failed to rename temporary file: %w", err)
+	}
+
+	return nil
+}
+
 func RegistrationStatus(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("RegistrationStatus tool called")
+
+	if err := updateActionCountInit("RegistrationStatus"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
 
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
@@ -63,6 +180,10 @@ func RegistrationStatus(ctx context.Context, req *mcp.CallToolRequest, input Too
 func ListExtensions(ctx context.Context, req *mcp.CallToolRequest, input ToolInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("ListExtensions tool called")
+
+	if err := updateActionCountInit("ListExtensions"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
 
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
@@ -85,6 +206,10 @@ func RegisterSystem(ctx context.Context, req *mcp.CallToolRequest, input Registe
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("RegisterSystem tool called")
 
+	if err := updateActionCountInit("RegisterSystem"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
+
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
 		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
@@ -104,6 +229,10 @@ func RegisterSystem(ctx context.Context, req *mcp.CallToolRequest, input Registe
 func ActivateProduct(ctx context.Context, req *mcp.CallToolRequest, input ActivateInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("ActivateProduct tool called")
+
+	if err := updateActionCountInit("ActivateProduct"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
 
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
@@ -130,6 +259,10 @@ func DeregisterSystem(ctx context.Context, req *mcp.CallToolRequest, input ToolI
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("DeregisterSystem tool called")
 
+	if err := updateActionCountInit("DeregisterSystem"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
+
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {
 		return nil, JSONOutput{Error: "Failed to read SUSEConnect configuration"}, err
@@ -147,6 +280,10 @@ func DeregisterSystem(ctx context.Context, req *mcp.CallToolRequest, input ToolI
 func DeactivateProduct(ctx context.Context, req *mcp.CallToolRequest, input DeactivateInput) (
 	*mcp.CallToolResult, JSONOutput, error) {
 	slog.Info("DeactivateProduct tool called")
+
+	if err := updateActionCountInit("DeactivateProduct"); err != nil {
+		return nil, JSONOutput{Error: "Failed to update Action Count"}, err
+	}
 
 	opts, err := connect.ReadFromConfiguration(connect.DefaultConfigPath)
 	if err != nil {

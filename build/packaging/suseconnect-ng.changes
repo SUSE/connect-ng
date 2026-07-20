@@ -7,6 +7,8 @@ Mon Jun 15 16:29:05 UTC 2026 - Earl Sampson <esampson@suse.com>
     install to support building the package (jsc#SCC-843 bsc#1268900).
   - Fix flag parsing so that unknown flags or options are flagged as an
     error and the usage message is displayed. (bsc#1159776).
+  - InstallReleasePackage interactive/noninteractive handling should
+    be consistent with DistUpgrade (bsc#1267478).
 
 -------------------------------------------------------------------
 Wed Jun 10 18:43:58 UTC 2026 - Earl Sampson <esampson@suse.com>

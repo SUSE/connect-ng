@@ -233,7 +233,7 @@ func RefreshAllServices() error {
 }
 
 // InstallReleasePackage ensures the <product-id>-release package is installed.
-func InstallReleasePackage(identifier string, autoImportRepoKeys bool) error {
+func InstallReleasePackage(identifier string, autoImportRepoKeys bool, nonInteractive bool) error {
 	if identifier == "" {
 		return nil
 	}
@@ -255,8 +255,11 @@ func InstallReleasePackage(identifier string, autoImportRepoKeys bool) error {
 		validExitCodes = append(validExitCodes, zypperInfoReposSkipped)
 	}
 
-	args := []string{"--no-refresh", "--non-interactive", "install", "--no-recommends",
-		"--auto-agree-with-product-licenses", "-t", "product", identifier}
+	args := []string{"--no-refresh"}
+	if nonInteractive {
+		args = append(args, "--non-interactive")
+	}
+	args = append(args, []string{"install", "--no-recommends", "--auto-agree-with-product-licenses", "-t", "product", identifier}...)
 
 	if autoImportRepoKeys {
 		args = append([]string{"--gpg-auto-import-keys"}, args...)

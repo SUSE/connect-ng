@@ -101,7 +101,10 @@ The following tools should be available and verified as working:
       ```
 
       See [Running All Test Suites](#running-all-test-suites) for details.
+  
+  * To let AI agents make use of suseconnect functionality
 
+      See [SUSEConnect MCP Server](#suseconnect-mcp-server) for details
 
 ### Build
 Requires Go >= 1.24
@@ -389,3 +392,35 @@ $ gh act -j run-agama-rust-tests
 [agama tests/Run agama rust tests                          ]   ✅  Success - Complete job
 [agama tests/Run agama rust tests                          ] 🏁  Job succeeded
 ```
+
+### SUSEConnect MCP Server
+The MCP server can be used as stdio by pointing to the suseconnect-mcp executable.
+In the SLES agentic framework, the systems MCP servers run behind a [proxy](https://www.suse.com/c/suse-linux-enterprise-server-16-agentic-ai/) which handles permissions and uses the stdio interface for the local MCPs.
+
+#### Configure MCP Server
+Add the MCP server to config in ~/.gemini/settings.json or ~/.claude/settings.json or .mcp.json:
+
+```bash
+{
+    "mcpServers": {
+     "suseconnect-mcp-stdio": {
+      "command": "/space/workspace/connect-ng/out/suseconnect-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+#### Tools
+ * ActivateProduct - Activates an additional extension product or module on your SUSE system.      
+                     Available extensions can get queried with the ListExtensions tool
+ * DeactivateProduct - Deactivates an extension product or module on your SUSE system
+ * DeregisterSystem - Deregisters your SUSE system. This will remove the system's registration and disable access to online repositories
+ * ListExtensions - List available extension products for your SUSE system
+ * RegisterSystem - Registers and activates your SUSE system.  
+                    This will enable access to online repositories and additional extensions and modules
+ * RegistrationStatus - Tool to output the registration status of the system and activated/non-activated installed products
+
+#### Usage
+gemini-cli/claude can use the tools to answer questions such as "What is the registration status of my system".
+
