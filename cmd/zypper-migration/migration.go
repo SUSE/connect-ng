@@ -77,6 +77,7 @@ func main() {
 		repo                     multiArg
 		download                 multiArg // using multiArg here to make flags simpler to visit
 		autoImportRepoKeys       bool
+		echo                     bool
 	)
 
 	flag.Usage = func() {
@@ -172,7 +173,9 @@ func main() {
 		// reset root (if set) as the update stack can be outside of
 		// the to be updated system
 		opts.FsRoot = ""
-		echo := util.SetSystemEcho(true)
+		if !nonInteractive {
+			echo = util.SetSystemEcho(true)
+		}
 		if pending, err := zypper.PatchCheck(true, quiet, verbose, nonInteractive, false); err != nil {
 			fmt.Printf("patch pre-check failed: %v\n", err)
 			os.Exit(1)
@@ -202,7 +205,9 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		util.SetSystemEcho(echo)
+		if !nonInteractive {
+			util.SetSystemEcho(echo)
+		}
 		// restore root if needed
 		if fsRoot != "" {
 			opts.FsRoot = fsRoot
@@ -211,14 +216,18 @@ func main() {
 	QuietOut.Print("\n")
 
 	// This is only necessary, if we run with --root option
-	echo := util.SetSystemEcho(true)
+	if !nonInteractive {
+		echo = util.SetSystemEcho(true)
+	}
 	if err := zypper.RefreshRepos("", false, quiet, verbose, nonInteractive, autoImportRepoKeys); err != nil {
 		fmt.Println("repository refresh failed, exiting")
 		os.Exit(1)
 	}
-	util.SetSystemEcho(echo)
+	if !nonInteractive {
+		util.SetSystemEcho(echo)
+	}
 
-	systemProducts, err := checkSystemProducts(api, true, autoImportRepoKeys, opts)
+	systemProducts, err := checkSystemProducts(api, true, autoImportRepoKeys, nonInteractive, opts)
 	if err != nil {
 		fmt.Printf("Can't determine the list of installed products: %v\n", err)
 		os.Exit(1)
@@ -364,7 +373,7 @@ func main() {
 
 	// make sure all release packages are installed (bsc#1171652)
 	if err == nil {
-		_, err := checkSystemProducts(api, false, autoImportRepoKeys, opts)
+		_, err := checkSystemProducts(api, false, autoImportRepoKeys, nonInteractive, opts)
 		if err != nil {
 			fmt.Printf("Can't determine the list of installed products after migration: %v\n", err)
 			// the system has been sucessfully upgraded, zypper reported no error so
@@ -391,16 +400,22 @@ func main() {
 	}
 }
 
-func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRepoKeys bool, opts *connect.Options) ([]registration.Product, error) {
+func checkSystemProducts(api connect.WrappedAPI, rollbackOnFailure, autoImportRepoKeys bool, nonInteractive bool, opts *connect.Options) ([]registration.Product, error) {
+	var echo bool
 	systemProducts, err := connect.SystemProducts(api, opts)
 	if err != nil {
 		return systemProducts, err
 	}
-
 	releasePackageMissing := false
 	for _, p := range systemProducts {
 		// if a release package for registered product is missing -> try install it
-		err := zypper.InstallReleasePackage(p.Identifier, autoImportRepoKeys)
+		if !nonInteractive {
+			echo = util.SetSystemEcho(true)
+		}
+		err := zypper.InstallReleasePackage(p.Identifier, autoImportRepoKeys, nonInteractive)
+		if !nonInteractive {
+			util.SetSystemEcho(echo)
+		}
 		if err != nil {
 			releasePackageMissing = true
 			QuietOut.Printf("Can't install release package for registered product %s\n", p.Name)
@@ -672,6 +687,7 @@ func applyMigration(opts *connect.Options, migration connect.MigrationPath, base
 	quiet, verbose, nonInteractive, insecure, forceDisableRepos, autoAgreeLicenses, autoImportRepoKeys, failDupOnlyOnFatalErrors bool,
 	dupArgs []string) (bool, error) {
 
+	var echo bool
 	fsInconsistent := false
 
 	if err := zypper.Backup(); err != nil {
@@ -702,7 +718,9 @@ func applyMigration(opts *connect.Options, migration connect.MigrationPath, base
 		return fsInconsistent, err
 	}
 
-	echo := util.SetSystemEcho(true)
+	if !nonInteractive {
+		echo = util.SetSystemEcho(true)
+	}
 	if err := zypper.RefreshRepos(baseProductVersion, true, false, false, false, autoImportRepoKeys); err != nil {
 		return fsInconsistent, fmt.Errorf("Refresh of repositories failed: %v", err)
 	}
@@ -711,7 +729,9 @@ func applyMigration(opts *connect.Options, migration connect.MigrationPath, base
 	}
 
 	err = zypper.DistUpgrade(baseProductVersion, quiet, verbose, autoAgreeLicenses, nonInteractive, dupArgs)
-	util.SetSystemEcho(echo)
+	if !nonInteractive {
+		util.SetSystemEcho(echo)
+	}
 	if err != nil {
 		ze := err.(zypper.ZypperError)
 		// TODO: export connect.zypperErrCommit (8)?
