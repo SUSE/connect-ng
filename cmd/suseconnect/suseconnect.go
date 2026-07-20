@@ -124,7 +124,7 @@ func main() {
 	if flag.NArg() > 0 {
 		fmt.Fprintf(os.Stderr, "Error: Unexpected argument '%s'\n\n", flag.Arg(0))
 		flag.Usage()
-		os.Exit(1) // Or use your custom exitOnError(err, nil, nil)
+		os.Exit(1)
 	}
 
 	if version {
