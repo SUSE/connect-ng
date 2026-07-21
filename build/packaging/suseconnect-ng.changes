@@ -11,6 +11,8 @@ Mon Jun 15 16:29:05 UTC 2026 - Earl Sampson <esampson@suse.com>
   - Use product identifier for product migrations. (bsc#1268596)
   - Switch to using go1.26-openssl as the default Go version to
     install to support building the package (jsc#SCC-843 bsc#1268900).
+  - Fix flag parsing so that unknown flags or options are flagged as an
+    error and the usage message is displayed. (bsc#1159776).
   - InstallReleasePackage interactive/noninteractive handling should
     be consistent with DistUpgrade (bsc#1267478).
 
