@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/internal/util"
@@ -196,7 +197,7 @@ func Deregister(api WrappedAPI, opts *Options) error {
 	}
 
 	baseMeta, tree, err := registration.Upgrade(conn, base.Identifier, base.Version, base.Arch)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "expired") {
 		return err
 	}
 
@@ -237,8 +238,10 @@ func Deregister(api WrappedAPI, opts *Options) error {
 	}
 
 	if !opts.SkipServiceInstall {
-		if err := localRemoveOrRefreshService(baseMeta.Name, opts); err != nil {
-			return err
+		if baseMeta != nil {
+			if err := localRemoveOrRefreshService(baseMeta.Name, opts); err != nil {
+				return err
+			}
 		}
 	}
 
