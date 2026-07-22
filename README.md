@@ -404,7 +404,7 @@ Add the MCP server to config in ~/.gemini/settings.json or ~/.claude/settings.js
 {
     "mcpServers": {
      "suseconnect-mcp-stdio": {
-      "command": "/space/workspace/connect-ng/out/suseconnect-mcp",
+      "command": "/usr/bin/suseconnect-mcp",
       "args": []
     }
   }
