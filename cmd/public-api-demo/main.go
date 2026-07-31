@@ -2,16 +2,20 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/SUSE/connect-ng/pkg/connection"
 	"github.com/SUSE/connect-ng/pkg/labels"
+	"github.com/SUSE/connect-ng/pkg/profiles"
 	"github.com/SUSE/connect-ng/pkg/registration"
 )
 
@@ -32,12 +36,14 @@ func waitForUser(message string) {
 	}
 }
 
-func runDemo(identifier, version, arch, infoPath, regcode string) error {
+func runDemo(identifier, version, arch, infoPath, regcode string, systemProfiles registration.DataProfiles) error {
 	opts := connection.DefaultOptions("public-api-demo", "1.0", "DE")
 	isProxy := false
 	creds := &SccCredentials{}
 
 	if url := os.Getenv("SCC_HOST"); url != "" {
+		opts.URL = url
+	} else if url := os.Getenv("RMT_HOST"); url != "" {
 		opts.URL = url
 		isProxy = true
 	}
@@ -108,6 +114,11 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 		fmt.Printf("!! first 40 characters: %s\n", string(payload[0:40]))
 	}
 
+	extraData := registration.ExtraData{
+		"instance_data":   "<document>{}</document>",
+		"system_profiles": systemProfiles,
+	}
+
 	bold("2) Registering a client to SCC with a registration code\n")
 	id, regErr := registration.Register(conn, regcode, hostname, systemInformation, registration.NoExtraData)
 	if regErr != nil {
@@ -125,15 +136,10 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 
 	bold("4) System status // Ping\n")
 
-	extraData := registration.ExtraData{
-		"instance_data": "<document>{}</document>",
-	}
-
 	systemInformation["uname"] = "public api demo - ping"
+	delete(extraData, "system_profiles")
 
-	profiles := registration.DataProfiles{}
-
-	status, statusErr := registration.Status(conn, hostname, systemInformation, profiles, extraData)
+	status, statusErr := registration.Status(conn, hostname, systemInformation, systemProfiles, extraData)
 	if statusErr != nil {
 		return statusErr
 	}
@@ -179,52 +185,56 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 	waitForUser("All activated products are listed")
 
 	bold("7) Label management\n")
-	toAssign := []labels.Label{
-		labels.Label{Name: "public-library-demo", Description: "Demo label created by the public-api-demo executable"},
-		labels.Label{Name: "to-be-removed", Description: "Demo label create by the public-api-demo-executable"},
+	// labels aren't supported by RMTs
+	if !isProxy {
+		toAssign := []labels.Label{
+			labels.Label{Name: "public-library-demo", Description: "Demo label created by the public-api-demo executable"},
+			labels.Label{Name: "to-be-removed", Description: "Demo label create by the public-api-demo-executable"},
+		}
+
+		fmt.Printf("Assigning labels..\n")
+		assigned, assignErr := labels.AssignLabels(conn, toAssign)
+
+		if assignErr != nil {
+			return assignErr
+		}
+
+		fmt.Printf("Newly assigned labels:\n")
+		for _, label := range assigned {
+			fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
+		}
+
+		waitForUser("Now lets unassign a label")
+
+		index := slices.IndexFunc(assigned, func(l labels.Label) bool {
+			return l.Name == "to-be-removed"
+		})
+
+		if index == -1 {
+			return fmt.Errorf("Could not find to-be-removed label for this system! Something went wrong!")
+		}
+
+		fmt.Printf("Unassign %s (id: %d)..\n", assigned[index].Name, assigned[index].Id)
+		_, unassignErr := labels.UnassignLabel(conn, assigned[index].Id)
+
+		if unassignErr != nil {
+			return unassignErr
+		}
+
+		fmt.Printf("Fetch updated list of labels..\n")
+		updated, listErr := labels.ListLabels(conn)
+
+		if listErr != nil {
+			return listErr
+		}
+
+		fmt.Printf("Up to date list from SCC:\n")
+		for _, label := range updated {
+			fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
+		}
+	} else {
+		fmt.Printf("** Skipping labels as not supported by RMTs\n")
 	}
-
-	fmt.Printf("Assigning labels..\n")
-	assigned, assignErr := labels.AssignLabels(conn, toAssign)
-
-	if assignErr != nil {
-		return assignErr
-	}
-
-	fmt.Printf("Newly assigned labels:\n")
-	for _, label := range assigned {
-		fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
-	}
-
-	waitForUser("Now lets unassign a label")
-
-	index := slices.IndexFunc(assigned, func(l labels.Label) bool {
-		return l.Name == "to-be-removed"
-	})
-
-	if index == -1 {
-		return fmt.Errorf("Could not find to-be-removed label for this system! Something went wrong!")
-	}
-
-	fmt.Printf("Unassign %s (id: %d)..\n", assigned[index].Name, assigned[index].Id)
-	_, unassignErr := labels.UnassignLabel(conn, assigned[index].Id)
-
-	if unassignErr != nil {
-		return unassignErr
-	}
-
-	fmt.Printf("Fetch updated list of labels..\n")
-	updated, listErr := labels.ListLabels(conn)
-
-	if listErr != nil {
-		return listErr
-	}
-
-	fmt.Printf("Up to date list from SCC:\n")
-	for _, label := range updated {
-		fmt.Printf(" - %d: %s (%s)\n", label.Id, label.Name, label.Description)
-	}
-
 	waitForUser("Labels managed")
 
 	bold("8) Deregistration of the client\n")
@@ -232,6 +242,52 @@ func runDemo(identifier, version, arch, infoPath, regcode string) error {
 		return err
 	}
 	bold("\n-- System deregistered\n")
+	return nil
+}
+
+func loadProfiles(dir string, systemProfiles registration.DataProfiles) error {
+	foundProfiles := []string{}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		// only interested in regular files
+		if !entry.Type().IsRegular() {
+			continue
+		}
+
+		// read the file content
+		filePath := filepath.Join(dir, entry.Name())
+		contents, err := os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		// unmarshal JSON blob, verifying that it is valid JSON
+		var data any
+		if err := json.Unmarshal(contents, &data); err != nil {
+			return fmt.Errorf("invalid JSON in %s: %w", entry.Name(), err)
+		}
+
+		// generate a profile identifier
+		hash := sha256.Sum256(contents)
+		id := hex.EncodeToString(hash[:])
+
+		// add an appropriate Profile entry to systemProfiles
+		systemProfiles[entry.Name()] = profiles.Profile{
+			Id:   id,
+			Data: data,
+		}
+
+		// add the key name to foundProfiles
+		foundProfiles = append(foundProfiles, entry.Name())
+	}
+
+	fmt.Printf("** Loaded the following profiles: %v\n", foundProfiles)
+
 	return nil
 }
 
@@ -252,7 +308,20 @@ func main() {
 		systemInformationPath = os.Args[4]
 	}
 
-	err := runDemo(os.Args[1], os.Args[2], os.Args[3], systemInformationPath, regcode)
+	// if a profiles dir is provided it should contain files named for the profile type,
+	// e.g. pci_data, mod_list, rpm_packages, that consist of the JSON blob payload to
+	// used for that profile's data. A profile id will be generated from the checksum of
+	// the JSON data blob
+	profilesDir := os.Getenv("PROFILES_DIR")
+	systemProfiles := registration.DataProfiles{}
+	if profilesDir != "" {
+		if err := loadProfiles(profilesDir, systemProfiles); err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading profiles from %p: %s\n", profilesDir, err)
+			os.Exit(1)
+		}
+	}
+
+	err := runDemo(os.Args[1], os.Args[2], os.Args[3], systemInformationPath, regcode, systemProfiles)
 
 	if err != nil {
 		fmt.Printf("%s\n", err)
