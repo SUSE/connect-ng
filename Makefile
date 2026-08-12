@@ -98,7 +98,7 @@ dist: clean internal/connect/version.txt vendor
 
 	@rm -r $(DIST)/
 
-vendor:
+vendor: go.mod go.sum
 	@$(GO) mod download
 	@$(GO) mod verify
 	@$(GO) mod vendor
@@ -106,8 +106,8 @@ vendor:
 out:
 	mkdir -p out
 
-internal/connect/version.txt:
-	@echo -n "$(VERSION)" > internal/connect/version.txt
+internal/connect/version.txt: build/packaging/suseconnect-ng.spec
+	@echo -n "$(VERSION)" > $@ && echo Setting $@ to $(VERSION)
 
 show-version: internal/connect/version.txt
 	@cat internal/connect/version.txt
