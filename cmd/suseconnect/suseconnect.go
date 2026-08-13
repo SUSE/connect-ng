@@ -383,6 +383,20 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 	if err == nil {
 		return
 	}
+
+	// command in error message should match action user needs to do.
+	// so, if TRANSACTIONAL_UPDATE is active or we are trying update
+	// a transactional file system command should be "transactional-update register"
+
+	command_string := "SUSEConnect"
+	if os.Getenv("TRANSACTIONAL_UPDATE") != "" {
+		command_string = "transactional-update register"
+	} else if err1 := util.ReadOnlyFilesystem(opts.FsRoot); err1 != nil {
+		if strings.Contains(err1.Error(), "transactional-update register") {
+			command_string = "transactional-update register"
+		}
+	}
+
 	if ze, ok := err.(zypper.ZypperError); ok {
 		fmt.Println(ze)
 		os.Exit(ze.ExitCode)
@@ -406,7 +420,7 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 			fmt.Print("Error: Invalid system credentials, probably because the ")
 			fmt.Print("registered system was deleted in SUSE Customer Center. ")
 			fmt.Print("Check ", opts.BaseURL, " whether your system appears there. ")
-			fmt.Print("If it does not, please call SUSEConnect --cleanup and re-register this system.\n")
+			fmt.Printf("If it does not, please call %s --cleanup and re-register this system.\n", command_string)
 		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)
 		} else {
@@ -430,10 +444,10 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		os.Exit(69)
 	case connect.ErrListExtensionsUnregistered:
 		fmt.Print("To list extensions, you must first register the base product, ")
-		fmt.Print("using: SUSEConnect -r <registration code>\n")
+		fmt.Printf("using: %s -r <registration code>\n", command_string)
 		os.Exit(1)
 	case connect.ErrBaseProductDeactivation:
-		fmt.Print("Can not deregister base product. Use SUSEConnect -d to deactivate ")
+		fmt.Printf("Can not deregister base product. Use %s -d to deactivate ", command_string)
 		fmt.Print("the whole system.\n")
 		os.Exit(70)
 	case connect.ErrPingFromUnregistered:
@@ -441,7 +455,7 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		fmt.Print("System is not registered. Use the --regcode parameter to register it.\n")
 		os.Exit(71)
 	default:
-		fmt.Printf("SUSEConnect error: %s\n", err)
+		fmt.Printf("%s error: %s\n", "SUSEConnect", err)
 		os.Exit(1)
 	}
 }

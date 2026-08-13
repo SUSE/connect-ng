@@ -142,10 +142,10 @@ func ReadOnlyFilesystem(root string) error {
 		// `transactional-update` binary installed is a transactional server.
 		_, err := os.Stat("/usr/sbin/transactional-update")
 		if statfs.Type == BTRFS_SUPER_MAGIC && err == nil {
-			// The user did not use the 'root' flag from the CLI: this is not
+			// If path is / from either no '--root' or '--root /' then this is not
 			// `transactional-update` calling SUSEConnect but rather a user
 			// directly which is dicouraged.
-			if root == "" {
+			if path == "/" {
 				return errors.New("This is a transactional system, please use `transactional-update register` to manage your product activations")
 			}
 
