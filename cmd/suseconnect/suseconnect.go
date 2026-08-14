@@ -69,7 +69,7 @@ func main() {
 		cleanup               bool
 		rollback              bool
 		baseURL               string
-		fsRoot                string
+		fsRoot                singleStringFlag
 		namespace             string
 		token                 string
 		labels                string
@@ -106,7 +106,7 @@ func main() {
 	flag.BoolVar(&autoImportRepoKeys, "gpg-auto-import-keys", false, "")
 	flag.BoolVar(&autoAgreeWithLicenses, "auto-agree-with-licenses", false, "")
 	flag.StringVar(&baseURL, "url", "", "")
-	flag.StringVar(&fsRoot, "root", "", "")
+	flag.Var(&fsRoot, "root", "")
 	flag.StringVar(&namespace, "namespace", "", "")
 	flag.StringVar(&token, "regcode", "", "")
 	flag.StringVar(&token, "r", "", "")
@@ -142,7 +142,7 @@ func main() {
 	util.Debug.Println("For http debug use: GODEBUG=http2debug=2", strings.Join(os.Args, " "))
 
 	// Ensure --root parameter is actually an absolute path
-	if fsRoot != "" && !filepath.IsAbs(fsRoot) {
+	if fsRoot.isSet && !filepath.IsAbs(fsRoot.value) {
 		fmt.Println("SUSEConnect error: the path specified in the --root option must be absolute.")
 		os.Exit(1)
 	}
@@ -150,7 +150,7 @@ func main() {
 	// Fetch the options to be passed to the internal/connect library by reading
 	// at the default configuration in the provided path. If that default configuration is not there,
 	// then it will simply default to scc.suse.com with no proxy in between.
-	configPath := filepath.Join(fsRoot, connect.DefaultConfigPath)
+	configPath := filepath.Join(fsRoot.value, connect.DefaultConfigPath)
 	opts, err := connect.ReadFromConfiguration(configPath)
 	exitOnError(err, nil, nil)
 
@@ -172,9 +172,9 @@ func main() {
 		writeConfig = true
 	}
 
-	if fsRoot != "" {
-		opts.FsRoot = fsRoot
-		zypper.SetFilesystemRoot(fsRoot)
+	if fsRoot.isSet {
+		opts.FsRoot = fsRoot.value
+		zypper.SetFilesystemRoot(fsRoot.value)
 	}
 
 	if namespace != "" {
