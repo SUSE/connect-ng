@@ -348,8 +348,14 @@ For SLE 16.0 and later code streams, follow the
 to submit a PR to add an updated suseconnect-ng package to the relevant code stream
 branch, e.g. `slfo-1.2`.
 
+In particular pay attention to the progress of the required reviewers on the
+dependent [products/SLFO](https://src.suse.de/products/SLFO) PR that is created
+in response to the [pool/suseconnect-ng](https://src.suse.de/pool/suseconnect-ng)
+PR.
+
 See [suseconnect-ng PR#1](https://src.suse.de/pool/suseconnect-ng/pulls/1) for an
-example of a previous submission.
+example of a previous submission, with associated
+[products/SLFO PR#3666](https://src.suse.de/products/SLFO/pulls/3666).
 
 #### RES8 Submissions
 
