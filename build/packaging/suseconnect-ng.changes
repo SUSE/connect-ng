@@ -6,6 +6,8 @@ Thu Aug  6 14:30:46 UTC 2026 - Fergal Mc Carthy <fmccarthy@suse.com>
   - make --root a single use option (jsc#SCC-973)
   - suseconnect-ng status output not consistently shown in 
     requested format (bsc# 1233147)
+  - Fix error on activating sle-we due to nvidia repository
+    (bsc#1219176, bsc#1222028, bsc#1226006)
 
 -------------------------------------------------------------------
 Mon Jun 15 16:29:05 UTC 2026 - Earl Sampson <esampson@suse.com>

@@ -259,7 +259,7 @@ func InstallReleasePackage(identifier string, autoImportRepoKeys bool, nonIntera
 	if nonInteractive {
 		args = append(args, "--non-interactive")
 	}
-	args = append(args, []string{"install", "--no-recommends", "--auto-agree-with-product-licenses", "-t", "product", identifier}...)
+	args = append(args, []string{"--gpg-auto-import-keys", "install", "--no-recommends", "--auto-agree-with-product-licenses", "-t", "product", identifier}...)
 
 	if autoImportRepoKeys {
 		args = append([]string{"--gpg-auto-import-keys"}, args...)
