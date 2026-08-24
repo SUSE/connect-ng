@@ -84,6 +84,7 @@ Manage subscriptions at the SUSE Customer Center: https://scc.suse.com
 
   **--root <PATH>**
   : Path to the root folder, uses the same parameter for zypper.
+    Only one use of --root is allowed.
 
   **--gpg-auto-import-keys**
   : Automatically trust and import new repository signing keys.

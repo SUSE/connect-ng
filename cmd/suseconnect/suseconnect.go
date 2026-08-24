@@ -417,10 +417,12 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 
 	handleAPIError := func(code int, err error) {
 		if code == http.StatusUnauthorized && api.IsRegistered() {
-			fmt.Print("Error: Invalid system credentials, probably because the ")
-			fmt.Print("registered system was deleted in SUSE Customer Center. ")
-			fmt.Print("Check ", opts.BaseURL, " whether your system appears there. ")
-			fmt.Printf("If it does not, please call %s --cleanup and re-register this system.\n", command_string)
+			errorMsg := fmt.Sprintf("Invalid system credentials, probably because the "+
+				"registered system was deleted in SUSE Customer Center. "+
+				"Check %s whether your system appears there. "+
+				"If it does not, please call %s --cleanup and re-register this system.", opts.BaseURL, command_string)
+			jsonOutput, _ := json.Marshal(map[string]string{"Error": errorMsg})
+			fmt.Println(string(jsonOutput))
 		} else if connect.IsOutdatedRegProxy(api.GetConnection(), opts) {
 			fmt.Println(outdatedRegProxy)
 		} else {
