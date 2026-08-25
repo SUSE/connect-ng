@@ -13,6 +13,8 @@ import (
 	"github.com/SUSE/connect-ng/internal/connect"
 	cred "github.com/SUSE/connect-ng/internal/credentials"
 	"github.com/SUSE/connect-ng/pkg/connection"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type timeoutError struct{}
@@ -143,14 +145,13 @@ func TestErrorToJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var got errorResponse
-			if err := json.Unmarshal([]byte(errorToJSON(test.err)), &got); err != nil {
-				t.Fatalf("errorToJSON returned invalid JSON: %v", err)
-			}
+			assert := assert.New(t)
 
-			if got != test.want {
-				t.Fatalf("errorToJSON() = %#v, want %#v", got, test.want)
-			}
+			var got errorResponse
+			err := json.Unmarshal([]byte(errorToJSON(test.err)), &got)
+			require.NoError(t, err, "errorToJSON must return valid JSON")
+
+			assert.Equal(test.want, got)
 		})
 	}
 }
