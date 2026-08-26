@@ -3,6 +3,8 @@ name: agama tests
 
 on: [pull_request]
 
+permissions:
+  contents: read
 env:
   CONNECTNG_SOURCE: /usr/src/connect-ng
   AGAMA_SOURCE: /usr/src/agama

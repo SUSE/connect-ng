@@ -3,6 +3,8 @@ name: build and install rpm
 
 on: [pull_request]
 
+permissions:
+  contents: read
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts

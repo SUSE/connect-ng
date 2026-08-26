@@ -1,4 +1,5 @@
 --artifact-server-path /tmp/act-connect-ng-artifact-server
 --env-file .env
+--secret-file .env
 --platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:go-latest
 
