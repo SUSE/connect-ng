@@ -311,8 +311,9 @@ specify alternate platform images via the `--platform` option.
 Additionally, enabling the emulation of the v4 artifact upload/download support
 also requires appropriate command line options to be set.
 
-Similarly, to ensure that `act` sets up the appropriate environment settings for
-jobs that run, the `--env-file .env` option should be set.
+Similarly, to ensure that `act` sets up the appropriate environment settings and
+secrets for jobs that run, the `--env-file .env` and `--secret-file .env`
+options should be set.
 
 The [.actrc](.actrc) file in the repo specifies appropriate values for these
 options.

@@ -8,7 +8,6 @@ permissions:
 env:
   SOURCE: /usr/src/connect-ng
   ARTIFACT_SOURCE: artifacts
-  REGCODE: ${{ secrets.REGCODE }}
 
 jobs:
   build-rpm:
@@ -18,7 +17,7 @@ jobs:
       options: --user root --privileged
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: move source to /usr/src/connect-ng
         run: |
