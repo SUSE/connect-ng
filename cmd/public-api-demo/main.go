@@ -115,12 +115,13 @@ func runDemo(identifier, version, arch, infoPath, regcode string, systemProfiles
 	}
 
 	extraData := registration.ExtraData{
-		"instance_data":   "<document>{}</document>",
+		"instance_data": `<instance_data product="SUSE"/>
+<document>{}</document>`,
 		"system_profiles": systemProfiles,
 	}
 
 	bold("2) Registering a client to SCC with a registration code\n")
-	id, regErr := registration.Register(conn, regcode, hostname, systemInformation, registration.NoExtraData)
+	id, regErr := registration.Register(conn, regcode, hostname, systemInformation, extraData)
 	if regErr != nil {
 		return regErr
 	}
