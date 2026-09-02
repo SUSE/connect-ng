@@ -127,11 +127,21 @@ func runDemo(identifier, version, arch, infoPath, regcode string, systemProfiles
 	bold("!! check https://scc.suse.com/systems/%d\n", id)
 
 	bold("3) Activate %s/%s/%s\n", identifier, version, arch)
+	fmt.Printf("VERSION = %s\n", version)
 	_, root, rootErr := registration.Activate(conn, identifier, version, arch, regcode)
 	if rootErr != nil {
 		return rootErr
 	}
 	bold("++ %s activated\n", root.FriendlyName)
+
+	version = "2.13.2"
+
+	bold("3) Activate %s/%s/%s\n", identifier, version, arch)
+	_, root2, rootErr2 := registration.Activate(conn, identifier, version, arch, regcode)
+	if rootErr2 != nil {
+		return rootErr2
+	}
+	bold("++ %s activated again with new version\n", root2.FriendlyName)
 	waitForUser("Registration complete")
 
 	bold("4) System status // Ping\n")
