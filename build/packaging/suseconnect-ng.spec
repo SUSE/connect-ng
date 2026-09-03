@@ -60,6 +60,9 @@ Requires:       coreutils
 Requires:       pciutils
 Requires:       util-linux
 Requires:       zypper
+%if (0%{?suse_version} >= 1600 && 0%{?suse_version} != 1699)
+Recommends:     mcp-server-suseconnect
+%endif
 Recommends:     systemd
 
 %ifarch s390x
