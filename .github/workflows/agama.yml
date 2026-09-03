@@ -3,13 +3,13 @@ name: agama tests
 
 on: [pull_request]
 
+permissions:
+  contents: read
 env:
   CONNECTNG_SOURCE: /usr/src/connect-ng
   AGAMA_SOURCE: /usr/src/agama
   CONNECTNG_ARTIFACT: suseconnect-build-out
   CONNECTNG_TARBALL: /usr/src/suseconnect-build-out.tar.gz
-  REGCODE: ${{ secrets.REGCODE }}
-  RMT_HOST: ${{ secrets.RMT_HOST }}
 
 jobs:
 
@@ -26,7 +26,7 @@ jobs:
           zypper --non-interactive in nodejs-default
 
       - name: Checkout SUSE/connect-ng
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: connect-ng
 
@@ -65,7 +65,7 @@ jobs:
           zypper --non-interactive in nodejs-default
 
       - name: Checkout SUSE/connect-ng
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: connect-ng
 
@@ -84,7 +84,7 @@ jobs:
           tar -C ${CONNECTNG_SOURCE} -xzf ${CONNECTNG_TARBALL}
 
       - name: Checkout agama-project/agama
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: agama-project/agama
           path: agama
@@ -95,5 +95,8 @@ jobs:
 
       - name: Run agama rust tests
         working-directory: ${{ env.CONNECTNG_SOURCE }}
+        env:
+          REGCODE: ${{ secrets.REGCODE }}
+          RMT_HOST: ${{ secrets.RMT_HOST }}
         run: |
           build/ci/run-agama-rust-tests
