@@ -20,8 +20,11 @@ install_locally_built_suseconnect "${SOURCE}/out"
 
 cleanup_testing_environment
 
+# install packages needed for profile testing
+zypper in -y pciutils kmod
+
 group "run feature tests"
 pushd "$SOURCE"
-go test -timeout 15m -v features/suseconnect/*.go
+go test -timeout 20m -v features/suseconnect/*.go
 popd
 groupend
