@@ -84,3 +84,13 @@ func TryCurlrcCleanup() {
 
 	_ = os.Remove(filepath.Join(home, ".curlrc"))
 }
+
+func DeleteFile(file string) {
+	_ = os.Remove(file)
+}
+
+
+func CreateFileWithContent(file string, data string) {
+	DeleteFile(file)
+	_ = os.WriteFile(file, []byte(data), 0644)
+}
