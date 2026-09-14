@@ -12,6 +12,7 @@ import (
 )
 
 func TestRegistration(t *testing.T) {
+	t.Cleanup(helpers.TryConfigCleanup)
 	t.Cleanup(helpers.CleanupPolutedFilesystem)
 	t.Cleanup(helpers.TrySUSEConnectCleanup)
 	t.Cleanup(helpers.TrySUSEConnectDeregister)
@@ -24,6 +25,7 @@ func TestRegistration(t *testing.T) {
 }
 
 func TestRegistrationWithProxies(t *testing.T) {
+	t.Cleanup(helpers.TryConfigCleanup)
 	t.Cleanup(helpers.CleanupPolutedFilesystem)
 	t.Cleanup(helpers.TrySUSEConnectCleanup)
 	t.Cleanup(helpers.TryCurlrcCleanup)
