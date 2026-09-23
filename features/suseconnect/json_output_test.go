@@ -8,6 +8,7 @@ import (
 )
 
 func TestJSONOutput(t *testing.T) {
+	t.Cleanup(helpers.TryConfigCleanup)
 	t.Cleanup(helpers.CleanupPolutedFilesystem)
 	t.Cleanup(helpers.TrySUSEConnectCleanup)
 	t.Cleanup(helpers.TrySUSEConnectDeregister)

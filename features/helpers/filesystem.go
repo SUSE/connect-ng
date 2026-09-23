@@ -84,3 +84,11 @@ func TryCurlrcCleanup() {
 
 	_ = os.Remove(filepath.Join(home, ".curlrc"))
 }
+
+func TryConfigCleanup() {
+	_ = os.Remove(filepath.Join(zypper.GetFilesystemRoot(), "etc/SUSEConnect"))
+}
+
+func CreateConfig(data string) {
+	_ = os.WriteFile(filepath.Join(zypper.GetFilesystemRoot(), "etc/SUSEConnect"), []byte(data), 0644)
+}
