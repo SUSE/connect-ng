@@ -149,8 +149,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	api := connect.NewWrappedAPI(opts)
-
 	// pass root to connect config
 	if fsRoot != "" {
 		opts.FsRoot = fsRoot
@@ -158,6 +156,9 @@ func main() {
 		// if we update a chroot system, we cannot create snapshots of it
 		noSnapshots = true
 	}
+
+	// after FsRoot is set: the credentials are read here, and must be the ones of the target root
+	api := connect.NewWrappedAPI(opts)
 
 	if !connect.IsSnapperConfigured() {
 		noSnapshots = true
