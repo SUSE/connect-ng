@@ -457,7 +457,7 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		fmt.Print("System is not registered. Use the --regcode parameter to register it.\n")
 		os.Exit(71)
 	default:
-		fmt.Printf("%s error: %s\n", "SUSEConnect", err)
+		fmt.Printf("%s error: %s\n", command_string, err)
 		os.Exit(1)
 	}
 }
