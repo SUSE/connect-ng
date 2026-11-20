@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/x509"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -457,7 +458,39 @@ func exitOnError(err error, api connect.WrappedAPI, opts *connect.Options) {
 		fmt.Print("System is not registered. Use the --regcode parameter to register it.\n")
 		os.Exit(71)
 	default:
-		fmt.Printf("%s error: %s\n", "SUSEConnect", err)
+		handleCertificateError(command_string, err)
+		fmt.Printf("%s error: %s\n", command_string, err)
+		os.Exit(1)
+	}
+}
+
+// If this is an error on the connection certificate, do a special handling and
+// call os.Exit(). If this is not the case, then it returns as usual.
+func handleCertificateError(command string, err error) {
+	if err == nil {
+		return
+	}
+
+	var unknownAuthErr x509.UnknownAuthorityError
+	if errors.As(err, &unknownAuthErr) {
+		fmt.Printf("%s certificate error: %s (certificate subject: '%s'; certificate issuer: '%s')\n",
+			command, unknownAuthErr.Error(), unknownAuthErr.Cert.Subject, unknownAuthErr.Cert.Issuer)
+		os.Exit(1)
+	}
+
+	var invalidErr x509.CertificateInvalidError
+	if errors.As(err, &invalidErr) {
+		fmt.Printf("%s certificate error: %s (certificate subject: '%s')\n",
+			command, invalidErr.Error(), invalidErr.Cert.Subject)
+		os.Exit(1)
+	}
+
+	var hostnameErr x509.HostnameError
+	if errors.As(err, &hostnameErr) {
+		// NOTE: x509.HostnameError.Error() already includes the requested host
+		// on its string.
+		fmt.Printf("%s certificate error: %s (certificate subject: '%s')\n",
+			command, hostnameErr.Error(), hostnameErr.Certificate.Subject)
 		os.Exit(1)
 	}
 }
