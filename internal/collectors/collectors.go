@@ -42,7 +42,7 @@ type Collector interface {
 	run(arch string) (Result, error)
 }
 
-func CollectInformation(architecture string, collectors []Collector) (Result, error) {
+func CollectInformation(architecture string, collectors []Collector) Result {
 	obj := Result{}
 
 	for _, collector := range collectors {
@@ -52,8 +52,7 @@ func CollectInformation(architecture string, collectors []Collector) (Result, er
 		}
 		maps.Copy(obj, res)
 	}
-
-	return obj, nil
+	return obj
 }
 
 // Extract a value from the already existing result set preserving the existing value type

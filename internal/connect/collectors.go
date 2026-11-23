@@ -3,7 +3,6 @@ package connect
 import (
 	"github.com/SUSE/connect-ng/internal/collectors"
 	collectorsconfig "github.com/SUSE/connect-ng/pkg/collectors"
-	"github.com/SUSE/connect-ng/pkg/profiles"
 )
 
 // instantiateCollectors builds a list of collector instances for a given type.
@@ -43,7 +42,7 @@ func FetchSystemInformation(arch string, collectorOpts collectorsconfig.Collecto
 	if err != nil {
 		return collectors.NoResult, err
 	}
-	return collectors.CollectInformation(arch, usedCollectors)
+	return collectors.CollectInformation(arch, usedCollectors), nil
 }
 
 // FetchSystemProfiles collects system profile data from enabled profile collectors.
@@ -59,14 +58,9 @@ func FetchSystemProfiles(arch string, updateCache bool, collectorOpts collectors
 	if arch == "" {
 		arch, err = collectors.DetectArchitecture()
 	}
+	if err != nil {
+		return collectors.NoResult, err
+	}
 
-	if err != nil {
-		return collectors.NoResult, err
-	}
-	profile, err := collectors.CollectInformation(arch, usedCollectors)
-	if err != nil {
-		profiles.DeleteProfileCache("*-profile-id")
-		return collectors.NoResult, err
-	}
-	return profile, err
+	return collectors.CollectInformation(arch, usedCollectors), nil
 }

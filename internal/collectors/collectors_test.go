@@ -24,10 +24,8 @@ func TestCollectInformationRunAllCollectors(t *testing.T) {
 		collector2,
 	}
 
-	result, err := CollectInformation(ARCHITECTURE_X86_64, collectors)
-	if assert.NoError(err) {
-		assert.Equal(result, expected)
-	}
+	result := CollectInformation(ARCHITECTURE_X86_64, collectors)
+	assert.Equal(result, expected)
 }
 
 func TestCollectInformationWithFailingCollector(t *testing.T) {
@@ -55,9 +53,7 @@ func TestCollectInformationWithFailingCollector(t *testing.T) {
 		&collector3,
 	}
 
-	result, err := CollectInformation(ARCHITECTURE_X86_64, collectors)
-
-	assert.NoError(err)
+	result := CollectInformation(ARCHITECTURE_X86_64, collectors)
 	assert.Equal(expectedResult, result)
 }
 
