@@ -42,18 +42,23 @@ type Collector interface {
 	run(arch string) (Result, error)
 }
 
+// Runs all the 'collectors' given an 'architecture' and returns a map with all
+// the accumulated results. Returns an error if any of the collectors failed,
+// but they will all be run regardless if any of them fail.
 func CollectInformation(architecture string, collectors []Collector) (Result, error) {
+	var e error = nil
 	obj := Result{}
 
 	for _, collector := range collectors {
 		res, err := collector.run(architecture)
 		if err != nil {
+			e = err
 			util.Debug.Printf("Collecting system information failed: %s", err)
 		}
 		maps.Copy(obj, res)
 	}
 
-	return obj, nil
+	return obj, e
 }
 
 // Extract a value from the already existing result set preserving the existing value type
