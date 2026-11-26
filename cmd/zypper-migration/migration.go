@@ -201,7 +201,7 @@ func main() {
 			QuietOut.Print("\nRestarting the migration script...\n")
 			// this should replace current process with a new one but stop on error
 			// just in case
-			if err := syscall.Exec(os.Args[0], os.Args, []string{}); err != nil {
+			if err := syscall.Exec(os.Args[0], os.Args, os.Environ()); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}

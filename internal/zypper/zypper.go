@@ -394,9 +394,13 @@ func PatchCheck(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool)
 func Patch(updateStackOnly, quiet, verbose, nonInteractive, noRefresh bool) error {
 	flags := zypperFlags("", quiet, verbose, nonInteractive, noRefresh)
 	args := append(flags, "patch")
+	validExitCodes := []int{zypperOK}
 	if updateStackOnly {
 		args = append(args, "--updatestack-only")
+		// zypper exits with zypperInfoRestartNeeded after it updated the
+		// update stack, which is the expected outcome here
+		validExitCodes = append(validExitCodes, zypperInfoRestartNeeded)
 	}
-	_, err := zypperRun(args, []int{zypperOK})
+	_, err := zypperRun(args, validExitCodes)
 	return err
 }
