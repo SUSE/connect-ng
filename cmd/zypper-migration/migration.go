@@ -149,11 +149,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// pass root to connect config
+	// Pass root to connect config
 	if fsRoot != "" {
 		opts.FsRoot = fsRoot
 		zypper.SetFilesystemRoot(fsRoot)
-		// if we update a chroot system, we cannot create snapshots of it
+
+		// If we update a chroot system, we cannot create snapshots of it
 		noSnapshots = true
 	}
 
@@ -171,9 +172,14 @@ func main() {
 	}
 
 	if selfUpdate {
-		// reset root (if set) as the update stack can be outside of
-		// the to be updated system
-		opts.FsRoot = ""
+		// Reset root (if set) as the update stack can be outside of the to be
+		// updated system. Note that the 'api' object needs no changes, as this
+		// block only covers the zypper stack.
+		if fsRoot != "" {
+			opts.FsRoot = ""
+			zypper.SetFilesystemRoot("/")
+		}
+
 		if !nonInteractive {
 			echo = util.SetSystemEcho(true)
 		}
@@ -209,9 +215,11 @@ func main() {
 		if !nonInteractive {
 			util.SetSystemEcho(echo)
 		}
-		// restore root if needed
+
+		// Restore the root if we changed it.
 		if fsRoot != "" {
 			opts.FsRoot = fsRoot
+			zypper.SetFilesystemRoot(fsRoot)
 		}
 	}
 	QuietOut.Print("\n")
