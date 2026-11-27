@@ -214,3 +214,27 @@ func TestInstallReleasePakageZypperFails(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestPatchAcceptsRestartNeeded(t *testing.T) {
+	util.Execute = func(args []string, validExitCodes []int) ([]byte, error) {
+		assert.Contains(t, args, "--updatestack-only")
+		assert.Contains(t, validExitCodes, zypperInfoRestartNeeded, "patch must allow exit code 103")
+		return nil, nil
+	}
+
+	err := Patch(true, false, false, true, true)
+
+	assert.NoError(t, err)
+}
+
+func TestPatchWithoutUpdateStackOnlyRejectsRestartNeeded(t *testing.T) {
+	util.Execute = func(args []string, validExitCodes []int) ([]byte, error) {
+		assert.NotContains(t, args, "--updatestack-only")
+		assert.NotContains(t, validExitCodes, zypperInfoRestartNeeded, "a full patch must not allow exit code 103")
+		return nil, nil
+	}
+
+	err := Patch(false, false, false, true, true)
+
+	assert.NoError(t, err)
+}
