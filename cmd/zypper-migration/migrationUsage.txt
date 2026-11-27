@@ -24,5 +24,5 @@ Usage: zypper migration [options]
         --break-my-system            For testing and debugging purpose only.
         --product PRODUCT            Specify a product to which the system should be upgraded in offline mode.
                                      Format: <name>/<version>/<architecture>
-        --[no-]selfupdate            Do not update the update stack first
+        --[no-]selfupdate            Do (not) update the stack first
         --root DIR                   Operate on a different root directory
