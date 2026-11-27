@@ -288,6 +288,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	// --query only lists the migrations, even with --non-interactive or --migration
+	if query {
+		printMigrations(migrations, installedIDs, "Available migrations:", true)
+		os.Exit(0)
+	}
+
 	if nonInteractive && migrationNum == 0 {
 		// select the first option
 		migrationNum = 1
@@ -296,9 +302,6 @@ func main() {
 	// this part is only used in interactive mode
 	for migrationNum <= 0 || migrationNum > len(migrations) {
 		printMigrations(migrations, installedIDs, "Available migrations:", true)
-		if query {
-			os.Exit(0)
-		}
 		fmt.Print("[num/q]: ")
 		scanner := bufio.NewScanner(os.Stdin)
 		if !scanner.Scan() {
